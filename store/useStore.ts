@@ -71,10 +71,13 @@ export const useStore = create<StudentStore>((set, get) => ({
           name: student.name,
           gender: student.gender,
           address: student.address,
-          group: student.group,
-          teacher: student.teacher,
-          class: student.class,
-          level: student.level
+          class_id: student.class_id,
+          level_id: student.level_id,
+          father_name: student.father_name,
+          mother_name: student.mother_name,
+          wali_name: student.wali_name,
+          school_info: student.school_info,
+          status: student.status
         }])
         .select()
         .single();
@@ -97,10 +100,13 @@ export const useStore = create<StudentStore>((set, get) => ({
           name: student.name,
           gender: student.gender,
           address: student.address,
-          group: student.group,
-          teacher: student.teacher,
-          class: student.class,
-          level: student.level
+          class_id: student.class_id,
+          level_id: student.level_id,
+          father_name: student.father_name,
+          mother_name: student.mother_name,
+          wali_name: student.wali_name,
+          school_info: student.school_info,
+          status: student.status
         })
         .eq('id', student.id);
 
@@ -135,20 +141,35 @@ export const useStore = create<StudentStore>((set, get) => ({
 
   moveStudentToLevel: async (studentId, level) => {
     try {
+      // First update the database
       const { error } = await supabase
         .from('students')
-        .update({ level })
+        .update({ level_id: level.id })
         .eq('id', studentId);
 
       if (error) throw error;
 
+      // Then update the local state
       set(state => ({
         students: state.students.map(student =>
-          student.id === studentId ? { ...student, level } : student
+          student.id === studentId 
+            ? { 
+                ...student, 
+                level_id: level.id,
+                level: {
+                  id: level.id,
+                  name: level.name,
+                  created_at: level.created_at,
+                  updated_at: level.updated_at
+                }
+              } 
+            : student
         )
       }));
     } catch (error) {
       console.error('Error moving student:', error);
+      // Reload students to ensure we have the correct state
+      await get().loadStudents();
     }
   },
 

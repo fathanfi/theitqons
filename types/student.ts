@@ -15,17 +15,35 @@ export interface Redemption {
 
 export type Gender = "Ikhwan" | "Akhwat";
 
+export interface Class {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Level {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Student {
   id: string;
   name: string;
   gender: Gender;
   address: string;
-  group: string;
-  teacher: string;
-  class: string;
-  level: string;
+  class_id: string;
+  level_id: string;
+  father_name?: string;
+  mother_name?: string;
+  wali_name?: string;
+  school_info?: string;
   profileImageUrl: string;
   badges: Badge[];
   redemptions: Redemption[];
   status: boolean;
+  class?: Class;
+  level?: Level;
 }

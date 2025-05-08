@@ -1,13 +1,208 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSchoolStore } from '@/store/schoolStore';
+import { useStore } from '@/store/useStore';
+import { Group } from '@/types/school';
+import { Student } from '@/types/student';
+import { useSession } from '@/components/SessionProvider';
 import { GroupForm } from '@/components/GroupForm';
-import { GroupList } from '@/components/GroupList';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function GroupsPage() {
+  const { currentAcademicYear } = useSession();
+  const router = useRouter();
+  const groups = useSchoolStore((state) => state.groups);
+  const loadGroups = useSchoolStore((state) => state.loadGroups);
+  const classes = useSchoolStore((state) => state.classes);
+  const students = useStore((state) => state.students);
+  const levels = useSchoolStore((state) => state.levels);
+  const loadClasses = useSchoolStore((state) => state.loadClasses);
+  const loadTeachers = useSchoolStore((state) => state.loadTeachers);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | undefined>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState<string>('ALL');
+  const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  useEffect(() => {
+    if (currentAcademicYear) {
+      loadGroups(currentAcademicYear.id);
+      loadClasses();
+      loadTeachers();
+    }
+  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers]);
+
+  const handleDelete = async (groupId: string) => {
+    if (confirm('Are you sure you want to delete this group?')) {
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId);
+
+      if (error) {
+        console.error('Error deleting group:', error);
+        return;
+      }
+
+      loadGroups(currentAcademicYear?.id || '');
+    }
+  };
+
+  const handleEdit = (group: Group) => {
+    setEditingGroup(group);
+    setIsFormOpen(true);
+  };
+
+  const handleUpdate = () => {
+    setEditingGroup(undefined);
+    setIsFormOpen(false);
+    loadGroups(currentAcademicYear?.id || '');
+  };
+
+  // Filter groups based on search query and selected class
+  const filteredGroups = groups.filter(group => {
+    const matchesSearch = searchQuery === '' || 
+      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (group.students || []).some(studentId => {
+        const student = students.find(s => s.id === studentId);
+        return student?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      });
+    
+    const matchesClass = selectedClass === 'ALL' || group.classId === selectedClass;
+    
+    return matchesSearch && matchesClass;
+  });
+
+  // Sort students within each group
+  const getSortedStudents = (studentIds: string[] = []) => {
+    return studentIds
+      .map(id => students.find(s => s.id === id))
+      .filter((student): student is Student => student !== undefined)
+      .sort((a, b) => {
+        const comparison = a.name.localeCompare(b.name);
+        return studentSortOrder === 'asc' ? comparison : -comparison;
+      });
+  };
+
+  if (!currentAcademicYear) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <p className="text-center text-gray-500">Please select an academic year first</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Group Management</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <GroupForm />
-        <GroupList />
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Groups</h1>
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+        >
+          Add New Group
+        </button>
+      </div>
+
+      {/* Search and Filter Controls */}
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-4">
+          <input
+            type="text"
+            placeholder="Search groups or students..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            <option value="ALL">All Classes</option>
+            {classes.map(class_ => (
+              <option key={class_.id} value={class_.id}>
+                {class_.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setStudentSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className="bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200"
+          >
+            Sort Students {studentSortOrder === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
+      </div>
+
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <GroupForm
+              editGroup={editingGroup}
+              onUpdate={handleUpdate}
+            />
+            <button
+              onClick={() => {
+                setIsFormOpen(false);
+                setEditingGroup(undefined);
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredGroups.map((group) => {
+          const class_ = classes.find(c => c.id === group.classId);
+          const teacher = useSchoolStore.getState().teachers.find(t => t.id === group.teacherId);
+          const sortedStudents = getSortedStudents(group.students);
+
+          return (
+            <div key={group.id} className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold">{group.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    {class_ ? class_.name : 'No Class'} • {teacher ? teacher.name : 'No Teacher'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(group)}
+                    className="text-indigo-600 hover:text-indigo-800"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(group.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium">Students:</h4>
+                <ul className="space-y-1">
+                  {sortedStudents.map((student) => {
+                    const level = levels.find(l => l.id === student.level_id);
+                    return (
+                      <li key={student.id} className="text-sm">
+                        {student.name} {level && <span className="text-gray-500">[{level.name}]</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

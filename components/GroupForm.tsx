@@ -14,12 +14,16 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
   const classes = useSchoolStore((state) => state.classes);
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
+  const loadTeachers = useSchoolStore((state) => state.loadTeachers);
+  const loadClasses = useSchoolStore((state) => state.loadClasses);
   const addGroup = useSchoolStore((state) => state.addGroup);
   const updateGroup = useSchoolStore((state) => state.updateGroup);
 
   useEffect(() => {
     loadStudents();
-  }, [loadStudents]);
+    loadTeachers();
+    loadClasses();
+  }, [loadStudents, loadTeachers, loadClasses]);
 
   const [formData, setFormData] = useState<Partial<Group>>(
     editGroup || {
@@ -58,15 +62,18 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      // Clear students when class changes
+      ...(name === 'classId' ? { students: [] } : {})
+    }));
   };
 
   // Filter students by selected class
   const filteredStudents = students.filter(student => 
-    formData.classId ? student.class === formData.classId : true
+    formData.classId ? student.class_id === formData.classId : true
   );
 
   const studentOptions = filteredStudents.map(student => ({
@@ -160,7 +167,11 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
             className="basic-multi-select"
             classNamePrefix="select"
             placeholder="Search and select students..."
+            isDisabled={!formData.classId}
           />
+          {!formData.classId && (
+            <p className="mt-1 text-sm text-gray-500">Please select a class first to see available students</p>
+          )}
         </div>
         <button
           type="submit"

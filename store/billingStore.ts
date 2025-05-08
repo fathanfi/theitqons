@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 
-interface BillingSettings {
+export interface BillingSettings {
   id: string;
   academicYearId: string;
   monthlyPrice: number;
@@ -13,7 +13,7 @@ interface BillingSettings {
   updatedAt: string;
 }
 
-interface BillingRecord {
+export interface BillingRecord {
   id: string;
   academicYearId: string;
   studentId: string;

@@ -6,12 +6,13 @@ import { StudentAvatar } from './StudentAvatar';
 
 interface LevelProps {
   level: string;
+  levelId: string;
   students: Student[];
 }
 
-export function Level({ level, students }: LevelProps) {
+export function Level({ level, levelId, students }: LevelProps) {
   const { setNodeRef, isOver } = useDroppable({
-    id: level,
+    id: levelId,
   });
 
   return (

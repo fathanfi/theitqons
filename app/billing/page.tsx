@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore';
 import { useSchoolStore } from '@/store/schoolStore';
 import { useBillingStore } from '@/store/billingStore';
 import { useSession } from '@/components/SessionProvider';
+import type { BillingRecord } from '@/store/billingStore';
 
 const MONTHS = [
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
@@ -16,10 +17,8 @@ export default function BillingPage() {
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
   
-  const teachers = useSchoolStore((state) => state.teachers);
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
-  const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
 
@@ -29,7 +28,6 @@ export default function BillingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('');
   const [showInactive, setShowInactive] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -38,14 +36,13 @@ export default function BillingPage() {
 
   useEffect(() => {
     loadStudents();
-    loadTeachers();
     loadClasses();
     loadLevels();
     if (currentAcademicYear) {
       loadSettings(currentAcademicYear.id);
       loadRecords(currentAcademicYear.id);
     }
-  }, [loadStudents, loadTeachers, loadClasses, loadLevels, currentAcademicYear, loadSettings, loadRecords]);
+  }, [loadStudents, loadClasses, loadLevels, currentAcademicYear, loadSettings, loadRecords]);
 
   useEffect(() => {
     // Initialize billing checks from records
@@ -55,7 +52,7 @@ export default function BillingPage() {
     }, {} as {[key: string]: boolean[]});
 
     // Update checks based on existing records
-    records.forEach(record => {
+    (records as BillingRecord[]).forEach(record => {
       const studentId = record.studentId;
       const monthIndex = MONTHS.findIndex(m => {
         const [month, year] = record.month.split('-');
@@ -85,11 +82,11 @@ export default function BillingPage() {
 
     setIsSaving(true);
     try {
-      const records = [];
+      const newRecords: { academicYearId: string; studentId: string; month: string; status: 'paid' | 'unpaid' }[] = [];
       for (const [studentId, checks] of Object.entries(billingChecks)) {
         checks.forEach((isChecked, index) => {
           const monthYear = getMonthYear(index);
-          records.push({
+          newRecords.push({
             academicYearId: currentAcademicYear.id,
             studentId,
             month: monthYear,
@@ -98,7 +95,7 @@ export default function BillingPage() {
         });
       }
 
-      await saveBillingRecords(records);
+      await saveBillingRecords(newRecords);
       alert('Billing records saved successfully!');
     } catch (error) {
       console.error('Error saving billing records:', error);
@@ -132,11 +129,10 @@ export default function BillingPage() {
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClass = !selectedClass || student.class === selectedClass;
-    const matchesLevel = !selectedLevel || student.level === selectedLevel;
-    const matchesTeacher = !selectedTeacher || student.teacher === selectedTeacher;
+    const matchesClass = !selectedClass || student.class_id === selectedClass;
+    const matchesLevel = !selectedLevel || student.level_id === selectedLevel;
     const matchesStatus = showInactive || student.status;
-    return matchesSearch && matchesClass && matchesLevel && matchesTeacher && matchesStatus;
+    return matchesSearch && matchesClass && matchesLevel && matchesStatus;
   });
 
   if (!settings) {
@@ -199,7 +195,7 @@ export default function BillingPage() {
             </label>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
@@ -220,21 +216,8 @@ export default function BillingPage() {
             >
               <option value="">All Levels</option>
               {levels.map(level => (
-                <option key={level.id} value={level.name}>
+                <option key={level.id} value={level.id}>
                   {level.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedTeacher}
-              onChange={(e) => setSelectedTeacher(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-            >
-              <option value="">All Teachers</option>
-              {teachers.map(teacher => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
                 </option>
               ))}
             </select>

@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { StudentForm } from './StudentForm';
 import { Student } from '@/types/student';
 import { supabase } from '@/lib/supabase';
-import Select from 'react-select';
 
 type SortField = 'points' | 'name';
 type SortDirection = 'asc' | 'desc';
@@ -19,10 +18,8 @@ export function StudentList() {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
-  const teachers = useSchoolStore((state) => state.teachers);
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
-  const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
 
@@ -30,15 +27,13 @@ export function StudentList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('');
   const [showInactive, setShowInactive] = useState(true);
 
   useEffect(() => {
-    loadTeachers();
     loadClasses();
     loadLevels();
     loadStudentPoints();
-  }, [loadTeachers, loadClasses, loadLevels]);
+  }, [loadClasses, loadLevels]);
 
   const loadStudentPoints = async () => {
     const { data } = await supabase
@@ -93,23 +88,22 @@ export function StudentList() {
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClass = !selectedClass || student.class === selectedClass;
-    const matchesLevel = !selectedLevel || student.level === selectedLevel;
-    const matchesTeacher = !selectedTeacher || student.teacher === selectedTeacher;
+    const matchesClass = !selectedClass || student.class_id === selectedClass;
+    const matchesLevel = !selectedLevel || student.level_id === selectedLevel;
     const matchesStatus = showInactive || student.status;
-    return matchesSearch && matchesClass && matchesLevel && matchesTeacher && matchesStatus;
+    return matchesSearch && matchesClass && matchesLevel && matchesStatus;
   });
 
   const sortedStudents = sortStudents(filteredStudents);
 
-  const getTeacherName = (teacherId: string) => {
-    const teacher = teachers.find(t => t.id === teacherId);
-    return teacher ? teacher.name : teacherId;
-  };
-
   const getClassName = (classId: string) => {
     const class_ = classes.find(c => c.id === classId);
     return class_ ? class_.name : classId;
+  };
+
+  const getLevelName = (levelId: string) => {
+    const level = levels.find(l => l.id === levelId);
+    return level ? level.name : levelId;
   };
 
   return (
@@ -136,7 +130,7 @@ export function StudentList() {
           </label>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
@@ -157,21 +151,8 @@ export function StudentList() {
           >
             <option value="">All Levels</option>
             {levels.map(level => (
-              <option key={level.id} value={level.name}>
+              <option key={level.id} value={level.id}>
                 {level.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedTeacher}
-            onChange={(e) => setSelectedTeacher(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="">All Teachers</option>
-            {teachers.map(teacher => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.name}
               </option>
             ))}
           </select>
@@ -228,13 +209,28 @@ export function StudentList() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500">Level: {student.level}</p>
+                  <p className="text-sm text-gray-500">Level: {getLevelName(student.level_id)}</p>
+                  <p className="text-sm text-gray-500">
+                    Class: {getClassName(student.class_id)}
+                  </p>
                   <p className="text-sm text-indigo-600 font-medium">
                     Earned Points: {studentPoints[student.id] || 0}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Teacher: {getTeacherName(student.teacher)} | Class: {getClassName(student.class)}
-                  </p>
+                  {student.father_name && (
+                    <p className="text-sm text-gray-500">
+                      Father: {student.father_name}
+                    </p>
+                  )}
+                  {student.mother_name && (
+                    <p className="text-sm text-gray-500">
+                      Mother: {student.mother_name}
+                    </p>
+                  )}
+                  {student.wali_name && (
+                    <p className="text-sm text-gray-500">
+                      Wali: {student.wali_name}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -252,28 +248,8 @@ export function StudentList() {
                 </button>
               </div>
             </div>
-            {student.badges.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm font-medium text-gray-700 mb-1">Badges:</p>
-                <div className="flex gap-2">
-                  {student.badges.map((badge) => (
-                    <div
-                      key={badge.id}
-                      className="flex items-center bg-gray-100 rounded-full px-3 py-1"
-                      title={badge.description}
-                    >
-                      <span className="mr-1">{badge.icon}</span>
-                      <span className="text-sm">{badge.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ))}
-        {sortedStudents.length === 0 && (
-          <p className="text-gray-500 text-center">No students found.</p>
-        )}
       </div>
     </div>
   );

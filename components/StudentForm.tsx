@@ -9,28 +9,27 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
   const addStudent = useStore((state) => state.addStudent);
   const updateStudent = useStore((state) => state.updateStudent);
   
-  const teachers = useSchoolStore((state) => state.teachers);
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
-  const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
 
   useEffect(() => {
-    loadTeachers();
     loadClasses();
     loadLevels();
-  }, [loadTeachers, loadClasses, loadLevels]);
+  }, [loadClasses, loadLevels]);
 
   const [formData, setFormData] = useState<Partial<Student>>(
     editStudent || {
       name: '',
       gender: 'Ikhwan',
       address: '',
-      group: '',
-      teacher: '',
-      class: '',
-      level: '',
+      class_id: '',
+      level_id: '',
+      father_name: '',
+      mother_name: '',
+      wali_name: '',
+      school_info: '',
       status: true,
       profileImageUrl: '',
       badges: []
@@ -58,10 +57,12 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
         name: '',
         gender: 'Ikhwan',
         address: '',
-        group: '',
-        teacher: '',
-        class: '',
-        level: '',
+        class_id: '',
+        level_id: '',
+        father_name: '',
+        mother_name: '',
+        wali_name: '',
+        school_info: '',
         status: true,
         profileImageUrl: '',
         badges: []
@@ -69,12 +70,14 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData({
-      ...formData,
-      [e.target.name]: value
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const getInitials = (name: string) => {
@@ -136,30 +139,10 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Teacher</label>
-          <select
-            name="teacher"
-            value={formData.teacher}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            required
-          >
-            <option value="">Select Teacher</option>
-            {teachers
-              .filter(teacher => teacher.status)
-              .map(teacher => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
-                </option>
-              ))
-            }
-          </select>
-        </div>
-        <div>
           <label className="block text-sm font-medium text-gray-700">Class</label>
           <select
-            name="class"
-            value={formData.class}
+            name="class_id"
+            value={formData.class_id}
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             required
@@ -175,8 +158,8 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
         <div>
           <label className="block text-sm font-medium text-gray-700">Level</label>
           <select
-            name="level"
-            value={formData.level}
+            name="level_id"
+            value={formData.level_id}
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             required
@@ -185,13 +168,61 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
             {levels
               .filter(level => level.status)
               .map(level => (
-                <option key={level.id} value={level.name}>
+                <option key={level.id} value={level.id}>
                   {level.name}
                 </option>
               ))
             }
           </select>
         </div>
+
+        {/* Parent Information Section */}
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Parent Information</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Father's Name</label>
+              <input
+                type="text"
+                name="father_name"
+                value={formData.father_name}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Mother's Name</label>
+              <input
+                type="text"
+                name="mother_name"
+                value={formData.mother_name}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Wali's Name</label>
+              <input
+                type="text"
+                name="wali_name"
+                value={formData.wali_name}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">School Information</label>
+              <textarea
+                name="school_info"
+                value={formData.school_info}
+                onChange={handleChange}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center">
           <input
             type="checkbox"
