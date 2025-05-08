@@ -10,6 +10,7 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isPointsOpen, setIsPointsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
+  const [isItqonOpen, setIsItqonOpen] = useState(false);
 
   return (
     <nav className="bg-gray-800 text-white p-4">
@@ -105,10 +106,45 @@ export function Navigation() {
             </div>
             
             <Link href="/redeem" className="hover:text-gray-300">Redeem</Link>
-            <Link href="/levels" className="hover:text-gray-300 flex items-center gap-1">
-              Itqon
-              <span className="text-xl">💥</span>
-            </Link>
+
+            {/* Itqon Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsItqonOpen(!isItqonOpen)}
+                className="hover:text-gray-300 flex items-center gap-1"
+              >
+                Itqon
+                <span className="text-xl">💥</span>
+                <span className="text-xs">▼</span>
+              </button>
+              {isItqonOpen && (
+                <div className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                  <div className="py-1" role="menu">
+                    <Link 
+                      href="/levels" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsItqonOpen(false)}
+                    >
+                      Itqon Board
+                    </Link>
+                    <Link 
+                      href="/exam-management" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsItqonOpen(false)}
+                    >
+                      Exam Management
+                    </Link>
+                    <Link 
+                      href="/itqon-exam" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsItqonOpen(false)}
+                    >
+                      Itqon Exam
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Billing Dropdown */}
             <div className="relative">

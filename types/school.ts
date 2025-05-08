@@ -51,3 +51,13 @@ export interface Group {
   teacher?: Teacher;
   students?: string[];
 }
+
+export interface Exam {
+  id: string;
+  name: string;
+  description: string;
+  levelId: string;
+  status: boolean;
+  createdAt: string;
+  level?: Level;
+}
