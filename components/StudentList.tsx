@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { StudentForm } from './StudentForm';
 import { Student } from '@/types/student';
 import { supabase } from '@/lib/supabase';
+import React from 'react';
 
 type SortField = 'points' | 'name';
 type SortDirection = 'asc' | 'desc';
@@ -17,6 +18,8 @@ export function StudentList() {
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
@@ -95,6 +98,12 @@ export function StudentList() {
   });
 
   const sortedStudents = sortStudents(filteredStudents);
+
+  // Pagination
+  const totalPages = Math.ceil(sortedStudents.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentStudents = sortedStudents.slice(startIndex, endIndex);
 
   const getClassName = (classId: string) => {
     const class_ = classes.find(c => c.id === classId);
@@ -188,7 +197,7 @@ export function StudentList() {
       )}
       
       <div className="space-y-4">
-        {sortedStudents.map((student) => (
+        {currentStudents.map((student) => (
           <div 
             key={student.id} 
             className={`border rounded-lg p-4 ${!student.status ? 'bg-gray-50' : ''}`}
@@ -251,6 +260,57 @@ export function StudentList() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
+          <div className="text-sm text-gray-700 mb-4 sm:mb-0">
+            Showing {startIndex + 1} to {Math.min(endIndex, sortedStudents.length)} of {sortedStudents.length} students
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1 overflow-x-auto max-w-[300px]">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Show first page, last page, current page, and pages around current page
+                  const showAroundCurrent = Math.abs(page - currentPage) <= 1;
+                  const isFirstOrLast = page === 1 || page === totalPages;
+                  return showAroundCurrent || isFirstOrLast;
+                })
+                .map((page, index, array) => (
+                  <React.Fragment key={page}>
+                    {index > 0 && array[index - 1] !== page - 1 && (
+                      <span className="px-2 text-gray-500">...</span>
+                    )}
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`min-w-[32px] px-3 py-1 rounded ${
+                        currentPage === page
+                          ? 'bg-indigo-600 text-white'
+                          : 'border hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  </React.Fragment>
+                ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
