@@ -22,14 +22,14 @@ export default function BillingPage() {
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
 
-  const { settings, records, loadSettings, loadRecords, saveBillingRecords } = useBillingStore();
+  const { settings, records, loadSettings, loadRecords, updateSingleRecord } = useBillingStore();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [showInactive, setShowInactive] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   // Billing state
   const [billingChecks, setBillingChecks] = useState<{[key: string]: boolean[]}>({});
@@ -70,38 +70,31 @@ export default function BillingPage() {
     setBillingChecks(initialChecks);
   }, [students, records, settings]);
 
-  const handleCheckChange = (studentId: string, index: number) => {
-    setBillingChecks(prev => ({
-      ...prev,
-      [studentId]: prev[studentId].map((check, i) => i === index ? !check : check)
-    }));
-  };
-
-  const handleSave = async () => {
+  const handleCheckChange = async (studentId: string, index: number) => {
     if (!currentAcademicYear || !settings) return;
 
-    setIsSaving(true);
-    try {
-      const newRecords: { academicYearId: string; studentId: string; month: string; status: 'paid' | 'unpaid' }[] = [];
-      for (const [studentId, checks] of Object.entries(billingChecks)) {
-        checks.forEach((isChecked, index) => {
-          const monthYear = getMonthYear(index);
-          newRecords.push({
-            academicYearId: currentAcademicYear.id,
-            studentId,
-            month: monthYear,
-            status: isChecked ? 'paid' : 'unpaid'
-          });
-        });
-      }
+    const newStatus = !billingChecks[studentId][index];
+    const monthYear = getMonthYear(index);
+    const recordId = `${studentId}-${monthYear}`;
 
-      await saveBillingRecords(newRecords);
-      alert('Billing records saved successfully!');
+    setIsUpdating(recordId);
+    try {
+      await updateSingleRecord({
+        academicYearId: currentAcademicYear.id,
+        studentId,
+        month: monthYear,
+        status: newStatus ? 'paid' : 'unpaid'
+      });
+
+      setBillingChecks(prev => ({
+        ...prev,
+        [studentId]: prev[studentId].map((check, i) => i === index ? newStatus : check)
+      }));
     } catch (error) {
-      console.error('Error saving billing records:', error);
-      alert('Failed to save billing records');
+      console.error('Error updating billing record:', error);
+      alert('Failed to update billing record');
     } finally {
-      setIsSaving(false);
+      setIsUpdating(null);
     }
   };
 
@@ -148,30 +141,7 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Billing Management</h1>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`${
-            isSaving 
-              ? 'bg-indigo-400 cursor-not-allowed' 
-              : 'bg-indigo-600 hover:bg-indigo-700'
-          } text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center gap-2`}
-        >
-          {isSaving ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : (
-            'Save Changes'
-          )}
-        </button>
-      </div>
+      <h1 className="text-3xl font-bold">Billing Management</h1>
 
       <div className="bg-white p-6 rounded-lg shadow-lg space-y-6">
         {/* Filters */}
@@ -248,16 +218,22 @@ export default function BillingPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{student.name}</div>
                   </td>
-                  {Array.from({ length: 13 }, (_, i) => (
-                    <td key={i} className="px-6 py-4 whitespace-nowrap text-center">
-                      <input
-                        type="checkbox"
-                        checked={billingChecks[student.id]?.[i] || false}
-                        onChange={() => handleCheckChange(student.id, i)}
-                        className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                      />
-                    </td>
-                  ))}
+                  {Array.from({ length: 13 }, (_, i) => {
+                    const recordId = `${student.id}-${getMonthYear(i)}`;
+                    return (
+                      <td key={i} className="px-6 py-4 whitespace-nowrap text-center">
+                        <input
+                          type="checkbox"
+                          checked={billingChecks[student.id]?.[i] || false}
+                          onChange={() => handleCheckChange(student.id, i)}
+                          disabled={isUpdating === recordId}
+                          className={`rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${
+                            isUpdating === recordId ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        />
+                      </td>
+                    );
+                  })}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     Rp {calculateTotal(student.id).toLocaleString()}
                   </td>

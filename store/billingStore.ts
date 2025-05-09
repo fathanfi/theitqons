@@ -31,6 +31,7 @@ interface BillingStore {
   updateSettings: (settings: BillingSettings) => Promise<void>;
   loadRecords: (academicYearId: string) => Promise<void>;
   saveBillingRecords: (records: { academicYearId: string; studentId: string; month: string; status: 'paid' | 'unpaid' }[]) => Promise<void>;
+  updateSingleRecord: (record: { academicYearId: string; studentId: string; month: string; status: 'paid' | 'unpaid' }) => Promise<void>;
 }
 
 export const useBillingStore = create<BillingStore>((set) => ({
@@ -188,6 +189,76 @@ export const useBillingStore = create<BillingStore>((set) => ({
           }))
         ]
       }));
+    }
+  },
+
+  updateSingleRecord: async (record) => {
+    try {
+      // First check if record exists
+      const { data: existingRecord } = await supabase
+        .from('billing_records')
+        .select('*')
+        .eq('academic_year_id', record.academicYearId)
+        .eq('student_id', record.studentId)
+        .eq('month', record.month)
+        .single();
+
+      if (existingRecord) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('billing_records')
+          .update({ status: record.status })
+          .eq('id', existingRecord.id)
+          .select()
+          .single();
+
+        if (data && !error) {
+          set(state => ({
+            records: state.records.map(r => 
+              r.id === data.id 
+                ? {
+                    id: data.id,
+                    academicYearId: data.academic_year_id,
+                    studentId: data.student_id,
+                    month: data.month,
+                    status: data.status,
+                    createdAt: data.created_at,
+                    updatedAt: data.updated_at
+                  }
+                : r
+            )
+          }));
+        }
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('billing_records')
+          .insert([{
+            academic_year_id: record.academicYearId,
+            student_id: record.studentId,
+            month: record.month,
+            status: record.status
+          }])
+          .select()
+          .single();
+
+        if (data && !error) {
+          set(state => ({
+            records: [...state.records, {
+              id: data.id,
+              academicYearId: data.academic_year_id,
+              studentId: data.student_id,
+              month: data.month,
+              status: data.status,
+              createdAt: data.created_at,
+              updatedAt: data.updated_at
+            }]
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error updating billing record:', error);
+      throw error;
     }
   }
 }));
