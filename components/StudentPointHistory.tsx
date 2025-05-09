@@ -61,7 +61,7 @@ export function StudentPointHistory() {
   }));
 
   const filteredPoints = selectedStudent
-    ? studentPoints.filter(point => point.student_id === selectedStudent)
+    ? studentPoints.filter(point => point.studentId === selectedStudent)
     : studentPoints;
 
   return (
@@ -83,12 +83,12 @@ export function StudentPointHistory() {
           <div key={studentPoint.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold">{getStudentName(studentPoint.student_id)}</h3>
+                <h3 className="font-semibold">{getStudentName(studentPoint.studentId)}</h3>
                 <p className="text-sm text-gray-500">
                   {studentPoint.point?.name} ({studentPoint.point?.point} points)
                 </p>
                 <p className="text-xs text-gray-400">
-                  {formatDate(studentPoint.created_at)}
+                  {formatDate(studentPoint.createdAt)}
                 </p>
               </div>
               <button

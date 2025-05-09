@@ -466,28 +466,13 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
     }));
 
     try {
-      // Update the moved level
+      // Update orders of levels between old and new positions
       await supabase
-        .from('levels')
-        .update({ order: newOrder })
-        .eq('id', id);
-
-      // Update other affected levels
-      if (newOrder > oldOrder) {
-        await supabase
-          .from('levels')
-          .update({ order: supabase.sql`order - 1` })
-          .gte('order', oldOrder + 1)
-          .lte('order', newOrder)
-          .neq('id', id);
-      } else {
-        await supabase
-          .from('levels')
-          .update({ order: supabase.sql`order + 1` })
-          .gte('order', newOrder)
-          .lt('order', oldOrder)
-          .neq('id', id);
-      }
+        .rpc('update_level_orders', {
+          old_order: oldOrder,
+          new_order: newOrder,
+          level_id: id
+        });
     } catch (error) {
       // If there's an error, reload the levels to get the correct order
       await get().loadLevels();
