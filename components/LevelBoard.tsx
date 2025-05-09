@@ -6,7 +6,7 @@ import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { Student } from '@/types/student';
 import { Level as SchoolLevel } from '@/types/school';
 import { Level } from './Level';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function LevelBoard() {
   const students = useStore((state) => state.students);
@@ -14,6 +14,7 @@ export function LevelBoard() {
   const levels = useSchoolStore((state) => state.levels);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
   const loadStudents = useStore((state) => state.loadStudents);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadLevels();
@@ -49,7 +50,11 @@ export function LevelBoard() {
 
   const getStudentsForLevel = (levelId: string): Student[] => {
     return students
-      .filter(student => student.status && student.level_id === levelId);
+      .filter(student => student.status && student.level_id === levelId)
+      .filter(student => {
+        if (!searchQuery) return true;
+        return student.name.toLowerCase().includes(searchQuery.toLowerCase());
+      });
   };
 
   // Only show active levels
@@ -58,17 +63,27 @@ export function LevelBoard() {
     .sort((a, b) => a.order - b.order);
 
   return (
-    <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search students by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         {activeLevels.map((level) => (
           <Level 
             key={level.id} 
             level={level.name} 
             levelId={level.id}
-            students={getStudentsForLevel(level.id)} 
+            students={getStudentsForLevel(level.id)}
+            searchQuery={searchQuery}
           />
         ))}
-      </div>
-    </DndContext>
+      </DndContext>
+    </div>
   );
 }

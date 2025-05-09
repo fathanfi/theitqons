@@ -5,9 +5,10 @@ import { useDraggable } from '@dnd-kit/core';
 
 interface StudentAvatarProps {
   student: Student;
+  searchQuery: string;
 }
 
-export function StudentAvatar({ student }: StudentAvatarProps) {
+export function StudentAvatar({ student, searchQuery }: StudentAvatarProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: student.id,
   });
@@ -29,6 +30,13 @@ export function StudentAvatar({ student }: StudentAvatarProps) {
     }
     
     return initials.toUpperCase();
+  };
+
+  const highlightName = (name: string) => {
+    if (!searchQuery) return name;
+    
+    const regex = new RegExp(`(${searchQuery})`, 'gi');
+    return name.replace(regex, '<mark class="bg-yellow-200">$1</mark>');
   };
 
   return (
@@ -61,7 +69,10 @@ export function StudentAvatar({ student }: StudentAvatarProps) {
             </span>
           ))}
         </div>
-        <span className="mt-2 text-xs text-gray-700 text-center">{student.name}</span>
+        <span 
+          className="mt-2 text-xs text-gray-700 text-center"
+          dangerouslySetInnerHTML={{ __html: highlightName(student.name) }}
+        />
       </div>
     </div>
   );

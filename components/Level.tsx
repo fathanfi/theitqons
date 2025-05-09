@@ -8,9 +8,10 @@ interface LevelProps {
   level: string;
   levelId: string;
   students: Student[];
+  searchQuery: string;
 }
 
-export function Level({ level, levelId, students }: LevelProps) {
+export function Level({ level, levelId, students, searchQuery }: LevelProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: levelId,
   });
@@ -25,7 +26,11 @@ export function Level({ level, levelId, students }: LevelProps) {
       <h2 className="text-2xl font-semibold mb-4">Level {level}</h2>
       <div className="flex flex-wrap gap-4">
         {students.map((student) => (
-          <StudentAvatar key={student.id} student={student} />
+          <StudentAvatar 
+            key={student.id} 
+            student={student} 
+            searchQuery={searchQuery}
+          />
         ))}
         {students.length === 0 && (
           <p className="text-gray-500">No students in this level</p>
