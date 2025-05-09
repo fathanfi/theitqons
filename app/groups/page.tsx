@@ -18,12 +18,15 @@ export default function GroupsPage() {
   const classes = useSchoolStore((state) => state.classes);
   const students = useStore((state) => state.students);
   const levels = useSchoolStore((state) => state.levels);
+  const academicYears = useSchoolStore((state) => state.academicYears);
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
+  const loadAcademicYears = useSchoolStore((state) => state.loadAcademicYears);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('ALL');
   const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
@@ -31,8 +34,9 @@ export default function GroupsPage() {
       loadGroups(currentAcademicYear.id);
       loadClasses();
       loadTeachers();
+      loadAcademicYears();
     }
-  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers]);
+  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears]);
 
   const handleDelete = async (groupId: string) => {
     if (confirm('Are you sure you want to delete this group?')) {
@@ -71,8 +75,9 @@ export default function GroupsPage() {
       });
     
     const matchesClass = selectedClass === 'ALL' || group.classId === selectedClass;
+    const matchesAcademicYear = selectedAcademicYear === 'ALL' || group.academicYearId === selectedAcademicYear;
     
-    return matchesSearch && matchesClass;
+    return matchesSearch && matchesClass && matchesAcademicYear;
   });
 
   // Sort students within each group
@@ -116,6 +121,18 @@ export default function GroupsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           />
+          <select
+            value={selectedAcademicYear}
+            onChange={(e) => setSelectedAcademicYear(e.target.value)}
+            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            <option value="ALL">All Academic Years</option>
+            {academicYears.map(year => (
+              <option key={year.id} value={year.id}>
+                {year.name} {year.status ? '(Active)' : ''}
+              </option>
+            ))}
+          </select>
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
@@ -190,15 +207,22 @@ export default function GroupsPage() {
               <div className="space-y-2">
                 <h4 className="font-medium">Students:</h4>
                 <ul className="space-y-1">
-                  {sortedStudents.map((student) => {
+                  {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
                     return (
-                      <li key={student.id} className="text-sm">
-                        {student.name} {level && <span className="text-gray-500">[{level.name}]</span>}
+                      <li key={student.id} className="text-sm flex items-center gap-2">
+                        <span className="text-gray-500 w-6">{index + 1}.</span>
+                        <span>{student.name}</span>
+                        {level && <span className="text-gray-500">[{level.name}]</span>}
                       </li>
                     );
                   })}
                 </ul>
+                {sortedStudents.length > 0 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Total Students: {sortedStudents.length}
+                  </p>
+                )}
               </div>
             </div>
           );
