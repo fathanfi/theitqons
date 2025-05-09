@@ -58,12 +58,12 @@ export function StudentAvatar({ student, searchQuery }: StudentAvatarProps) {
             {student.name}
           </div>
         </div>
-        <div className="absolute -top-1 -right-1 flex">
-          {student.badges.slice(0, 3).map((badge, index) => (
+        <div className="absolute -top-2 -right-2 flex flex-wrap gap-1 max-w-[120px] justify-end">
+          {student.badges.map((badge, index) => (
             <span
               key={badge.id}
-              className="text-sm"
-              style={{ marginRight: `-${index * 4}px` }}
+              className="text-lg"
+              title={badge.description}
             >
               {badge.icon}
             </span>
