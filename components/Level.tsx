@@ -16,6 +16,10 @@ export function Level({ level, levelId, students, searchQuery }: LevelProps) {
     id: levelId,
   });
 
+  // Calculate gender counts
+  const maleCount = students.filter(student => student.gender === 'Ikhwan').length;
+  const femaleCount = students.filter(student => student.gender === 'Akhwat').length;
+
   return (
     <div
       ref={setNodeRef}
@@ -23,7 +27,16 @@ export function Level({ level, levelId, students, searchQuery }: LevelProps) {
         isOver ? 'bg-indigo-50' : 'bg-white'
       } shadow-lg transition-colors`}
     >
-      <h2 className="text-2xl font-semibold mb-4">Level {level}</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold">Level {level}</h2>
+        <div className="text-sm text-gray-600">
+          <div>Total: {students.length} students</div>
+          <div className="flex gap-4">
+            <span className="text-blue-600">Male: {maleCount}</span>
+            <span className="text-pink-600">Female: {femaleCount}</span>
+          </div>
+        </div>
+      </div>
       <div className="flex flex-wrap gap-4">
         {students.map((student) => (
           <StudentAvatar 
