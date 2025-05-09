@@ -1,14 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { login, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,12 +23,8 @@ export default function LoginPage() {
     setError('');
 
     try {
-      if (password === 'itqon2025') {
-        Cookies.set('auth', 'true', { 
-          expires: 7,
-          path: '/',
-          sameSite: 'lax'
-        });
+      const success = await login(password);
+      if (success) {
         router.push('/');
         router.refresh();
       } else {

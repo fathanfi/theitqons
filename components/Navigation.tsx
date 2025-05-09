@@ -4,13 +4,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AcademicYearSelector } from './AcademicYearSelector';
 import { useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useRouter } from 'next/navigation';
 
 export function Navigation() {
   const pathname = usePathname();
+  const { logout } = useAuthStore();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isPointsOpen, setIsPointsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [isItqonOpen, setIsItqonOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
     <nav className="bg-gray-800 text-white p-4">
@@ -180,6 +189,12 @@ export function Navigation() {
           </div>
           <div className="flex items-center gap-4">
             <AcademicYearSelector />
+            <button
+              onClick={handleLogout}
+              className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>
