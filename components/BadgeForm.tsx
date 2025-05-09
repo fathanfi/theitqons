@@ -30,7 +30,7 @@ export function BadgeForm() {
     });
   };
 
-  const emojis = ['🏆', '⭐', '🌟', '🎖️', '🥇', '🥈', '🥉', '📚', '✨', '🎯'];
+  const emojis = ['🏆', '⭐', '🌟', '🎖️', '🥇', '🥈', '🥉', '📚', '✨', '🎯', '🏅', '🌕', '🚀'];
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">
