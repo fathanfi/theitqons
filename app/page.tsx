@@ -1,4 +1,5 @@
 import { DashboardStats } from '@/components/DashboardStats';
+import { Footer } from '@/components/Footer';
 
 export default function Home() {
   return (
@@ -11,9 +12,6 @@ export default function Home() {
         <p className="text-gray-600">Student Management System</p>
       </div>
       <DashboardStats />
-      <footer className="text-center text-gray-500 mt-8 pb-4">
-        <p>© 2025 The Itqon v.1 - Developed by fathanfi</p>
-      </footer>
     </div>
   );
 }
