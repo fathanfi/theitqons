@@ -7,7 +7,7 @@ interface PointsStore {
   studentPoints: StudentPoint[];
   loadPoints: () => Promise<void>;
   loadStudentPoints: () => Promise<void>;
-  addPoint: (point: Omit<Point, 'id' | 'createdAt'>) => Promise<void>;
+  addPoint: (point: Omit<Point, 'id' | 'created_at'>) => Promise<void>;
   updatePoint: (point: Point) => Promise<void>;
   deletePoint: (id: string) => Promise<void>;
   addStudentPoint: (studentId: string, pointId: string) => Promise<void>;
@@ -33,7 +33,8 @@ export const usePointsStore = create<PointsStore>((set, get) => ({
       .from('student_points')
       .select(`
         *,
-        point:points(*)
+        point:points(*),
+        student:students(*)
       `)
       .order('created_at', { ascending: false });
 
@@ -97,7 +98,8 @@ export const usePointsStore = create<PointsStore>((set, get) => ({
       }])
       .select(`
         *,
-        point:points(*)
+        point:points(*),
+        student:students(*)
       `)
       .single();
 

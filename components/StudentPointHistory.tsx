@@ -30,24 +30,26 @@ export function StudentPointHistory() {
   }, [loadStudentPoints, loadStudents]);
 
   const getStudentName = (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
-    return student ? student.name : 'Unknown Student';
+    const studentPoint = studentPoints.find(sp => sp.student_id === studentId);
+    return studentPoint?.student?.name || 'Unknown Student';
   };
 
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return 'Invalid Date';
       
-      // Parse the ISO date string
+      // Parse the PostgreSQL timestamp with timezone
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return 'Invalid Date';
 
+      // Format the date in Indonesian locale
       return new Intl.DateTimeFormat('id-ID', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: 'Asia/Jakarta' // Set to Indonesia timezone
       }).format(date);
     } catch (error) {
       console.error('Date formatting error:', error);
@@ -61,7 +63,7 @@ export function StudentPointHistory() {
   }));
 
   const filteredPoints = selectedStudent
-    ? studentPoints.filter(point => point.studentId === selectedStudent)
+    ? studentPoints.filter(point => point.student_id === selectedStudent)
     : studentPoints;
 
   return (
@@ -83,12 +85,12 @@ export function StudentPointHistory() {
           <div key={studentPoint.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold">{getStudentName(studentPoint.studentId)}</h3>
+                <h3 className="font-semibold">{getStudentName(studentPoint.student_id)}</h3>
                 <p className="text-sm text-gray-500">
                   {studentPoint.point?.name} ({studentPoint.point?.point} points)
                 </p>
                 <p className="text-xs text-gray-400">
-                  {formatDate(studentPoint.createdAt)}
+                  {formatDate(studentPoint.created_at)}
                 </p>
               </div>
               <button

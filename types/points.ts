@@ -3,13 +3,17 @@ export interface Point {
   name: string;
   description: string;
   point: number;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface StudentPoint {
   id: string;
-  studentId: string;
-  pointId: string;
-  createdAt: string;
+  student_id: string;
+  point_id: string;
+  created_at: string;
   point?: Point;
+  student?: {
+    id: string;
+    name: string;
+  };
 }
