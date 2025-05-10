@@ -9,6 +9,7 @@ import { useSession } from '@/components/SessionProvider';
 import { GroupForm } from '@/components/GroupForm';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function GroupsPage() {
   const { currentAcademicYear } = useSession();
@@ -112,50 +113,53 @@ export default function GroupsPage() {
       </div>
 
       {/* Search and Filter Controls */}
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <input
-            type="text"
-            placeholder="Search groups or students..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-3 py-2 border rounded-md"
-          />
-          <button
-            onClick={() => setStudentSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-            className={`px-4 py-2 rounded ${
-              studentSortOrder === 'asc' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
-            }`}
-          >
-            Sort Students {studentSortOrder === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select
-            value={selectedAcademicYear}
-            onChange={(e) => setSelectedAcademicYear(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="ALL">All Academic Years</option>
-            {academicYears.map(year => (
-              <option key={year.id} value={year.id}>
-                {year.name} {year.status ? '(Active)' : ''}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="ALL">All Classes</option>
-            {classes.map(class_ => (
-              <option key={class_.id} value={class_.id}>
-                {class_.name}
-              </option>
-            ))}
-          </select>
+      <div className="mb-6">
+        <div className="bg-white rounded-lg shadow p-4 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <input
+              type="text"
+              placeholder="Search groups or students..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <select
+              value={selectedAcademicYear}
+              onChange={(e) => setSelectedAcademicYear(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="ALL">All Academic Years</option>
+              {academicYears.map(year => (
+                <option key={year.id} value={year.id}>
+                  {year.name} {year.status ? '(Active)' : ''}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-4">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="ALL">All Classes</option>
+                {classes.map(class_ => (
+                  <option key={class_.id} value={class_.id}>
+                    {class_.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setStudentSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                className={`px-4 py-2 rounded whitespace-nowrap ${
+                  studentSortOrder === 'asc' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+                }`}
+              >
+                Sort Students {studentSortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -186,26 +190,29 @@ export default function GroupsPage() {
           const sortedStudents = getSortedStudents(group.students);
 
           return (
-            <div key={group.id} className="bg-white rounded-lg shadow-md p-6">
+            <div key={group.id} className="rounded-lg shadow-md p-6" style={{background: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)'}}>
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold">{group.name}</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
                     {class_ ? class_.name : 'No Class'} • {teacher ? teacher.name : 'No Teacher'}
+                    <span className="text-xs text-blue-700 font-bold">• {sortedStudents.length}</span>
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(group)}
-                    className="text-indigo-600 hover:text-indigo-800"
+                    className="text-indigo-600 hover:text-indigo-800 p-1"
+                    title="Edit"
                   >
-                    Edit
+                    <PencilSquareIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(group.id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 hover:text-red-800 p-1"
+                    title="Delete"
                   >
-                    Delete
+                    <TrashIcon className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -218,13 +225,17 @@ export default function GroupsPage() {
                       <li key={student.id} className="text-sm flex items-center gap-2">
                         <span className="text-gray-500 w-6">{index + 1}.</span>
                         <span>{student.name}</span>
-                        {level && <span className="text-gray-500">[{level.name}]</span>}
+                        {level && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-white shadow-md">
+                            {level.name}
+                          </span>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
                 {sortedStudents.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-gray-700 mt-2 font-semibold">
                     Total Students: {sortedStudents.length}
                   </p>
                 )}
