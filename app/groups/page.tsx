@@ -113,18 +113,29 @@ export default function GroupsPage() {
 
       {/* Search and Filter Controls */}
       <div className="mb-6 space-y-4">
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
           <input
             type="text"
             placeholder="Search groups or students..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="flex-1 px-3 py-2 border rounded-md"
           />
+          <button
+            onClick={() => setStudentSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className={`px-4 py-2 rounded ${
+              studentSortOrder === 'asc' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+            }`}
+          >
+            Sort Students {studentSortOrder === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <select
             value={selectedAcademicYear}
             onChange={(e) => setSelectedAcademicYear(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full px-3 py-2 border rounded-md"
           >
             <option value="ALL">All Academic Years</option>
             {academicYears.map(year => (
@@ -136,7 +147,7 @@ export default function GroupsPage() {
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full px-3 py-2 border rounded-md"
           >
             <option value="ALL">All Classes</option>
             {classes.map(class_ => (
@@ -145,12 +156,6 @@ export default function GroupsPage() {
               </option>
             ))}
           </select>
-          <button
-            onClick={() => setStudentSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-            className="bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200"
-          >
-            Sort Students {studentSortOrder === 'asc' ? '↑' : '↓'}
-          </button>
         </div>
       </div>
 
