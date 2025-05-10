@@ -35,6 +35,11 @@ export function RedeemPoints() {
     }
   };
 
+  const reloadAll = async () => {
+    await loadStudentPoints();
+    await useStore.getState().loadStudents();
+  };
+
   const deleteRedemption = async (redemptionId: string) => {
     const { error } = await supabase
       .from('redemptions')
@@ -58,7 +63,7 @@ export function RedeemPoints() {
   const student = students.find(s => s.id === selectedStudent);
   const studentTotalPoints = studentPoints[selectedStudent] || 0;
 
-  const handleRedeem = () => {
+  const handleRedeem = async () => {
     if (!selectedStudent || selectedReward === null) return;
     
     const reward = REWARDS.find(r => r.id === selectedReward);
@@ -73,9 +78,9 @@ export function RedeemPoints() {
       icon: reward.icon
     };
 
-    redeemPoints(selectedStudent, redemption);
+    await redeemPoints(selectedStudent, redemption);
     setSelectedReward(null);
-    loadStudentPoints(); // Reload points after redemption
+    await reloadAll(); // Reload points and students after redemption
   };
 
   const studentOptions = students.map(student => ({
