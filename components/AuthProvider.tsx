@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { RouteLoader } from './RouteLoader';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, loading, signIn } = useAuthStore();
@@ -59,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, user, loading, router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <RouteLoader />;
   }
 
   if (!user && pathname !== '/login') {

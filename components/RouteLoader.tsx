@@ -2,11 +2,16 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
-export default function Loading() {
+export function RouteLoader() {
+  const [loading, setLoading] = useState(false);
   const [fill, setFill] = useState(0);
+  const pathname = usePathname();
 
   useEffect(() => {
+    setLoading(true);
+    setFill(0);
     const interval = setInterval(() => {
       setFill((prev) => {
         if (prev >= 100) {
@@ -16,11 +21,18 @@ export default function Loading() {
         return prev + 2;
       });
     }, 30);
-    return () => clearInterval(interval);
-  }, []);
+    // Simulate loading for 600ms or until fill is 100
+    const timeout = setTimeout(() => setLoading(false), 600);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [pathname]);
+
+  if (!loading) return null;
 
   return (
-    <div className="fixed inset-0 bg-white z-50">
+    <div className="fixed inset-0 bg-white z-[100]">
       <div className="absolute left-1/2 flex flex-col items-center" style={{ top: '20vh', transform: 'translateX(-50%)' }}>
         <div className="relative w-24 h-24 mb-3">
           <Image

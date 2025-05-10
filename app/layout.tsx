@@ -6,6 +6,7 @@ import { SessionProvider } from '@/components/SessionProvider';
 import { Navigation } from '@/components/Navigation';
 import { StoreInitializer } from '@/components/StoreInitializer';
 import { Footer } from '@/components/Footer';
+import { RouteLoader } from '@/components/RouteLoader';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <AuthProvider>
           <SessionProvider>
             <StoreInitializer>
+              <RouteLoader />
               <Navigation />
               <main className="container mx-auto px-4 py-8">
                 {children}

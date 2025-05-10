@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { RouteLoader } from './RouteLoader';
 
 interface RoleGuardProps {
   children: ReactNode;
@@ -16,12 +17,12 @@ export function RoleGuard({ children, requireAdmin = false }: RoleGuardProps) {
     if (!loading && !user) {
       router.push('/login');
     } else if (!loading && requireAdmin && !isAdmin()) {
-      router.push('/unauthorized');
+      router.push('/');
     }
   }, [user, loading, requireAdmin, isAdmin, router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <RouteLoader />;
   }
 
   if (!user || (requireAdmin && !isAdmin())) {
