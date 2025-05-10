@@ -29,4 +29,4 @@ BEGIN
     AND id != level_id;
   END IF;
 END;
-$$; 
+$$;
