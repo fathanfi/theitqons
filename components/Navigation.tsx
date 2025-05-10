@@ -9,16 +9,20 @@ import { useRouter } from 'next/navigation';
 
 export function Navigation() {
   const pathname = usePathname();
-  const { logout } = useAuthStore();
+  const { signOut } = useAuthStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isPointsOpen, setIsPointsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [isItqonOpen, setIsItqonOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
