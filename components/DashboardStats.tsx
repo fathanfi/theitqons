@@ -53,7 +53,7 @@ export function DashboardStats() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <div className="text-4xl mb-2">👥</div>
           <div className="text-2xl font-bold">{students.length}</div>
@@ -83,7 +83,7 @@ export function DashboardStats() {
 
       <div className="bg-white p-6 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-6">Quick Access Menu</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {menuItems.map((item) => (
             <Link
               key={item.href}
