@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { AcademicYear, Teacher, Class, Level, Group } from '@/types/school';
+import { Badge } from '@/types/student';
 import { supabase } from '@/lib/supabase';
 
 interface SchoolStore {
@@ -8,6 +9,7 @@ interface SchoolStore {
   classes: Class[];
   levels: Level[];
   groups: Group[];
+  badges: Badge[];
   
   // Academic Year actions
   loadAcademicYears: () => Promise<void>;
@@ -37,6 +39,11 @@ interface SchoolStore {
   loadGroups: (academicYearId: string) => Promise<void>;
   addGroup: (group: Omit<Group, 'id' | 'createdAt'>) => Promise<void>;
   updateGroup: (group: Group) => Promise<void>;
+
+  // Badge actions
+  loadBadges: () => Promise<void>;
+  addBadge: (badge: Omit<Badge, 'id'>) => Promise<void>;
+  updateBadge: (badge: Badge) => Promise<void>;
 }
 
 export const useSchoolStore = create<SchoolStore>((set, get) => ({
@@ -45,6 +52,7 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
   classes: [],
   levels: [],
   groups: [],
+  badges: [],
 
   // Academic Year actions
   loadAcademicYears: async () => {
@@ -593,5 +601,44 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         )
       }));
     }
-  }
+  },
+
+  // Badge actions
+  loadBadges: async () => {
+    const { data, error } = await supabase
+      .from('badges')
+      .select('*')
+      .order('id', { ascending: false });
+    if (data && !error) {
+      set({ badges: data });
+    }
+  },
+
+  addBadge: async (badge) => {
+    const { data, error } = await supabase
+      .from('badges')
+      .insert([badge])
+      .select()
+      .single();
+    if (data && !error) {
+      set(state => ({ badges: [data, ...state.badges] }));
+    }
+  },
+
+  updateBadge: async (badge) => {
+    const { data, error } = await supabase
+      .from('badges')
+      .update({
+        icon: badge.icon,
+        description: badge.description
+      })
+      .eq('id', badge.id)
+      .select()
+      .single();
+    if (data && !error) {
+      set(state => ({
+        badges: state.badges.map(b => b.id === badge.id ? data : b)
+      }));
+    }
+  },
 }));

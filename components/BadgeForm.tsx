@@ -5,6 +5,7 @@ import { useSchoolStore } from '@/store/schoolStore';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import { Badge } from '@/types/student';
+import { useStore } from '@/store/useStore';
 
 export function BadgeForm({ editBadge, onUpdate }: { editBadge?: any; onUpdate?: () => void }) {
   const addBadge = useSchoolStore((state) => state.addBadge);
@@ -23,9 +24,27 @@ export function BadgeForm({ editBadge, onUpdate }: { editBadge?: any; onUpdate?:
       return;
     }
     if (editBadge) {
-      await updateBadge(formData);
+      if (formData.id && formData.icon && formData.description) {
+        await updateBadge({
+          id: formData.id,
+          icon: formData.icon,
+          description: formData.description
+        });
+      } else {
+        alert('Badge ID, icon, and description are required for update.');
+        return;
+      }
     } else {
-      await addBadge(formData);
+      if (formData.icon && formData.description) {
+        await addBadge({
+          icon: formData.icon,
+          description: formData.description
+        });
+        await useStore.getState().loadInitialData();
+      } else {
+        alert('Icon and description are required.');
+        return;
+      }
     }
     onUpdate?.();
   };
