@@ -7,6 +7,8 @@ import { Student } from '@/types/student';
 import { Level as SchoolLevel } from '@/types/school';
 import { Level } from './Level';
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 
 export function LevelBoard() {
   const students = useStore((state) => state.students);
@@ -15,6 +17,9 @@ export function LevelBoard() {
   const loadLevels = useSchoolStore((state) => state.loadLevels);
   const loadStudents = useStore((state) => state.loadStudents);
   const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuthStore();
+  const { showUnauthorized } = useUnauthorized();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     loadLevels();
@@ -25,6 +30,11 @@ export function LevelBoard() {
     const { active, over } = event;
     
     if (!over) return;
+
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
 
     const studentId = active.id as string;
     const levelId = over.id as string;

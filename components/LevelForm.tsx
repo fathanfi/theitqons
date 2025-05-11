@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { Level } from '@/types/school';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function LevelForm({ editLevel, onUpdate }: { editLevel?: Level; onUpdate?: () => void }) {
   const addLevel = useSchoolStore((state) => state.addLevel);
   const updateLevel = useSchoolStore((state) => state.updateLevel);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState<Partial<Level>>(
     editLevel || {
@@ -19,12 +23,15 @@ export function LevelForm({ editLevel, onUpdate }: { editLevel?: Level; onUpdate
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (editLevel) {
       await updateLevel({ ...editLevel, ...formData } as Level);
       onUpdate?.();
     } else {
-      await addLevel(formData as Omit<Level, 'id' | 'createdAt'>);
+      await addLevel(formData as Omit<Level, 'id' | 'createdAt' | 'order'>);
       setFormData({
         name: '',
         description: '',

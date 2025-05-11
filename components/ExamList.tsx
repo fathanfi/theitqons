@@ -4,16 +4,36 @@ import { useState, useEffect } from 'react';
 import { useExamStore } from '@/store/examStore';
 import { Exam } from '@/types/exam';
 import { ExamForm } from './ExamForm';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function ExamList() {
   const exams = useExamStore((state) => state.exams);
   const loadExams = useExamStore((state) => state.loadExams);
   const deleteExam = useExamStore((state) => state.deleteExam);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadExams();
   }, [loadExams]);
+
+  const handleEdit = (exam: Exam) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    setEditingExam(exam);
+  };
+
+  const handleDelete = (examId: string) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    deleteExam(examId);
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -38,13 +58,13 @@ export function ExamList() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setEditingExam(exam)}
+                  onClick={() => handleEdit(exam)}
                   className="text-indigo-600 hover:text-indigo-800"
                 >
                   Edit
                 </button>
                 <button
-                  onClick={() => deleteExam(exam.id)}
+                  onClick={() => handleDelete(exam.id)}
                   className="text-red-600 hover:text-red-800"
                 >
                   Delete

@@ -6,6 +6,8 @@ import { useStore } from '@/store/useStore';
 import { useSchoolStore } from '@/store/schoolStore';
 import { ItqonExam } from '@/types/exam';
 import Select from 'react-select';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 const SCORE_OPTIONS = [
   'Outstanding',
@@ -34,6 +36,9 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
   const teachers = useSchoolStore((state) => state.teachers);
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
 
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+
   useEffect(() => {
     loadExams();
     loadStudents();
@@ -54,7 +59,10 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (editExam) {
       await updateItqonExam({ ...editExam, ...formData } as ItqonExam);
       onUpdate?.();

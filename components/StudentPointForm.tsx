@@ -1,37 +1,42 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useStore } from '@/store/useStore';
 import { usePointsStore } from '@/store/pointsStore';
+import { useStore } from '@/store/useStore';
 import Select from 'react-select';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function StudentPointForm() {
-  const students = useStore((state) => state.students);
-  const loadStudents = useStore((state) => state.loadStudents);
   const points = usePointsStore((state) => state.points);
   const loadPoints = usePointsStore((state) => state.loadPoints);
   const addStudentPoint = usePointsStore((state) => state.addStudentPoint);
-
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
-  const [selectedPoint, setSelectedPoint] = useState<string>('');
+  const students = useStore((state) => state.students);
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedPoint, setSelectedPoint] = useState('');
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    loadStudents();
     loadPoints();
-  }, [loadStudents, loadPoints]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedStudent || !selectedPoint) return;
-
-    await addStudentPoint(selectedStudent, selectedPoint);
-    setSelectedPoint('');
-  };
+  }, [loadPoints]);
 
   const studentOptions = students.map(student => ({
     value: student.id,
     label: student.name
   }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    if (!selectedStudent || !selectedPoint) return;
+    await addStudentPoint(selectedStudent, selectedPoint);
+    setSelectedStudent('');
+    setSelectedPoint('');
+  };
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">

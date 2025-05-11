@@ -4,18 +4,21 @@ import { useState, useEffect } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { AcademicYear } from '@/types/school';
 import { AcademicYearForm } from './AcademicYearForm';
+import { useAuthStore } from '@/store/authStore';
 
 export function AcademicYearList() {
   const academicYears = useSchoolStore((state) => state.academicYears);
   const loadAcademicYears = useSchoolStore((state) => state.loadAcademicYears);
   const setAcademicYearStatus = useSchoolStore((state) => state.setAcademicYearStatus);
   const [editingYear, setEditingYear] = useState<AcademicYear | null>(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadAcademicYears();
   }, [loadAcademicYears]);
 
   const handleStatusChange = async (id: string, status: boolean) => {
+    if (!user || user.role !== 'admin') return;
     await setAcademicYearStatus(id, status);
   };
 
@@ -47,6 +50,7 @@ export function AcademicYearList() {
                     checked={year.status}
                     onChange={(e) => handleStatusChange(year.id, e.target.checked)}
                     className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    disabled={!user || user.role !== 'admin'}
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
                 </label>

@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react';
 import { useExamStore } from '@/store/examStore';
 import { ItqonExam } from '@/types/exam';
 import { ItqonExamForm } from './ItqonExamForm';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function ItqonExamList() {
   const itqonExams = useExamStore((state) => state.itqonExams);
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
   const deleteItqonExam = useExamStore((state) => state.deleteItqonExam);
   const [editingExam, setEditingExam] = useState<ItqonExam | null>(null);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadItqonExams();
@@ -23,6 +27,14 @@ export function ItqonExamList() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleDelete = (examId: string) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    deleteItqonExam(examId);
   };
 
   return (
@@ -91,7 +103,7 @@ export function ItqonExamList() {
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteItqonExam(exam.id)}
+                    onClick={() => handleDelete(exam.id)}
                     className="text-red-600 hover:text-red-900"
                   >
                     Delete

@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { AcademicYear } from '@/types/school';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function AcademicYearForm({ editYear, onUpdate }: { editYear?: AcademicYear; onUpdate?: () => void }) {
   const addAcademicYear = useSchoolStore((state) => state.addAcademicYear);
   const updateAcademicYear = useSchoolStore((state) => state.updateAcademicYear);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState<Partial<AcademicYear>>(
     editYear || {
@@ -19,7 +23,10 @@ export function AcademicYearForm({ editYear, onUpdate }: { editYear?: AcademicYe
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (editYear) {
       await updateAcademicYear({ ...editYear, ...formData } as AcademicYear);
       onUpdate?.();

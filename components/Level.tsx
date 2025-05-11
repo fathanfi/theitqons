@@ -3,6 +3,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { Student } from '@/types/student';
 import { StudentAvatar } from './StudentAvatar';
+import { useAuthStore } from '@/store/authStore';
 
 interface LevelProps {
   level: string;
@@ -12,9 +13,13 @@ interface LevelProps {
 }
 
 export function Level({ level, levelId, students, searchQuery }: LevelProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: levelId,
-  });
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+
+  // Only enable droppable for admin
+  const droppable = isAdmin ? useDroppable({ id: levelId }) : null;
+  const setNodeRef = droppable ? droppable.setNodeRef : undefined;
+  const isOver = droppable ? droppable.isOver : false;
 
   // Calculate gender counts
   const maleCount = students.filter(student => student.gender === 'Ikhwan').length;

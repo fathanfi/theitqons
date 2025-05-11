@@ -4,18 +4,21 @@ import { useState, useEffect } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { Teacher } from '@/types/school';
 import { TeacherForm } from './TeacherForm';
+import { useAuthStore } from '@/store/authStore';
 
 export function TeacherList() {
   const teachers = useSchoolStore((state) => state.teachers);
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const setTeacherStatus = useSchoolStore((state) => state.setTeacherStatus);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadTeachers();
   }, [loadTeachers]);
 
   const handleStatusChange = async (id: string, status: boolean) => {
+    if (!user || user.role !== 'admin') return;
     await setTeacherStatus(id, status);
   };
 
@@ -62,6 +65,7 @@ export function TeacherList() {
                     checked={teacher.status}
                     onChange={(e) => handleStatusChange(teacher.id, e.target.checked)}
                     className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    disabled={!user || user.role !== 'admin'}
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
                 </label>

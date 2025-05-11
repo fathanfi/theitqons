@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { useExamStore } from '@/store/examStore';
 import { Exam } from '@/types/exam';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function ExamForm({ editExam, onUpdate }: { editExam?: Exam; onUpdate?: () => void }) {
   const addExam = useExamStore((state) => state.addExam);
   const updateExam = useExamStore((state) => state.updateExam);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState<Partial<Exam>>(
     editExam || {
@@ -18,6 +22,11 @@ export function ExamForm({ editExam, onUpdate }: { editExam?: Exam; onUpdate?: (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+
     if (editExam) {
       await updateExam({ ...editExam, ...formData } as Exam);
       onUpdate?.();

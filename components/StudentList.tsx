@@ -7,6 +7,8 @@ import { StudentForm } from './StudentForm';
 import { Student } from '@/types/student';
 import { supabase } from '@/lib/supabase';
 import React from 'react';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 type SortField = 'points' | 'name';
 type SortDirection = 'asc' | 'desc';
@@ -14,12 +16,16 @@ type SortDirection = 'asc' | 'desc';
 export function StudentList() {
   const students = useStore((state) => state.students);
   const deleteStudent = useStore((state) => state.deleteStudent);
+  const updateStudent = useStore((state) => state.updateStudent);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
@@ -113,6 +119,14 @@ export function StudentList() {
   const getLevelName = (levelId: string) => {
     const level = levels.find(l => l.id === levelId);
     return level ? level.name : levelId;
+  };
+
+  const handleStatusChange = (student: Student) => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    updateStudent({ ...student, status: !student.status });
   };
 
   return (
@@ -250,10 +264,15 @@ export function StudentList() {
                   Edit
                 </button>
                 <button
-                  onClick={() => deleteStudent(student.id)}
-                  className="text-red-600 hover:text-red-800"
+                  onClick={() => handleStatusChange(student)}
+                  className={`text-sm px-2 py-1 rounded ${
+                    student.status 
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                  disabled={!isAdmin}
                 >
-                  Delete
+                  {student.status ? 'Active' : 'Inactive'}
                 </button>
               </div>
             </div>

@@ -7,6 +7,8 @@ import { Group } from '@/types/school';
 import { useSession } from './SessionProvider';
 import Select from 'react-select';
 import Link from 'next/link';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate?: () => void }) {
   const { currentAcademicYear } = useSession();
@@ -18,6 +20,8 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const addGroup = useSchoolStore((state) => state.addGroup);
   const updateGroup = useSchoolStore((state) => state.updateGroup);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadStudents();
@@ -38,6 +42,11 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+
     if (!currentAcademicYear) {
       alert('Please select an academic year');
       return;

@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { Class, Teacher } from '@/types/school';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function ClassForm({ editClass, onUpdate }: { editClass?: Class; onUpdate?: () => void }) {
   const teachers = useSchoolStore((state) => state.teachers);
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const addClass = useSchoolStore((state) => state.addClass);
   const updateClass = useSchoolStore((state) => state.updateClass);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadTeachers();
@@ -24,7 +28,10 @@ export function ClassForm({ editClass, onUpdate }: { editClass?: Class; onUpdate
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (editClass) {
       await updateClass({ ...editClass, ...formData } as Class);
       onUpdate?.();

@@ -6,6 +6,8 @@ import { Redemption } from '@/types/student';
 import { usePointsStore } from '@/store/pointsStore';
 import { supabase } from '@/lib/supabase';
 import Select from 'react-select';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 const REWARDS = [
   { id: 1, name: 'Beasiswa SPP 1 Pekan', points: 30, icon: '📚' },
@@ -20,6 +22,8 @@ export function RedeemPoints() {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedReward, setSelectedReward] = useState<number | null>(null);
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const loadStudentPoints = async () => {
     const { data } = await supabase
@@ -41,6 +45,10 @@ export function RedeemPoints() {
   };
 
   const deleteRedemption = async (redemptionId: string) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     const { error } = await supabase
       .from('redemptions')
       .delete()
@@ -64,6 +72,10 @@ export function RedeemPoints() {
   const studentTotalPoints = studentPoints[selectedStudent] || 0;
 
   const handleRedeem = async () => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (!selectedStudent || selectedReward === null) return;
     
     const reward = REWARDS.find(r => r.id === selectedReward);

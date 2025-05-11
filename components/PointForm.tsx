@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { usePointsStore } from '@/store/pointsStore';
 import { Point } from '@/types/points';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function PointForm({ editPoint, onUpdate }: { editPoint?: Point; onUpdate?: () => void }) {
   const addPoint = usePointsStore((state) => state.addPoint);
   const updatePoint = usePointsStore((state) => state.updatePoint);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState<Partial<Point>>(
     editPoint || {
@@ -18,7 +22,10 @@ export function PointForm({ editPoint, onUpdate }: { editPoint?: Point; onUpdate
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (editPoint) {
       await updatePoint({ ...editPoint, ...formData } as Point);
       onUpdate?.();

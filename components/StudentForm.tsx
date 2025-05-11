@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { useSchoolStore } from '@/store/schoolStore';
 import { Student } from '@/types/student';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; onUpdate?: () => void }) {
   const addStudent = useStore((state) => state.addStudent);
@@ -13,6 +15,9 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
   const levels = useSchoolStore((state) => state.levels);
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     loadClasses();
@@ -38,6 +43,10 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
     const initials = getInitials(formData.name || '');
     const avatarType = formData.gender === 'Akhwat' ? 'lorelei' : 'avataaars';
     const profileImageUrl = `https://api.dicebear.com/7.x/${avatarType}/svg?seed=${encodeURIComponent(initials)}`;
@@ -230,6 +239,7 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
             checked={formData.status}
             onChange={handleChange}
             className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            disabled={!isAdmin}
           />
           <label className="ml-2 block text-sm font-medium text-gray-700">
             Active

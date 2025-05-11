@@ -6,6 +6,8 @@ import { useSchoolStore } from '@/store/schoolStore';
 import { useBillingStore } from '@/store/billingStore';
 import { useSession } from '@/components/SessionProvider';
 import type { BillingRecord } from '@/store/billingStore';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 const MONTHS = [
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
@@ -16,6 +18,9 @@ export default function BillingPage() {
   const { currentAcademicYear } = useSession();
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
@@ -71,6 +76,10 @@ export default function BillingPage() {
   }, [students, records, settings]);
 
   const handleCheckChange = async (studentId: string, index: number) => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
     if (!currentAcademicYear || !settings) return;
 
     const newStatus = !billingChecks[studentId][index];
@@ -159,7 +168,7 @@ export default function BillingPage() {
                 type="checkbox"
                 checked={showInactive}
                 onChange={(e) => setShowInactive(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 mr-2"
+                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 mr-2 h-5 w-5"
               />
               Show Inactive Students
             </label>
@@ -226,9 +235,12 @@ export default function BillingPage() {
                           type="checkbox"
                           checked={billingChecks[student.id]?.[i] || false}
                           onChange={() => handleCheckChange(student.id, i)}
-                          disabled={isUpdating === recordId}
-                          className={`rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${
-                            isUpdating === recordId ? 'opacity-50 cursor-not-allowed' : ''
+                          className={`rounded border-gray-300 shadow-sm focus:ring focus:ring-opacity-50 h-5 w-5 ${
+                            billingChecks[student.id]?.[i]
+                              ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+                              : 'bg-white text-gray-400 border-gray-300 hover:bg-gray-50'
+                          } ${
+                            isUpdating === recordId ? 'opacity-50 cursor-wait' : 'cursor-pointer'
                           }`}
                         />
                       </td>

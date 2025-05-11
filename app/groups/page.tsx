@@ -10,6 +10,8 @@ import { GroupForm } from '@/components/GroupForm';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export default function GroupsPage() {
   const { currentAcademicYear } = useSession();
@@ -29,6 +31,8 @@ export default function GroupsPage() {
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('ALL');
   const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     if (currentAcademicYear) {
@@ -40,6 +44,11 @@ export default function GroupsPage() {
   }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears]);
 
   const handleDelete = async (groupId: string) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this group?')) {
       const { error } = await supabase
         .from('groups')
@@ -56,7 +65,19 @@ export default function GroupsPage() {
   };
 
   const handleEdit = (group: Group) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     setEditingGroup(group);
+    setIsFormOpen(true);
+  };
+
+  const handleAddNew = () => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     setIsFormOpen(true);
   };
 
@@ -105,7 +126,7 @@ export default function GroupsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Groups</h1>
         <button
-          onClick={() => setIsFormOpen(true)}
+          onClick={handleAddNew}
           className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
         >
           Add New Group

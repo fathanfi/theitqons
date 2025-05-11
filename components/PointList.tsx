@@ -4,16 +4,36 @@ import { useState, useEffect } from 'react';
 import { usePointsStore } from '@/store/pointsStore';
 import { Point } from '@/types/points';
 import { PointForm } from './PointForm';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function PointList() {
   const points = usePointsStore((state) => state.points);
   const loadPoints = usePointsStore((state) => state.loadPoints);
   const deletePoint = usePointsStore((state) => state.deletePoint);
   const [editingPoint, setEditingPoint] = useState<Point | null>(null);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadPoints();
   }, [loadPoints]);
+
+  const handleEdit = (point: Point) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    setEditingPoint(point);
+  };
+
+  const handleDelete = (pointId: string) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    deletePoint(pointId);
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -41,13 +61,13 @@ export function PointList() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setEditingPoint(point)}
+                  onClick={() => handleEdit(point)}
                   className="text-indigo-600 hover:text-indigo-800"
                 >
                   Edit
                 </button>
                 <button
-                  onClick={() => deletePoint(point.id)}
+                  onClick={() => handleDelete(point.id)}
                   className="text-red-600 hover:text-red-800"
                 >
                   Delete

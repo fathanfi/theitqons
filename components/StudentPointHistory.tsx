@@ -5,6 +5,8 @@ import { usePointsStore } from '@/store/pointsStore';
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/lib/supabase';
 import Select from 'react-select';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export function StudentPointHistory() {
   const studentPoints = usePointsStore((state) => state.studentPoints);
@@ -12,13 +14,18 @@ export function StudentPointHistory() {
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
-  const deleteStudentPoint = async (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     const { error } = await supabase
       .from('student_points')
       .delete()
       .eq('id', id);
-
     if (!error) {
       loadStudentPoints();
     }
@@ -94,7 +101,7 @@ export function StudentPointHistory() {
                 </p>
               </div>
               <button
-                onClick={() => deleteStudentPoint(studentPoint.id)}
+                onClick={() => handleDelete(studentPoint.id)}
                 className="text-red-600 hover:text-red-800"
               >
                 Delete

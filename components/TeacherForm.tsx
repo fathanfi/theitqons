@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { Teacher } from '@/types/school';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 const ROLES = [
   'Teacher',
@@ -15,6 +17,8 @@ const ROLES = [
 export function TeacherForm({ editTeacher, onUpdate }: { editTeacher?: Teacher; onUpdate?: () => void }) {
   const addTeacher = useSchoolStore((state) => state.addTeacher);
   const updateTeacher = useSchoolStore((state) => state.updateTeacher);
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState<Partial<Teacher>>(
     editTeacher || {
@@ -32,7 +36,10 @@ export function TeacherForm({ editTeacher, onUpdate }: { editTeacher?: Teacher; 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (editTeacher) {
       await updateTeacher(formData as Teacher);
       onUpdate?.();

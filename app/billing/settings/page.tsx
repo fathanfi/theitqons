@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react';
 import { useSchoolStore } from '@/store/schoolStore';
 import { useBillingStore } from '@/store/billingStore';
 import { useSession } from '@/components/SessionProvider';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export default function BillingSettingsPage() {
   const { currentAcademicYear } = useSession();
   const academicYears = useSchoolStore((state) => state.academicYears);
   const loadAcademicYears = useSchoolStore((state) => state.loadAcademicYears);
   const { settings, loadSettings, saveSettings, updateSettings } = useBillingStore();
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
     academicYearId: '',
@@ -19,6 +23,8 @@ export default function BillingSettingsPage() {
     startYear: new Date().getFullYear(),
     endYear: new Date().getFullYear()
   });
+
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     loadAcademicYears();
@@ -46,7 +52,10 @@ export default function BillingSettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
     if (settings) {
       await updateSettings({
         ...settings,
@@ -91,6 +100,7 @@ export default function BillingSettingsPage() {
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               required
+              disabled={!isAdmin}
             >
               <option value="">Select Academic Year</option>
               {academicYears.map(year => (
@@ -115,6 +125,7 @@ export default function BillingSettingsPage() {
                 required
                 min="2000"
                 max="2100"
+                disabled={!isAdmin}
               />
             </div>
 

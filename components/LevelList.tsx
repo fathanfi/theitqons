@@ -21,12 +21,17 @@ import {
   arrayMove
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useAuthStore } from '@/store/authStore';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 
 function SortableLevel({ level, onStatusChange, onEdit }: { 
   level: Level; 
   onStatusChange: (id: string, status: boolean) => void;
   onEdit: (level: Level) => void;
 }) {
+  const { user } = useAuthStore();
+  const { showUnauthorized } = useUnauthorized();
+  const isAdmin = user?.role === 'admin';
   const {
     attributes,
     listeners,
@@ -40,15 +45,18 @@ function SortableLevel({ level, onStatusChange, onEdit }: {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    cursor: isAdmin ? 'move' : 'default',
   };
+
+  // Only apply drag listeners/attributes for admin
+  const dragProps = isAdmin ? { ...attributes, ...listeners } : {};
 
   return (
     <div 
       ref={setNodeRef}
       style={style}
-      className={`border rounded-lg p-4 cursor-move ${isDragging ? 'border-indigo-500 bg-indigo-50' : ''}`}
-      {...attributes}
-      {...listeners}
+      className={`border rounded-lg p-4${isAdmin ? ' cursor-move' : ''} ${isDragging ? 'border-indigo-500 bg-indigo-50' : ''}`}
+      {...dragProps}
     >
       <div className="flex items-center justify-between">
         <div>
@@ -64,6 +72,10 @@ function SortableLevel({ level, onStatusChange, onEdit }: {
               checked={level.status}
               onChange={(e) => {
                 e.stopPropagation();
+                if (!isAdmin) {
+                  showUnauthorized();
+                  return;
+                }
                 onStatusChange(level.id, e.target.checked);
               }}
               className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
@@ -91,6 +103,8 @@ export function LevelList() {
   const setLevelStatus = useSchoolStore((state) => state.setLevelStatus);
   const reorderLevel = useSchoolStore((state) => state.reorderLevel);
   const [editingLevel, setEditingLevel] = useState<Level | null>(null);
+  const { user } = useAuthStore();
+  const { showUnauthorized } = useUnauthorized();
 
   useEffect(() => {
     loadLevels();
@@ -105,6 +119,11 @@ export function LevelList() {
   );
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+
     const { active, over } = event;
     
     if (!over || active.id === over.id) return;
@@ -116,6 +135,14 @@ export function LevelList() {
 
     const newOrder = levels[newIndex].order;
     await reorderLevel(active.id as string, newOrder);
+  };
+
+  const handleStatusChange = (id: string, status: boolean) => {
+    if (!user || user.role !== 'admin') {
+      showUnauthorized();
+      return;
+    }
+    setLevelStatus(id, status);
   };
 
   const sortedLevels = [...levels].sort((a, b) => a.order - b.order);
@@ -145,7 +172,7 @@ export function LevelList() {
               <SortableLevel
                 key={level.id}
                 level={level}
-                onStatusChange={setLevelStatus}
+                onStatusChange={handleStatusChange}
                 onEdit={setEditingLevel}
               />
             ))}
