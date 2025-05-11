@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 export function Navigation() {
   const pathname = usePathname();
-  const { signOut } = useAuthStore();
+  const { signOut, user } = useAuthStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isPointsOpen, setIsPointsOpen] = useState(false);
@@ -242,12 +242,14 @@ export function Navigation() {
           {/* Desktop right side */}
           <div className="hidden lg:flex items-center space-x-4">
             <AcademicYearSelector />
-            <button
-              onClick={handleLogout}
-              className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Logout
-            </button>
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
 
@@ -359,12 +361,14 @@ export function Navigation() {
                   <AcademicYearSelector />
                 </div>
                 <div className="mt-4 px-4">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
+                  {user && (
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

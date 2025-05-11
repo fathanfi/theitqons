@@ -211,26 +211,26 @@ export default function GroupsPage() {
           const sortedStudents = getSortedStudents(group.students);
 
           return (
-            <div key={group.id} className="rounded-lg shadow-md p-6" style={{background: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)'}}>
+            <div key={group.id} className="rounded-lg shadow-md p-6 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold">{group.name}</h3>
-                  <p className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
+                  <p className="text-sm text-gray-300 flex items-center gap-2 flex-wrap">
                     {class_ ? class_.name : 'No Class'} • {teacher ? teacher.name : 'No Teacher'}
-                    <span className="text-xs text-blue-700 font-bold">• {sortedStudents.length}</span>
+                    <span className="text-xs text-blue-300 font-bold">• {sortedStudents.length}</span>
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(group)}
-                    className="text-indigo-600 hover:text-indigo-800 p-1"
+                    className="text-indigo-300 hover:text-indigo-100 p-1"
                     title="Edit"
                   >
                     <PencilSquareIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(group.id)}
-                    className="text-red-600 hover:text-red-800 p-1"
+                    className="text-red-400 hover:text-red-200 p-1"
                     title="Delete"
                   >
                     <TrashIcon className="w-5 h-5" />
@@ -238,16 +238,16 @@ export default function GroupsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <h4 className="font-medium">Students:</h4>
+                <h4 className="font-medium text-gray-200">Students:</h4>
                 <ul className="space-y-1">
                   {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
                     return (
-                      <li key={student.id} className="text-sm flex items-center gap-2">
-                        <span className="text-gray-500 w-6">{index + 1}.</span>
+                      <li key={student.id} className="text-sm flex items-center gap-2 text-gray-100">
+                        <span className="text-gray-400 w-6">{index + 1}.</span>
                         <span>{student.name}</span>
                         {level && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-white shadow-md">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-md">
                             {level.name}
                           </span>
                         )}
@@ -256,7 +256,7 @@ export default function GroupsPage() {
                   })}
                 </ul>
                 {sortedStudents.length > 0 && (
-                  <p className="text-sm text-gray-700 mt-2 font-semibold">
+                  <p className="text-sm text-gray-300 mt-2 font-semibold">
                     Total Students: {sortedStudents.length}
                   </p>
                 )}
