@@ -12,8 +12,17 @@ import { UnauthorizedProvider } from '@/contexts/UnauthorizedContext';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Student Management System',
-  description: 'A comprehensive system for managing students and levels',
+  title: 'The Itqon',
+  description: 'Student Management System',
+  icons: {
+    icon: '/images/favicon/favicon.ico',
+    shortcut: '/images/favicon/favicon.ico',
+    apple: '/images/favicon/apple-touch-icon.png',
+    other: [
+      { rel: 'icon', type: 'image/png', sizes: '192x192', url: '/images/favicon/android-chrome-192.png' },
+      // Add more sizes if available
+    ],
+  },
 };
 
 export default function RootLayout({

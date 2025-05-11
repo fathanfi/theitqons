@@ -241,7 +241,7 @@ export function Navigation() {
 
           {/* Desktop right side */}
           <div className="hidden lg:flex items-center space-x-4">
-            <AcademicYearSelector />
+            {user && <AcademicYearSelector />}
             {user && (
               <button
                 onClick={handleLogout}
@@ -358,7 +358,7 @@ export function Navigation() {
 
               <div className="border-t border-gray-200 pt-4 pb-3">
                 <div className="px-4">
-                  <AcademicYearSelector />
+                  {user && <AcademicYearSelector />}
                 </div>
                 <div className="mt-4 px-4">
                   {user && (
