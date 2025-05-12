@@ -15,6 +15,7 @@ export function Navigation() {
   const [isPointsOpen, setIsPointsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [isItqonOpen, setIsItqonOpen] = useState(false);
+  const [isStoriesOpen, setIsStoriesOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -31,6 +32,7 @@ export function Navigation() {
     setIsPointsOpen(false);
     setIsBillingOpen(false);
     setIsItqonOpen(false);
+    setIsStoriesOpen(false);
   };
 
   const toggleMobileMenu = () => {
@@ -177,6 +179,19 @@ export function Navigation() {
               ],
               '💰'
             )}
+
+            {renderDropdown(
+              isStoriesOpen,
+              setIsStoriesOpen,
+              'Stories',
+              [
+                { href: '/session-stories', label: 'Session Stories' },
+                { href: '/stories', label: 'Stories' },
+                { href: '/story-actions', label: 'Story Actions' },
+                { href: '/story-timeline', label: 'Story Timeline' }
+              ],
+              '📚'
+            )}
           </div>
 
           {/* Mobile menu button and quick access */}
@@ -193,50 +208,6 @@ export function Navigation() {
                 )}
               </svg>
             </button>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              <Link
-                href="/groups"
-                className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors whitespace-nowrap"
-              >
-                <span className="text-lg">👥</span>
-                <span className="font-semibold hidden sm:inline">Groups</span>
-              </Link>
-              <Link
-                href="/levels"
-                className="flex items-center gap-1 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors whitespace-nowrap"
-              >
-                <span className="text-lg">💥</span>
-                <span className="font-semibold hidden sm:inline">Itqon</span>
-              </Link>
-              <Link
-                href="/students"
-                className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors whitespace-nowrap"
-              >
-                <span className="text-lg">👨‍🎓</span>
-                <span className="font-semibold hidden sm:inline">Students</span>
-              </Link>
-              <Link
-                href="/itqon-exam"
-                className="flex items-center gap-1 px-3 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors whitespace-nowrap"
-              >
-                <span className="text-lg">📝</span>
-                <span className="font-semibold hidden sm:inline">Exam</span>
-              </Link>
-              <Link
-                href="/student-points"
-                className="flex items-center gap-1 px-3 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors whitespace-nowrap"
-              >
-                <span className="text-lg">⭐</span>
-                <span className="font-semibold hidden sm:inline">Points</span>
-              </Link>
-              <Link
-                href="/redeem"
-                className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap"
-              >
-                <span className="text-lg">🎁</span>
-                <span className="font-semibold hidden sm:inline">Redeem</span>
-              </Link>
-            </div>
           </div>
 
           {/* Desktop right side */}
@@ -256,26 +227,6 @@ export function Navigation() {
         {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-white text-gray-800">
-            {/* Quick Access Buttons */}
-            <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50">
-              <Link
-                href="/groups"
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                onClick={handleMobileLinkClick}
-              >
-                <span className="text-lg">👥</span>
-                <span className="font-semibold">Groups</span>
-              </Link>
-              <Link
-                href="/levels"
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-                onClick={handleMobileLinkClick}
-              >
-                <span className="text-lg">💥</span>
-                <span className="font-semibold">Itqon</span>
-              </Link>
-            </div>
-
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link
                 href="/"
@@ -354,6 +305,19 @@ export function Navigation() {
                   { href: '/billing/settings', label: 'Billing Settings' }
                 ],
                 '💰'
+              )}
+
+              {renderMobileDropdown(
+                isStoriesOpen,
+                setIsStoriesOpen,
+                'Stories',
+                [
+                  { href: '/session-stories', label: 'Session Stories' },
+                  { href: '/stories', label: 'Stories' },
+                  { href: '/story-actions', label: 'Story Actions' },
+                  { href: '/story-timeline', label: 'Story Timeline' }
+                ],
+                '📚'
               )}
 
               <div className="border-t border-gray-200 pt-4 pb-3">
