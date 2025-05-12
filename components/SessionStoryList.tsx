@@ -65,7 +65,7 @@ export function SessionStoryList() {
                   Parent: {getParentName(story.parentId)}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Period: {new Date(story.startDate).toLocaleDateString()} - {new Date(story.endDate).toLocaleDateString()}
+                  Period: {new Date(story.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(story.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
               <div className="flex items-center gap-4">

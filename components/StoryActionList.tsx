@@ -7,6 +7,8 @@ import { StoryActionForm } from './StoryActionForm';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import Image from 'next/image';
+import { useSchoolStore } from '@/store/schoolStore';
+import { useStore } from '@/store/useStore';
 
 export function StoryActionList() {
   const storyActions = useStoryStore((state) => state.storyActions);
@@ -15,8 +17,11 @@ export function StoryActionList() {
   const loadStories = useStoryStore((state) => state.loadStories);
   const deleteStoryAction = useStoryStore((state) => state.deleteStoryAction);
   const [editingAction, setEditingAction] = useState<StoryAction | null>(null);
+  const [selectedAction, setSelectedAction] = useState<StoryAction | null>(null);
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
+  const teachers = useSchoolStore((state) => state.teachers);
+  const students = useStore((state) => state.students);
 
   useEffect(() => {
     loadStoryActions();
@@ -42,6 +47,24 @@ export function StoryActionList() {
   const getStoryName = (storyId: string) => {
     const story = stories.find(s => s.id === storyId);
     return story ? story.name : 'Unknown Story';
+  };
+
+  const getParticipantName = (participantId: string) => {
+    if (participantId === 'ALL_TEACHERS') return 'All Teachers';
+    if (participantId === 'ALL') return 'All';
+    if (participantId === 'ALL_STUDENTS') return 'All Students';
+    if (participantId === 'ALL_PARENTS') return 'All Parents';
+    if (participantId.startsWith('TEACHER_')) {
+      const teacherId = participantId.replace('TEACHER_', '');
+      const teacher = teachers.find((t: { id: string }) => t.id === teacherId);
+      return teacher ? teacher.name : 'Unknown Teacher';
+    }
+    if (participantId.startsWith('STUDENT_')) {
+      const studentId = participantId.replace('STUDENT_', '');
+      const student = students.find((s: { id: string }) => s.id === studentId);
+      return student ? student.name : 'Unknown Student';
+    }
+    return participantId;
   };
 
   return (
@@ -83,7 +106,7 @@ export function StoryActionList() {
                 {action.participants && action.participants.length > 0 && (
                   <div className="mt-2">
                     <p className="text-sm text-gray-600">
-                      Participants: {action.participants.join(', ')}
+                      Participants: {action.participants.map(getParticipantName).join(', ')}
                     </p>
                   </div>
                 )}
@@ -98,6 +121,12 @@ export function StoryActionList() {
                   />
                   <span className="ml-2 text-sm text-gray-700">Active</span>
                 </label>
+                <button
+                  onClick={() => setSelectedAction(action)}
+                  className="text-indigo-600 hover:text-indigo-800"
+                >
+                  View Details
+                </button>
                 <button
                   onClick={() => handleEdit(action)}
                   className="text-indigo-600 hover:text-indigo-800"
