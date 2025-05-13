@@ -121,11 +121,50 @@ export function Navigation() {
     </div>
   );
 
+  const quickAccessItems = [
+    { href: '/groups', label: 'Groups', icon: '👥', bg: 'bg-blue-500' },
+    { href: '/levels', label: 'Itqon', icon: '💥', bg: 'bg-purple-400' },
+    { href: '/itqon-exam', label: 'Itqon Exam', icon: '📝', bg: 'bg-green-500' },
+    { href: '/student-points', label: 'Points', icon: '⭐', bg: 'bg-yellow-400' },
+    { href: '/redeem', label: 'Redeem', icon: '🎁', bg: 'bg-blue-600' },
+    { href: '/billing', label: 'Billing', icon: '💰', bg: 'bg-red-500' }
+  ];
+
   return (
     <nav className="bg-gray-800 text-white">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo and Desktop Menu */}
+          {/* Mobile menu button */}
+          <div className="lg:hidden">
+            <button
+              onClick={toggleMobileMenu}
+              className="text-white hover:text-gray-300 focus:outline-none"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
+          {/* Quick Access Menu - Mobile */}
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto p-1">
+            {quickAccessItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center justify-center w-12 h-12 rounded-lg shadow ${item.bg} hover:opacity-80 transition-opacity`}
+                style={{ minWidth: 48 }}
+              >
+                <span className="text-3xl">{item.icon}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop Menu */}
           <div className="hidden lg:flex items-center space-x-4">
             <Link href="/" className="hover:text-gray-300">Home</Link>
             
@@ -194,22 +233,6 @@ export function Navigation() {
             )}
           </div>
 
-          {/* Mobile menu button and quick access */}
-          <div className="lg:hidden flex items-center gap-2">
-            <button
-              onClick={toggleMobileMenu}
-              className="text-white hover:text-gray-300 focus:outline-none"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {isMobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
-
           {/* Desktop right side */}
           <div className="hidden lg:flex items-center space-x-4">
             {user && <AcademicYearSelector />}
@@ -228,6 +251,27 @@ export function Navigation() {
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-white text-gray-800">
             <div className="px-2 pt-2 pb-3 space-y-1">
+              {/* Quick Access Buttons */}
+              <div className="flex gap-2 p-2">
+                <Link
+                  href="/groups"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-base"
+                  onClick={handleMobileLinkClick}
+                >
+                  <span className="text-xl">👥</span>
+                  <span className="text-sm font-medium">Groups</span>
+                </Link>
+                <Link
+                  href="/levels"
+                  className="flex items-center gap-2 px-3 py-2 bg-purple-400 text-white rounded-lg hover:bg-purple-500 transition-colors text-base"
+                  onClick={handleMobileLinkClick}
+                >
+                  <span className="text-xl">💥</span>
+                  <span className="text-sm font-medium">Itqon</span>
+                </Link>
+              </div>
+
+              {/* Regular Menu Items */}
               <Link
                 href="/"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
@@ -248,14 +292,6 @@ export function Navigation() {
                   { href: '/students', label: 'Students' }
                 ]
               )}
-
-              <Link
-                href="/groups"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 bg-blue-50 font-semibold"
-                onClick={handleMobileLinkClick}
-              >
-                Groups
-              </Link>
 
               <Link
                 href="/badges"
@@ -322,7 +358,14 @@ export function Navigation() {
 
               <div className="border-t border-gray-200 pt-4 pb-3">
                 <div className="px-4">
-                  {user && <AcademicYearSelector />}
+                  {user && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-gray-800">Academic Year:</label>
+                      <div className="w-full">
+                        <AcademicYearSelector />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4 px-4">
                   {user && (
