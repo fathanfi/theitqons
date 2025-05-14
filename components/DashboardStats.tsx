@@ -48,7 +48,13 @@ export function DashboardStats() {
     { href: '/student-points', label: 'Student Points', icon: '📝' },
     { href: '/redeem', label: 'Redeem', icon: '🎁' },
     { href: '/levels', label: 'Itqon', icon: '📚' },
-    { href: '/billing', label: 'Billing', icon: '💰' }
+    { href: '/billing', label: 'Billing', icon: '💰' },
+    { href: '/itqon-exam', label: 'Itqon Exam', icon: '📝' },
+    { href: '/story-timeline', label: 'Story Timeline', icon: '📅' },
+    { href: '/stories', label: 'Stories', icon: '📖' },
+    { href: '/story-actions', label: 'Story Actions', icon: '🎯' },
+    { href: '/school-settings', label: 'School Settings', icon: '⚙️' },
+    { href: '/school-information', label: 'School Information', icon: '🏫' }
   ];
 
   return (
