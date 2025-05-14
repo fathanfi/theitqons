@@ -177,7 +177,9 @@ export function Navigation() {
                 { href: '/teachers', label: 'Teachers' },
                 { href: '/classes', label: 'Classes' },
                 { href: '/levels-management', label: 'Levels' },
-                { href: '/students', label: 'Students' }
+                { href: '/students', label: 'Students' },
+                { href: '/school-settings', label: 'School Settings' },
+                { href: '/school-information', label: 'School Information' }
               ]
             )}
 

@@ -61,3 +61,33 @@ export interface Exam {
   createdAt: string;
   level?: Level;
 }
+
+export interface NameValuePair {
+  name: string;
+  value: string;
+}
+
+export interface SchoolSettings {
+  id: string;
+  name: string;
+  accountNumber: string;
+  principalName: string;
+  establishedYear: number;
+  address: string;
+  city: string;
+  stateProvince: string;
+  postalCode: string;
+  country: string;
+  phoneNumber: string;
+  email: string;
+  websiteUrl: string;
+  facilities: NameValuePair[];
+  studentCount: NameValuePair[];
+  staffCount: NameValuePair[];
+  schoolCode: string;
+  latitude: number;
+  longitude: number;
+  bankAccount: NameValuePair[];
+  createdAt: string;
+  updatedAt: string;
+}
