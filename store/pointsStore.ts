@@ -11,6 +11,7 @@ interface PointsStore {
   updatePoint: (point: Point) => Promise<void>;
   deletePoint: (id: string) => Promise<void>;
   addStudentPoint: (studentId: string, pointId: string) => Promise<void>;
+  deleteStudentPoint: (id: string) => Promise<void>;
 }
 
 export const usePointsStore = create<PointsStore>((set, get) => ({
@@ -90,23 +91,85 @@ export const usePointsStore = create<PointsStore>((set, get) => ({
   },
 
   addStudentPoint: async (studentId, pointId) => {
-    const { data, error } = await supabase
-      .from('student_points')
-      .insert([{
-        student_id: studentId,
-        point_id: pointId
-      }])
-      .select(`
-        *,
-        point:points(*),
-        student:students(*)
-      `)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('student_points')
+        .insert([{
+          student_id: studentId,
+          point_id: pointId
+        }])
+        .select(`
+          *,
+          point:points(*),
+          student:students(*)
+        `)
+        .single();
 
-    if (data && !error) {
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: studentId,
+        action_type: 'student_point_added',
+        message: `Added ${data.point.point} points to ${data.student.name} for ${data.point.name}`,
+        related_id: data.id,
+        metadata: {
+          point_name: data.point.name,
+          points: data.point.point,
+          student_name: data.student.name
+        }
+      });
+
       set(state => ({
         studentPoints: [data, ...state.studentPoints]
       }));
+    } catch (error) {
+      console.error('Error adding student point:', error);
+      throw error;
+    }
+  },
+
+  deleteStudentPoint: async (id) => {
+    try {
+      // Get student point details before deletion for logging
+      const { data: studentPoint, error: fetchError } = await supabase
+        .from('student_points')
+        .select(`
+          *,
+          point:points(*),
+          student:students(*)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const { error } = await supabase
+        .from('student_points')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: studentPoint.student_id,
+        action_type: 'student_point_deleted',
+        message: `Removed ${studentPoint.point.point} points from ${studentPoint.student.name} for ${studentPoint.point.name}`,
+        related_id: studentPoint.id,
+        metadata: {
+          point_name: studentPoint.point.name,
+          points: studentPoint.point.point,
+          student_name: studentPoint.student.name
+        }
+      });
+
+      set(state => ({
+        studentPoints: state.studentPoints.filter(sp => sp.id !== id)
+      }));
+    } catch (error) {
+      console.error('Error deleting student point:', error);
+      throw error;
     }
   }
 }));

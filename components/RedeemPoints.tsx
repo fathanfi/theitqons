@@ -19,6 +19,7 @@ const REWARDS = [
 export function RedeemPoints() {
   const students = useStore((state) => state.students);
   const redeemPoints = useStore((state) => state.redeemPoints);
+  const deleteRedemption = useStore((state) => state.deleteRedemption);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedReward, setSelectedReward] = useState<number | null>(null);
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
@@ -44,23 +45,16 @@ export function RedeemPoints() {
     await useStore.getState().loadStudents();
   };
 
-  const deleteRedemption = async (redemptionId: string) => {
+  const handleDeleteRedemption = async (redemptionId: string) => {
     if (!user || user.role !== 'admin') {
       showUnauthorized();
       return;
     }
-    const { error } = await supabase
-      .from('redemptions')
-      .delete()
-      .eq('id', redemptionId);
-
-    if (!error) {
-      // Reload points and student data
-      loadStudentPoints();
-      const student = students.find(s => s.id === selectedStudent);
-      if (student) {
-        student.redemptions = student.redemptions.filter(r => r.id !== redemptionId);
-      }
+    try {
+      await deleteRedemption(redemptionId);
+      await reloadAll();
+    } catch (error) {
+      console.error('Error deleting redemption:', error);
     }
   };
 
@@ -90,9 +84,13 @@ export function RedeemPoints() {
       icon: reward.icon
     };
 
-    await redeemPoints(selectedStudent, redemption);
-    setSelectedReward(null);
-    await reloadAll(); // Reload points and students after redemption
+    try {
+      await redeemPoints(selectedStudent, redemption);
+      setSelectedReward(null);
+      await reloadAll();
+    } catch (error) {
+      console.error('Error redeeming points:', error);
+    }
   };
 
   const studentOptions = students.map(student => ({
@@ -152,7 +150,7 @@ export function RedeemPoints() {
                       -{redemption.points} points
                     </span>
                     <button
-                      onClick={() => deleteRedemption(redemption.id)}
+                      onClick={() => handleDeleteRedemption(redemption.id)}
                       className="text-red-600 hover:text-red-800"
                     >
                       Delete

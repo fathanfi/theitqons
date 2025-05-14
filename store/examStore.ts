@@ -109,82 +109,143 @@ export const useExamStore = create<ExamStore>((set) => ({
   },
 
   addItqonExam: async (exam) => {
-    const { data, error } = await supabase
-      .from('itqon_exams')
-      .insert([{
-        exam_id: exam.examId,
+    try {
+      const { data: examData, error } = await supabase
+        .from('itqon_exams')
+        .insert([{
+          exam_id: exam.examId,
+          student_id: exam.studentId,
+          teacher_id: exam.teacherId,
+          exam_date: exam.examDate,
+          tahfidz_score: exam.tahfidzScore,
+          tajwid_score: exam.tajwidScore,
+          status: exam.status
+        }])
+        .select(`
+          *,
+          exam:exams(*),
+          student:students(name),
+          teacher:teachers(name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
         student_id: exam.studentId,
-        teacher_id: exam.teacherId,
-        exam_date: exam.examDate,
-        tahfidz_score: exam.tahfidzScore,
-        tajwid_score: exam.tajwidScore,
-        status: exam.status
-      }])
-      .select(`
-        *,
-        exam:exams(*),
-        student:students(id, name),
-        teacher:teachers(id, name)
-      `)
-      .single();
+        action_type: 'itqon_exam_created',
+        message: `Itqon Exam created for ${examData.student.name} on ${examData.exam.name} at ${exam.examDate}. Currently status is ${exam.status}`,
+        related_id: examData.id,
+        metadata: {
+          exam_date: exam.examDate,
+          status: exam.status,
+          exam_name: examData.exam.name
+        }
+      });
 
-    if (data && !error) {
-      const newExam: ItqonExam = {
-        id: data.id,
-        examId: data.exam_id,
-        studentId: data.student_id,
-        teacherId: data.teacher_id,
-        examDate: data.exam_date,
-        tahfidzScore: data.tahfidz_score,
-        tajwidScore: data.tajwid_score,
-        status: data.status,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        exam: data.exam,
-        student: data.student,
-        teacher: data.teacher
-      };
-
-      set(state => ({
-        itqonExams: [newExam, ...state.itqonExams]
+      set((state) => ({
+        itqonExams: [examData, ...state.itqonExams]
       }));
+    } catch (error) {
+      console.error('Error adding exam:', error);
+      throw error;
     }
   },
 
   updateItqonExam: async (exam) => {
-    const { error } = await supabase
-      .from('itqon_exams')
-      .update({
-        exam_id: exam.examId,
-        student_id: exam.studentId,
-        teacher_id: exam.teacherId,
-        exam_date: exam.examDate,
-        tahfidz_score: exam.tahfidzScore,
-        tajwid_score: exam.tajwidScore,
-        status: exam.status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', exam.id);
+    try {
+      const { data: examData, error } = await supabase
+        .from('itqon_exams')
+        .update({
+          exam_id: exam.examId,
+          student_id: exam.studentId,
+          teacher_id: exam.teacherId,
+          exam_date: exam.examDate,
+          tahfidz_score: exam.tahfidzScore,
+          tajwid_score: exam.tajwidScore,
+          status: exam.status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', exam.id)
+        .select(`
+          *,
+          exam:exams(*),
+          student:students(name),
+          teacher:teachers(name)
+        `)
+        .single();
 
-    if (!error) {
-      set(state => ({
-        itqonExams: state.itqonExams.map(e =>
-          e.id === exam.id ? exam : e
-        )
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: exam.studentId,
+        action_type: 'itqon_exam_updated',
+        message: `Itqon Exam updated for ${examData.student.name} on ${examData.exam.name} at ${exam.examDate}. Currently status is ${exam.status}`,
+        related_id: exam.id,
+        metadata: {
+          exam_date: exam.examDate,
+          status: exam.status,
+          exam_name: examData.exam.name,
+          changes: {
+            tahfidz_score: exam.tahfidzScore,
+            tajwid_score: exam.tajwidScore
+          }
+        }
+      });
+
+      set((state) => ({
+        itqonExams: state.itqonExams.map((e) => (e.id === exam.id ? examData : e))
       }));
+    } catch (error) {
+      console.error('Error updating exam:', error);
+      throw error;
     }
   },
 
   deleteItqonExam: async (id) => {
-    const { error } = await supabase
-      .from('itqon_exams')
-      .delete()
-      .eq('id', id);
+    try {
+      // Get exam details before deletion for logging
+      const { data: exam, error: fetchError } = await supabase
+        .from('itqon_exams')
+        .select(`
+          *,
+          exam:exams(*),
+          student:students(name),
+          teacher:teachers(name)
+        `)
+        .eq('id', id)
+        .single();
 
-    if (!error) {
-      set(state => ({
-        itqonExams: state.itqonExams.filter(exam => exam.id !== id)
+      if (fetchError) throw fetchError;
+
+      const { error } = await supabase
+        .from('itqon_exams')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: exam.student_id,
+        action_type: 'itqon_exam_deleted',
+        message: `Itqon Exam deleted for ${exam.student.name} on ${exam.exam.name} at ${exam.exam_date}. Last status was ${exam.status}`,
+        related_id: exam.id,
+        metadata: {
+          exam_date: exam.exam_date,
+          status: exam.status,
+          exam_name: exam.exam.name
+        }
+      });
+
+      set((state) => ({
+        itqonExams: state.itqonExams.filter((e) => e.id !== id)
       }));
+    } catch (error) {
+      console.error('Error deleting exam:', error);
+      throw error;
     }
   }
 }));

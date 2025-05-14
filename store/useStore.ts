@@ -14,6 +14,7 @@ interface StudentStore {
   addBadgeToStudent: (studentId: string, badge: Badge) => Promise<void>;
   removeBadgeFromStudent: (studentId: string, badgeId: string) => Promise<void>;
   redeemPoints: (studentId: string, redemption: Redemption) => Promise<void>;
+  deleteRedemption: (redemptionId: string) => Promise<void>;
   loadInitialData: () => Promise<void>;
   loadStudents: () => Promise<void>;
 }
@@ -141,6 +142,15 @@ export const useStore = create<StudentStore>((set, get) => ({
 
   moveStudentToLevel: async (studentId, level) => {
     try {
+      // Get student details for logging
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('name')
+        .eq('id', studentId)
+        .single();
+
+      if (studentError) throw studentError;
+
       // First update the database
       const { error } = await supabase
         .from('students')
@@ -148,6 +158,19 @@ export const useStore = create<StudentStore>((set, get) => ({
         .eq('id', studentId);
 
       if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: studentId,
+        action_type: 'itqon_level_updated',
+        message: `${student.name} moved to level ${level.name}`,
+        related_id: level.id,
+        metadata: {
+          student_name: student.name,
+          level_name: level.name,
+          level_id: level.id
+        }
+      });
 
       // Then update the local state
       set(state => ({
@@ -214,6 +237,15 @@ export const useStore = create<StudentStore>((set, get) => ({
 
   addBadgeToStudent: async (studentId, badge) => {
     try {
+      // Get student details for logging
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('name')
+        .eq('id', studentId)
+        .single();
+
+      if (studentError) throw studentError;
+
       const { error } = await supabase
         .from('student_badges')
         .insert([{
@@ -222,6 +254,19 @@ export const useStore = create<StudentStore>((set, get) => ({
         }]);
 
       if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: studentId,
+        action_type: 'student_badge_added',
+        message: `Added badge "${badge.description}" (${badge.icon}) to ${student.name}`,
+        related_id: badge.id,
+        metadata: {
+          student_name: student.name,
+          badge_description: badge.description,
+          badge_icon: badge.icon
+        }
+      });
 
       set(state => ({
         students: state.students.map(student =>
@@ -237,6 +282,23 @@ export const useStore = create<StudentStore>((set, get) => ({
 
   removeBadgeFromStudent: async (studentId, badgeId) => {
     try {
+      // Get student and badge details for logging
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('name')
+        .eq('id', studentId)
+        .single();
+
+      if (studentError) throw studentError;
+
+      const { data: badge, error: badgeError } = await supabase
+        .from('badges')
+        .select('*')
+        .eq('id', badgeId)
+        .single();
+
+      if (badgeError) throw badgeError;
+
       const { error } = await supabase
         .from('student_badges')
         .delete()
@@ -244,6 +306,19 @@ export const useStore = create<StudentStore>((set, get) => ({
         .eq('badge_id', badgeId);
 
       if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: studentId,
+        action_type: 'student_badge_removed',
+        message: `Removed badge "${badge.description}" (${badge.icon}) from ${student.name}`,
+        related_id: badgeId,
+        metadata: {
+          student_name: student.name,
+          badge_description: badge.description,
+          badge_icon: badge.icon
+        }
+      });
 
       set(state => ({
         students: state.students.map(student =>
@@ -259,6 +334,15 @@ export const useStore = create<StudentStore>((set, get) => ({
 
   redeemPoints: async (studentId, redemption) => {
     try {
+      // Get student details for logging
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('name')
+        .eq('id', studentId)
+        .single();
+
+      if (studentError) throw studentError;
+
       // Add redemption record
       const { data: redemptionData, error: redemptionError } = await supabase
         .from('redemptions')
@@ -275,6 +359,19 @@ export const useStore = create<StudentStore>((set, get) => ({
 
       if (redemptionError) throw redemptionError;
 
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: studentId,
+        action_type: 'points_redeemed',
+        message: `${student.name} redeemed ${redemption.points} points for ${redemption.reward_name}`,
+        related_id: redemption.id,
+        metadata: {
+          reward_name: redemption.reward_name,
+          points: redemption.points,
+          student_name: student.name
+        }
+      });
+
       set(state => ({
         students: state.students.map(s =>
           s.id === studentId
@@ -287,6 +384,57 @@ export const useStore = create<StudentStore>((set, get) => ({
       }));
     } catch (error) {
       console.error('Error redeeming points:', error);
+      throw error;
+    }
+  },
+
+  deleteRedemption: async (redemptionId) => {
+    try {
+      // Get redemption details before deletion for logging
+      const { data: redemption, error: fetchError } = await supabase
+        .from('redemptions')
+        .select(`
+          *,
+          student:students(name)
+        `)
+        .eq('id', redemptionId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const { error } = await supabase
+        .from('redemptions')
+        .delete()
+        .eq('id', redemptionId);
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.from('activity_logs').insert({
+        student_id: redemption.student_id,
+        action_type: 'redemption_deleted',
+        message: `Removed redemption of ${redemption.points} points for ${redemption.reward_name} from ${redemption.student.name}`,
+        related_id: redemption.id,
+        metadata: {
+          reward_name: redemption.reward_name,
+          points: redemption.points,
+          student_name: redemption.student.name
+        }
+      });
+
+      set(state => ({
+        students: state.students.map(s =>
+          s.id === redemption.student_id
+            ? {
+                ...s,
+                redemptions: s.redemptions.filter(r => r.id !== redemptionId)
+              }
+            : s
+        )
+      }));
+    } catch (error) {
+      console.error('Error deleting redemption:', error);
+      throw error;
     }
   }
 }));

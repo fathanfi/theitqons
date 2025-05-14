@@ -1,11 +1,16 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { useSchoolStore } from '@/store/schoolStore';
 import { usePointsStore } from '@/store/pointsStore';
-import { useEffect } from 'react';
-import Link from 'next/link';
 import { useSession } from '@/components/SessionProvider';
+import { ActivityLog } from './ActivityLog';
+import { supabase } from '@/lib/supabase';
+import { useActivityLogStore } from '@/store/activityLogStore';
+import Link from 'next/link';
+import { ActivitySplash } from './ActivitySplash';
+import { ActivityLog as ActivityLogType } from '@/types/activity';
 
 export function DashboardStats() {
   const { currentAcademicYear } = useSession();
@@ -16,21 +21,61 @@ export function DashboardStats() {
   const groups = useSchoolStore((state) => state.groups);
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const loadGroups = useSchoolStore((state) => state.loadGroups);
-  
+
   const studentPoints = usePointsStore((state) => state.studentPoints);
   const loadStudentPoints = usePointsStore((state) => state.loadStudentPoints);
+  const { loadLogs, logs } = useActivityLogStore();
 
+  const [splashActivity, setSplashActivity] = useState<ActivityLogType | null>(null);
+  const lastActivityIdRef = useRef<string | null>(null);
+
+  // Load initial data
   useEffect(() => {
     loadStudents();
     loadTeachers();
     loadStudentPoints();
-  }, [loadStudents, loadTeachers, loadStudentPoints]);
+    loadLogs();
+  }, [loadStudents, loadTeachers, loadStudentPoints, loadLogs]);
 
   useEffect(() => {
     if (currentAcademicYear) {
       loadGroups(currentAcademicYear.id);
     }
   }, [loadGroups, currentAcademicYear]);
+
+  // Set up real-time subscription for activity logs
+  useEffect(() => {
+    const subscription = supabase
+      .channel('activity_logs_channel')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'activity_logs'
+      }, (payload) => {
+        loadLogs();
+        if (payload.new && payload.new.id !== lastActivityIdRef.current) {
+          setSplashActivity(payload.new as ActivityLogType);
+          lastActivityIdRef.current = payload.new.id;
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [loadLogs]);
+
+  // Set up polling for activity logs
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      await loadLogs();
+    }, 5000);
+    return () => clearInterval(pollInterval);
+  }, [loadLogs]);
+
+  const handleRefresh = async () => {
+    await loadLogs();
+  };
 
   const totalPointsGiven = studentPoints.reduce((total, sp) => total + (sp.point?.point || 0), 0);
   const totalRedeemPoints = students.reduce((total, student) => 
@@ -59,6 +104,7 @@ export function DashboardStats() {
 
   return (
     <div className="space-y-8">
+      <ActivitySplash activity={splashActivity} onClose={() => setSplashActivity(null)} />
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <div className="text-4xl mb-2">👥</div>
@@ -101,6 +147,22 @@ export function DashboardStats() {
             </Link>
           ))}
         </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Recent Activities</h2>
+          <button
+            onClick={handleRefresh}
+            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
+        <ActivityLog />
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 export interface Badge {
   id: string;
+  name: string;
   icon: string;
   description: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Redemption {
@@ -27,6 +30,17 @@ export interface Level {
   name: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface StoryAction {
+  id: string;
+  storyId: string;
+  sessionId: string;
+  studentId: string;
+  actionType: string;
+  points: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Student {

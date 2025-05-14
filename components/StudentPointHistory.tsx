@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 export function StudentPointHistory() {
   const studentPoints = usePointsStore((state) => state.studentPoints);
   const loadStudentPoints = usePointsStore((state) => state.loadStudentPoints);
+  const deleteStudentPoint = usePointsStore((state) => state.deleteStudentPoint);
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
@@ -22,12 +23,11 @@ export function StudentPointHistory() {
       showUnauthorized();
       return;
     }
-    const { error } = await supabase
-      .from('student_points')
-      .delete()
-      .eq('id', id);
-    if (!error) {
-      loadStudentPoints();
+    try {
+      await deleteStudentPoint(id);
+      await loadStudentPoints();
+    } catch (error) {
+      console.error('Error deleting student point:', error);
     }
   };
 
