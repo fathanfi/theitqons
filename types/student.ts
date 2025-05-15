@@ -60,4 +60,11 @@ export interface Student {
   status: boolean;
   class?: Class;
   level?: Level;
+  placeOfBirth?: string;
+  dateOfBirth?: string;
+  phoneNumber?: string;
+  lastAchievement?: string;
+  totalPages?: number;
+  createdAt: string;
+  updatedAt: string;
 }

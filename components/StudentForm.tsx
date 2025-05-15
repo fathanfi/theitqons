@@ -7,7 +7,15 @@ import { Student } from '@/types/student';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 
-export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; onUpdate?: () => void }) {
+export function StudentForm({ 
+  onSubmit, 
+  initialData, 
+  onCancel 
+}: { 
+  onSubmit: (studentData: Student) => Promise<void>;
+  initialData?: Student | null;
+  onCancel: () => void;
+}) {
   const addStudent = useStore((state) => state.addStudent);
   const updateStudent = useStore((state) => state.updateStudent);
   
@@ -25,7 +33,7 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
   }, [loadClasses, loadLevels]);
 
   const [formData, setFormData] = useState<Partial<Student>>(
-    editStudent || {
+    initialData || {
       name: '',
       gender: 'Ikhwan',
       address: '',
@@ -35,13 +43,42 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
       mother_name: '',
       wali_name: '',
       school_info: '',
-      status: true,
       profileImageUrl: '',
+      status: true,
+      placeOfBirth: '',
+      dateOfBirth: '',
+      phoneNumber: '',
+      lastAchievement: '',
+      totalPages: 0,
       badges: []
     }
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        ...initialData,
+        gender: initialData.gender || 'Ikhwan',
+        address: initialData.address || '',
+        class_id: initialData.class_id || '',
+        level_id: initialData.level_id || '',
+        father_name: initialData.father_name || '',
+        mother_name: initialData.mother_name || '',
+        wali_name: initialData.wali_name || '',
+        school_info: initialData.school_info || '',
+        profileImageUrl: initialData.profileImageUrl || '',
+        status: initialData.status ?? true,
+        placeOfBirth: initialData.placeOfBirth || '',
+        dateOfBirth: initialData.dateOfBirth || '',
+        phoneNumber: initialData.phoneNumber || '',
+        lastAchievement: initialData.lastAchievement || '',
+        totalPages: initialData.totalPages || 0,
+        badges: initialData.badges || []
+      });
+    }
+  }, [initialData]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) {
       showUnauthorized();
@@ -51,19 +88,19 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
     const avatarType = formData.gender === 'Akhwat' ? 'lorelei' : 'avataaars';
     const profileImageUrl = `https://api.dicebear.com/7.x/${avatarType}/svg?seed=${encodeURIComponent(initials)}`;
 
-    if (editStudent) {
-      updateStudent({ ...editStudent, ...formData, profileImageUrl } as Student);
-      onUpdate?.();
-    } else {
-      addStudent({
-        ...formData,
-        id: crypto.randomUUID(),
-        badges: [],
-        profileImageUrl,
-        status: true
-      } as Student);
+    await onSubmit({
+      ...formData,
+      profileImageUrl
+    } as Student);
+
+    if (!initialData) {
       setFormData({
         name: '',
+        placeOfBirth: '',
+        dateOfBirth: '',
+        phoneNumber: '',
+        lastAchievement: '',
+        totalPages: 0,
         gender: 'Ikhwan',
         address: '',
         class_id: '',
@@ -105,7 +142,18 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-semibold mb-6">{editStudent ? 'Edit Student' : 'Add New Student'}</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">
+          {initialData ? 'Edit Student' : 'Add New Student'}
+        </h2>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+        >
+          Cancel
+        </button>
+      </div>
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -122,6 +170,37 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
               Avatar Initials: {getInitials(formData.name)}
             </p>
           )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Place of Birth</label>
+          <input
+            type="text"
+            name="placeOfBirth"
+            value={formData.placeOfBirth}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+          <input
+            type="tel"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            placeholder="e.g., 08123456789"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Gender</label>
@@ -232,6 +311,31 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Last Achievement</label>
+          <input
+            type="text"
+            name="lastAchievement"
+            value={formData.lastAchievement}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Enter student's last achievement"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Total Pages</label>
+          <input
+            type="number"
+            name="totalPages"
+            value={formData.totalPages}
+            onChange={handleChange}
+            min="0"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Enter total pages completed"
+          />
+        </div>
+
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -249,7 +353,7 @@ export function StudentForm({ editStudent, onUpdate }: { editStudent?: Student; 
           type="submit"
           className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          {editStudent ? 'Update Student' : 'Add Student'}
+          {initialData ? 'Update Student' : 'Add Student'}
         </button>
       </div>
     </form>

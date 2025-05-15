@@ -25,7 +25,7 @@ export const useStore = create<StudentStore>((set, get) => ({
 
   loadStudents: async () => {
     try {
-      const { data: students } = await supabase
+      const { data: students, error } = await supabase
         .from('students')
         .select(`
           *,
@@ -35,15 +35,36 @@ export const useStore = create<StudentStore>((set, get) => ({
           redemptions(*)
         `);
 
+      if (error) throw error;
+
       const transformedStudents = students?.map(student => ({
-        ...student,
+        id: student.id,
+        name: student.name,
+        gender: student.gender || 'Ikhwan',
+        address: student.address || '',
+        class_id: student.class_id || '',
+        level_id: student.level_id || '',
+        father_name: student.father_name || '',
+        mother_name: student.mother_name || '',
+        wali_name: student.wali_name || '',
+        school_info: student.school_info || '',
+        profileImageUrl: student.profile_image_url || '',
+        status: student.status ?? true,
+        placeOfBirth: student.place_of_birth || '',
+        dateOfBirth: student.date_of_birth || '',
+        phoneNumber: student.phone_number || '',
+        lastAchievement: student.last_achievement || '',
+        totalPages: student.total_pages || 0,
         badges: student.badges?.map((sb: any) => sb.badge) || [],
-        redemptions: student.redemptions || []
+        redemptions: student.redemptions || [],
+        createdAt: student.created_at,
+        updatedAt: student.updated_at
       })) || [];
 
       set({ students: transformedStudents });
     } catch (error) {
       console.error('Error loading students:', error);
+      throw error;
     }
   },
 
@@ -68,7 +89,6 @@ export const useStore = create<StudentStore>((set, get) => ({
       const { data, error } = await supabase
         .from('students')
         .insert([{
-          id: student.id,
           name: student.name,
           gender: student.gender,
           address: student.address,
@@ -78,18 +98,48 @@ export const useStore = create<StudentStore>((set, get) => ({
           mother_name: student.mother_name,
           wali_name: student.wali_name,
           school_info: student.school_info,
-          status: student.status
+          profile_image_url: student.profileImageUrl,
+          status: student.status,
+          place_of_birth: student.placeOfBirth,
+          date_of_birth: student.dateOfBirth,
+          phone_number: student.phoneNumber,
+          last_achievement: student.lastAchievement,
+          total_pages: student.totalPages || 0
         }])
         .select()
         .single();
 
       if (error) throw error;
 
+      const transformedStudent = {
+        ...data,
+        gender: data.gender || 'Ikhwan',
+        address: data.address || '',
+        class_id: data.class_id || '',
+        level_id: data.level_id || '',
+        father_name: data.father_name || '',
+        mother_name: data.mother_name || '',
+        wali_name: data.wali_name || '',
+        school_info: data.school_info || '',
+        profileImageUrl: data.profile_image_url || '',
+        status: data.status ?? true,
+        placeOfBirth: data.place_of_birth || '',
+        dateOfBirth: data.date_of_birth || '',
+        phoneNumber: data.phone_number || '',
+        lastAchievement: data.last_achievement || '',
+        totalPages: data.total_pages || 0,
+        badges: [],
+        redemptions: [],
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+
       set(state => ({
-        students: [...state.students, { ...data, badges: [], redemptions: [] }]
+        students: [transformedStudent, ...state.students]
       }));
     } catch (error) {
       console.error('Error adding student:', error);
+      throw error;
     }
   },
 
@@ -107,19 +157,46 @@ export const useStore = create<StudentStore>((set, get) => ({
           mother_name: student.mother_name,
           wali_name: student.wali_name,
           school_info: student.school_info,
-          status: student.status
+          profile_image_url: student.profileImageUrl,
+          status: student.status,
+          place_of_birth: student.placeOfBirth,
+          date_of_birth: student.dateOfBirth,
+          phone_number: student.phoneNumber,
+          last_achievement: student.lastAchievement,
+          total_pages: student.totalPages || 0,
+          updated_at: new Date().toISOString()
         })
         .eq('id', student.id);
 
       if (error) throw error;
 
+      const transformedStudent = {
+        ...student,
+        gender: student.gender || 'Ikhwan',
+        address: student.address || '',
+        class_id: student.class_id || '',
+        level_id: student.level_id || '',
+        father_name: student.father_name || '',
+        mother_name: student.mother_name || '',
+        wali_name: student.wali_name || '',
+        school_info: student.school_info || '',
+        profileImageUrl: student.profileImageUrl || '',
+        status: student.status ?? true,
+        placeOfBirth: student.placeOfBirth || '',
+        dateOfBirth: student.dateOfBirth || '',
+        phoneNumber: student.phoneNumber || '',
+        lastAchievement: student.lastAchievement || '',
+        totalPages: student.totalPages || 0
+      };
+
       set(state => ({
         students: state.students.map(s =>
-          s.id === student.id ? student : s
+          s.id === student.id ? transformedStudent : s
         )
       }));
     } catch (error) {
       console.error('Error updating student:', error);
+      throw error;
     }
   },
 

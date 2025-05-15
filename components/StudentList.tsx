@@ -9,20 +9,28 @@ import { supabase } from '@/lib/supabase';
 import React from 'react';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
+import { formatDate } from '@/lib/utils';
+import { 
+  PencilIcon, 
+  TrashIcon, 
+  CakeIcon, 
+  PhoneIcon, 
+  MapPinIcon, 
+  AcademicCapIcon, 
+  ChartBarIcon 
+} from '@heroicons/react/24/outline';
 
 type SortField = 'points' | 'name';
 type SortDirection = 'asc' | 'desc';
 
 export function StudentList() {
-  const students = useStore((state) => state.students);
-  const deleteStudent = useStore((state) => state.deleteStudent);
-  const updateStudent = useStore((state) => state.updateStudent);
+  const { students, loadStudents, deleteStudent, updateStudent } = useStore();
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 25;
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
@@ -37,12 +45,14 @@ export function StudentList() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [showInactive, setShowInactive] = useState(true);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
+    loadStudents();
     loadClasses();
     loadLevels();
     loadStudentPoints();
-  }, [loadClasses, loadLevels]);
+  }, [loadStudents, loadClasses, loadLevels]);
 
   const loadStudentPoints = async () => {
     const { data } = await supabase
@@ -96,7 +106,14 @@ export function StudentList() {
   };
 
   const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = 
+      student.name.toLowerCase().includes(searchLower) ||
+      student.address?.toLowerCase().includes(searchLower) ||
+      student.father_name?.toLowerCase().includes(searchLower) ||
+      student.mother_name?.toLowerCase().includes(searchLower) ||
+      student.wali_name?.toLowerCase().includes(searchLower) ||
+      student.school_info?.toLowerCase().includes(searchLower);
     const matchesClass = !selectedClass || student.class_id === selectedClass;
     const matchesLevel = !selectedLevel || student.level_id === selectedLevel;
     const matchesStatus = showInactive || student.status;
@@ -121,212 +138,275 @@ export function StudentList() {
     return level ? level.name : levelId;
   };
 
-  const handleStatusChange = (student: Student) => {
-    if (!isAdmin) {
+  const handleDelete = async (id: string) => {
+    if (!user || user.role !== 'admin') {
       showUnauthorized();
       return;
     }
-    updateStudent({ ...student, status: !student.status });
+    if (window.confirm('Are you sure you want to delete this student?')) {
+      await deleteStudent(id);
+    }
+  };
+
+  const calculateAge = (dateOfBirth: string) => {
+    if (!dateOfBirth) return '-';
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const handleEdit = (student: Student) => {
+    setEditingStudent(student);
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setEditingStudent(null);
+    setShowForm(false);
+  };
+
+  const handleSubmit = async (studentData: Student) => {
+    if (editingStudent) {
+      await updateStudent({ ...editingStudent, ...studentData });
+    }
+    setEditingStudent(null);
+    setShowForm(false);
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-semibold mb-6">Students List</h2>
-      
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <input
-            type="text"
-            placeholder="Search by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-3 py-2 border rounded-md"
-          />
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 mr-2"
-            />
-            Show Inactive Students
-          </label>
-        </div>
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-semibold mb-6">Students List</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="">All Classes</option>
-            {classes.map(class_ => (
-              <option key={class_.id} value={class_.id}>
-                {class_.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedLevel}
-            onChange={(e) => setSelectedLevel(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            <option value="">All Levels</option>
-            {levels.map(level => (
-              <option key={level.id} value={level.id}>
-                {level.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            onClick={() => toggleSort('name')}
-            className={`px-4 py-2 rounded ${
-              sortField === 'name' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
-            }`}
-          >
-            Sort by Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-          </button>
-          <button
-            onClick={() => toggleSort('points')}
-            className={`px-4 py-2 rounded ${
-              sortField === 'points' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
-            }`}
-          >
-            Sort by Points {sortField === 'points' && (sortDirection === 'asc' ? '↑' : '↓')}
-          </button>
-        </div>
-      </div>
-
-      {editingStudent && (
-        <div className="mb-6">
-          <StudentForm 
-            editStudent={editingStudent} 
-            onUpdate={() => setEditingStudent(null)} 
-          />
-        </div>
-      )}
-      
-      <div className="space-y-4">
-        {currentStudents.map((student) => (
-          <div 
-            key={student.id} 
-            className={`border rounded-lg p-4 ${!student.status ? 'bg-gray-50' : ''}`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold ${
-                  student.gender === 'Akhwat' ? 'bg-pink-200 text-pink-800' : 'bg-blue-200 text-blue-800'
-                }`}>
-                  {getInitials(student.name)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{student.name}</h3>
-                    {!student.status && (
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                        Inactive
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500">Level: {getLevelName(student.level_id)}</p>
-                  <p className="text-sm text-gray-500">
-                    Class: {getClassName(student.class_id)}
-                  </p>
-                  <p className="text-sm text-indigo-600 font-medium">
-                    Earned Points: {studentPoints[student.id] || 0}
-                  </p>
-                  {student.father_name && (
-                    <p className="text-sm text-gray-500">
-                      Father: {student.father_name}
-                    </p>
-                  )}
-                  {student.mother_name && (
-                    <p className="text-sm text-gray-500">
-                      Mother: {student.mother_name}
-                    </p>
-                  )}
-                  {student.wali_name && (
-                    <p className="text-sm text-gray-500">
-                      Wali: {student.wali_name}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setEditingStudent(student)}
-                  className="text-indigo-600 hover:text-indigo-800"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleStatusChange(student)}
-                  className={`text-sm px-2 py-1 rounded ${
-                    student.status 
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                  }`}
-                  disabled={!isAdmin}
-                >
-                  {student.status ? 'Active' : 'Inactive'}
-                </button>
-              </div>
-            </div>
+        <div className="mb-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <input
+              type="text"
+              placeholder="Search by name, address, or parent name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-3 py-2 border rounded-md"
+            />
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 mr-2"
+              />
+              Show Inactive Students
+            </label>
           </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
-          <div className="text-sm text-gray-700 mb-4 sm:mb-0">
-            Showing {startIndex + 1} to {Math.min(endIndex, sortedStudents.length)} of {sortedStudents.length} students
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
             >
-              Previous
+              <option value="">All Classes</option>
+              {classes.map(class_ => (
+                <option key={class_.id} value={class_.id}>
+                  {class_.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedLevel}
+              onChange={(e) => setSelectedLevel(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="">All Levels</option>
+              {levels.map(level => (
+                <option key={level.id} value={level.id}>
+                  {level.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-4">
+            <button
+              onClick={() => toggleSort('name')}
+              className={`px-4 py-2 rounded ${
+                sortField === 'name' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+              }`}
+            >
+              Sort by Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
             </button>
-            <div className="flex items-center gap-1 overflow-x-auto max-w-[300px]">
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => {
-                  // Show first page, last page, current page, and pages around current page
-                  const showAroundCurrent = Math.abs(page - currentPage) <= 1;
-                  const isFirstOrLast = page === 1 || page === totalPages;
-                  return showAroundCurrent || isFirstOrLast;
-                })
-                .map((page, index, array) => (
-                  <React.Fragment key={page}>
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className="px-2 text-gray-500">...</span>
+            <button
+              onClick={() => toggleSort('points')}
+              className={`px-4 py-2 rounded ${
+                sortField === 'points' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+              }`}
+            >
+              Sort by Points {sortField === 'points' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class & Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pages</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Address</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {currentStudents.map((student) => (
+                <tr key={student.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                    {student.dateOfBirth && (
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <CakeIcon className="h-4 w-4 mr-1" />
+                        {formatDate(student.dateOfBirth)} ({calculateAge(student.dateOfBirth)} years)
+                      </div>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div className="flex items-center space-x-2">
+                      {student.class_id && (
+                        <div className="flex items-center">
+                          <AcademicCapIcon className="h-4 w-4 mr-1" />
+                          {getClassName(student.class_id)}
+                        </div>
+                      )}
+                      {student.level_id && (
+                        <div className="flex items-center">
+                          <ChartBarIcon className="h-4 w-4 mr-1" />
+                          {getLevelName(student.level_id)}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.totalPages || 0}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{studentPoints[student.id] || 0}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div className="space-y-1">
+                      {student.phoneNumber && (
+                        <div className="flex items-center">
+                          <PhoneIcon className="h-4 w-4 mr-1 text-gray-500" />
+                          <a
+                            href={`https://wa.me/${student.phoneNumber.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            {student.phoneNumber}
+                          </a>
+                        </div>
+                      )}
+                      {student.address && (
+                        <div className="flex items-start">
+                          <MapPinIcon className="h-4 w-4 mr-1 text-gray-500 mt-0.5" />
+                          <span className="text-gray-600">{student.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => setCurrentPage(page)}
-                      className={`min-w-[32px] px-3 py-1 rounded ${
-                        currentPage === page
-                          ? 'bg-indigo-600 text-white'
-                          : 'border hover:bg-gray-50'
-                      }`}
+                      onClick={() => handleEdit(student)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
                     >
-                      {page}
+                      <PencilIcon className="h-5 w-5" />
                     </button>
-                  </React.Fragment>
-                ))}
+                    <button
+                      onClick={() => handleDelete(student.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
+            <div className="text-sm text-gray-700 mb-4 sm:mb-0">
+              Showing {startIndex + 1} to {Math.min(endIndex, sortedStudents.length)} of {sortedStudents.length} students
             </div>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Next
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1 overflow-x-auto max-w-[300px]">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    const showAroundCurrent = Math.abs(page - currentPage) <= 1;
+                    const isFirstOrLast = page === 1 || page === totalPages;
+                    return showAroundCurrent || isFirstOrLast;
+                  })
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        className={`min-w-[32px] px-3 py-1 rounded ${
+                          currentPage === page
+                            ? 'bg-indigo-600 text-white'
+                            : 'border hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </React.Fragment>
+                  ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Edit Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">
+                {editingStudent ? 'Edit Student' : 'Add New Student'}
+              </h3>
+              <button
+                onClick={handleCancel}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <StudentForm
+              onSubmit={handleSubmit}
+              initialData={editingStudent}
+              onCancel={handleCancel}
+            />
           </div>
         </div>
       )}
