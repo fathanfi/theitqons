@@ -12,9 +12,10 @@ export interface ItqonExam {
   studentId: string;
   teacherId: string;
   examDate: string;
-  tahfidzScore?: 'Outstanding' | 'Very Good' | 'Good' | 'Need Improvement' | 'Bad' | 'Very Bad';
-  tajwidScore?: 'Outstanding' | 'Very Good' | 'Good' | 'Need Improvement' | 'Bad' | 'Very Bad';
-  status?: 'Scheduled' | 'Passed' | 'Failed';
+  tahfidzScore?: string;
+  tajwidScore?: string;
+  examNotes?: string;
+  status: 'Scheduled' | 'Passed' | 'Failed';
   createdAt: string;
   updatedAt: string;
   exam?: Exam;

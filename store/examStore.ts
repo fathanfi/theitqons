@@ -10,7 +10,7 @@ interface ExamStore {
   addExam: (exam: Omit<Exam, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateExam: (exam: Exam) => Promise<void>;
   deleteExam: (id: string) => Promise<void>;
-  addItqonExam: (exam: Omit<ItqonExam, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addItqonExam: (exam: Omit<ItqonExam, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ItqonExam>;
   updateItqonExam: (exam: ItqonExam) => Promise<void>;
   deleteItqonExam: (id: string) => Promise<void>;
 }
@@ -119,6 +119,7 @@ export const useExamStore = create<ExamStore>((set) => ({
           exam_date: exam.examDate,
           tahfidz_score: exam.tahfidzScore,
           tajwid_score: exam.tajwidScore,
+          exam_notes: exam.examNotes,
           status: exam.status
         }])
         .select(`
@@ -137,27 +138,46 @@ export const useExamStore = create<ExamStore>((set) => ({
         const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleString('en-US', { month: 'long' });
         const year = date.getFullYear();
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `${day} ${month} ${year} at ${hours}:${minutes}`;
+        return `${day} ${month} ${year}`;
       };
 
       // Log the activity
       await supabase.from('activity_logs').insert({
         student_id: exam.studentId,
         action_type: 'itqon_exam_created',
-        message: `Itqon Exam created for ${examData.student.name} on ${examData.exam.name} at ${formatDate(exam.examDate)}. Currently status is ${exam.status}`,
+        message: `Itqon Exam created - ${examData.student.name} on ${examData.exam.name} at ${formatDate(exam.examDate)}. Status: ${exam.status}`,
         related_id: examData.id,
         metadata: {
           exam_date: exam.examDate,
           status: exam.status,
-          exam_name: examData.exam.name
+          exam_name: examData.exam.name,
+          exam_notes: exam.examNotes
         }
       });
 
+      // Add the new exam to the state with all required fields
+      const newExam = {
+        id: examData.id,
+        examId: examData.exam_id,
+        studentId: examData.student_id,
+        teacherId: examData.teacher_id,
+        examDate: examData.exam_date,
+        tahfidzScore: examData.tahfidz_score,
+        tajwidScore: examData.tajwid_score,
+        examNotes: examData.exam_notes,
+        status: examData.status,
+        createdAt: examData.created_at,
+        updatedAt: examData.updated_at,
+        exam: examData.exam,
+        student: examData.student,
+        teacher: examData.teacher
+      };
+
       set((state) => ({
-        itqonExams: [examData, ...state.itqonExams]
+        itqonExams: [newExam, ...state.itqonExams]
       }));
+
+      return newExam;
     } catch (error) {
       console.error('Error adding exam:', error);
       throw error;
@@ -175,6 +195,7 @@ export const useExamStore = create<ExamStore>((set) => ({
           exam_date: exam.examDate,
           tahfidz_score: exam.tahfidzScore,
           tajwid_score: exam.tajwidScore,
+          exam_notes: exam.examNotes,
           status: exam.status,
           updated_at: new Date().toISOString()
         })
@@ -195,21 +216,20 @@ export const useExamStore = create<ExamStore>((set) => ({
         const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleString('en-US', { month: 'long' });
         const year = date.getFullYear();
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `${day} ${month} ${year} at ${hours}:${minutes}`;
+        return `${day} ${month} ${year}`;
       };
 
       // Log the activity
       await supabase.from('activity_logs').insert({
         student_id: exam.studentId,
         action_type: 'itqon_exam_updated',
-        message: `Itqon Exam updated for ${examData.student.name} on ${examData.exam.name} at ${formatDate(exam.examDate)}. Currently status is ${exam.status}`,
+        message: `Itqon Exam updated - ${examData.student.name} on ${examData.exam.name} at ${formatDate(exam.examDate)}. Status: ${exam.status}`,
         related_id: exam.id,
         metadata: {
           exam_date: exam.examDate,
           status: exam.status,
           exam_name: examData.exam.name,
+          exam_notes: exam.examNotes,
           changes: {
             tahfidz_score: exam.tahfidzScore,
             tajwid_score: exam.tajwidScore
@@ -255,16 +275,14 @@ export const useExamStore = create<ExamStore>((set) => ({
         const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleString('en-US', { month: 'long' });
         const year = date.getFullYear();
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `${day} ${month} ${year} at ${hours}:${minutes}`;
+        return `${day} ${month} ${year}`;
       };
 
       // Log the activity
       await supabase.from('activity_logs').insert({
         student_id: exam.student_id,
         action_type: 'itqon_exam_deleted',
-        message: `Itqon Exam deleted for ${exam.student.name} on ${exam.exam.name} at ${formatDate(exam.exam_date)}. Last status was ${exam.status}`,
+        message: `Itqon Exam deleted - ${exam.student.name} on ${exam.exam.name} at ${formatDate(exam.exam_date)}. Status: ${exam.status}`,
         related_id: exam.id,
         metadata: {
           exam_date: exam.exam_date,

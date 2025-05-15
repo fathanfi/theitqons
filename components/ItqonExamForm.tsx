@@ -48,20 +48,23 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
   const [formData, setFormData] = useState<Partial<ItqonExam>>(
     editExam || {
       studentId: '',
-      examId: '',
-      examDate: new Date().toISOString().slice(0, 16),
-      status: 'Scheduled',
-      tahfidzScore: undefined,
-      tajwidScore: undefined,
-      teacherId: ''
+      examId: '08c8f7c4-0f23-4aec-9a70-d951fa6da9f6', // Default to Itqon 1
+      examDate: '2024-11-01', // Remove time, just date
+      status: 'Passed',
+      tahfidzScore: 'Good',
+      tajwidScore: 'Good',
+      examNotes: '',
+      teacherId: '01c32d4c-a1a9-46ba-a6ad-f27c3dbfee7f' // Default examiner
     }
   );
 
   useEffect(() => {
     if (editExam) {
+      // Ensure the date is in the correct format for date input
+      const examDate = editExam.examDate ? new Date(editExam.examDate).toISOString().split('T')[0] : '';
       setFormData({
         ...editExam,
-        examDate: editExam.examDate.slice(0, 16)
+        examDate
       });
     }
   }, [editExam]);
@@ -73,29 +76,37 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
       return;
     }
 
+    // Set time to start of day (00:00:00)
+    const localDate = new Date(formData.examDate || '');
+    localDate.setHours(0, 0, 0, 0);
+    const utcDate = new Date(localDate.getTime() - (localDate.getTimezoneOffset() * 60000));
+
     const submitData = {
       ...formData,
-      status: formData.status || 'Scheduled'
+      status: formData.status || 'Scheduled',
+      examDate: utcDate.toISOString()
     };
 
     if (editExam) {
       await updateItqonExam({ ...editExam, ...submitData } as ItqonExam);
       onUpdate?.();
     } else {
-      await addItqonExam(submitData as Omit<ItqonExam, 'id' | 'createdAt' | 'updatedAt'>);
+      const newExam = await addItqonExam(submitData as Omit<ItqonExam, 'id' | 'createdAt' | 'updatedAt'>);
+      // Reset form with default values
       setFormData({
         studentId: '',
-        examId: '',
-        examDate: new Date().toISOString().slice(0, 16),
-        status: 'Scheduled',
-        tahfidzScore: undefined,
-        tajwidScore: undefined,
-        teacherId: ''
+        examId: 'itqon-1', // Reset to default exam
+        examDate: '2024-11-01', // Reset to default date
+        status: 'Passed',
+        tahfidzScore: 'Good',
+        tajwidScore: 'Good',
+        examNotes: '',
+        teacherId: '01c32d4c-a1a9-46ba-a6ad-f27c3dbfee7f' // Reset to default examiner
       });
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -132,9 +143,9 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
       </div>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Date and Time</label>
+          <label className="block text-sm font-medium text-gray-700">Date</label>
           <input
-            type="datetime-local"
+            type="date"
             name="examDate"
             value={formData.examDate}
             onChange={handleChange}
@@ -234,6 +245,18 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Exam Notes</label>
+          <textarea
+            name="examNotes"
+            value={formData.examNotes}
+            onChange={handleChange}
+            rows={4}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Add any notes about the exam..."
+          />
         </div>
 
         <button
