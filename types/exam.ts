@@ -14,7 +14,7 @@ export interface ItqonExam {
   examDate: string;
   tahfidzScore?: 'Outstanding' | 'Very Good' | 'Good' | 'Need Improvement' | 'Bad' | 'Very Bad';
   tajwidScore?: 'Outstanding' | 'Very Good' | 'Good' | 'Need Improvement' | 'Bad' | 'Very Bad';
-  status?: 'Passed' | 'Failed' | 'Re-schedule';
+  status?: 'Scheduled' | 'Passed' | 'Failed';
   createdAt: string;
   updatedAt: string;
   exam?: Exam;

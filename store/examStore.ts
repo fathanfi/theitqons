@@ -131,11 +131,22 @@ export const useExamStore = create<ExamStore>((set) => ({
 
       if (error) throw error;
 
+      // Format date for activity log
+      const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'long' });
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${day} ${month} ${year} at ${hours}:${minutes}`;
+      };
+
       // Log the activity
       await supabase.from('activity_logs').insert({
         student_id: exam.studentId,
         action_type: 'itqon_exam_created',
-        message: `Itqon Exam created for ${examData.student.name} on ${examData.exam.name} at ${exam.examDate}. Currently status is ${exam.status}`,
+        message: `Itqon Exam created for ${examData.student.name} on ${examData.exam.name} at ${formatDate(exam.examDate)}. Currently status is ${exam.status}`,
         related_id: examData.id,
         metadata: {
           exam_date: exam.examDate,
@@ -178,11 +189,22 @@ export const useExamStore = create<ExamStore>((set) => ({
 
       if (error) throw error;
 
+      // Format date for activity log
+      const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'long' });
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${day} ${month} ${year} at ${hours}:${minutes}`;
+      };
+
       // Log the activity
       await supabase.from('activity_logs').insert({
         student_id: exam.studentId,
         action_type: 'itqon_exam_updated',
-        message: `Itqon Exam updated for ${examData.student.name} on ${examData.exam.name} at ${exam.examDate}. Currently status is ${exam.status}`,
+        message: `Itqon Exam updated for ${examData.student.name} on ${examData.exam.name} at ${formatDate(exam.examDate)}. Currently status is ${exam.status}`,
         related_id: exam.id,
         metadata: {
           exam_date: exam.examDate,
@@ -227,11 +249,22 @@ export const useExamStore = create<ExamStore>((set) => ({
 
       if (error) throw error;
 
+      // Format date for activity log
+      const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'long' });
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${day} ${month} ${year} at ${hours}:${minutes}`;
+      };
+
       // Log the activity
       await supabase.from('activity_logs').insert({
         student_id: exam.student_id,
         action_type: 'itqon_exam_deleted',
-        message: `Itqon Exam deleted for ${exam.student.name} on ${exam.exam.name} at ${exam.exam_date}. Last status was ${exam.status}`,
+        message: `Itqon Exam deleted for ${exam.student.name} on ${exam.exam.name} at ${formatDate(exam.exam_date)}. Last status was ${exam.status}`,
         related_id: exam.id,
         metadata: {
           exam_date: exam.exam_date,

@@ -32,11 +32,11 @@ export default function StoryTimelinePage() {
   }));
 
   const filteredActions = selectedSession
-    ? storyActions.filter(action => action.story?.sessionStoryId === selectedSession)
+    ? storyActions.filter(action => action.story?.session_story?.id === selectedSession)
     : storyActions;
 
   const sortedActions = [...filteredActions].sort((a, b) => 
-    new Date(a.publishDate).getTime() - new Date(b.publishDate).getTime()
+    new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
   );
 
   return (

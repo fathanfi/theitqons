@@ -27,10 +27,14 @@ export interface Story {
 export interface StoryAction {
   id: string;
   storyId: string;
-  sessionId: string;
-  studentId: string;
-  actionType: string;
-  points: number;
+  actionName: string;
+  actionSummary: string;
+  actionDetails: string;
+  participants: string[];
+  imageUrl: string;
+  docUrl: string;
+  publishDate: string;
+  status: boolean;
   createdAt?: string;
   updatedAt?: string;
   story?: {

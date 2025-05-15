@@ -28,6 +28,7 @@ export function DashboardStats() {
 
   const [splashActivity, setSplashActivity] = useState<ActivityLogType | null>(null);
   const lastActivityIdRef = useRef<string | null>(null);
+  const [activityCount, setActivityCount] = useState(0);
 
   // Load initial data
   useEffect(() => {
@@ -45,32 +46,48 @@ export function DashboardStats() {
 
   // Set up real-time subscription for activity logs
   useEffect(() => {
-    const subscription = supabase
-      .channel('activity_logs_channel')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'activity_logs'
-      }, (payload) => {
-        loadLogs();
-        if (payload.new && payload.new.id !== lastActivityIdRef.current) {
-          setSplashActivity(payload.new as ActivityLogType);
-          lastActivityIdRef.current = payload.new.id;
+    console.log('Setting up realtime subscription...');
+    
+    const channel = supabase
+      .channel('activity_logs_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',  // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'activity_logs'
+        },
+        (payload) => {
+          console.log('Realtime payload received:', payload);
+          if (payload.eventType === 'INSERT') {
+            loadLogs();
+            if (payload.new && payload.new.id !== lastActivityIdRef.current) {
+              setSplashActivity(payload.new as ActivityLogType);
+              lastActivityIdRef.current = payload.new.id;
+            }
+            setActivityCount(prev => prev + 1);
+          }
         }
-      })
-      .subscribe();
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
+
+    // Initial count fetch
+    const fetchInitialCount = async () => {
+      const { count } = await supabase
+        .from('activity_logs')
+        .select('*', { count: 'exact', head: true });
+      console.log('Initial activity count:', count);
+      setActivityCount(count || 0);
+    };
+
+    fetchInitialCount();
 
     return () => {
-      subscription.unsubscribe();
+      console.log('Cleaning up subscription...');
+      supabase.removeChannel(channel);
     };
-  }, [loadLogs]);
-
-  // Set up polling for activity logs
-  useEffect(() => {
-    const pollInterval = setInterval(async () => {
-      await loadLogs();
-    }, 5000);
-    return () => clearInterval(pollInterval);
   }, [loadLogs]);
 
   const handleRefresh = async () => {
@@ -101,6 +118,24 @@ export function DashboardStats() {
     { href: '/school-settings', label: 'School Settings', icon: '⚙️' },
     { href: '/school-information', label: 'School Information', icon: '🏫' }
   ];
+
+  const formatActivityMessage = (activity: ActivityLogType) => {
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = date.toLocaleString('en-US', { month: 'long' });
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${day} ${month} ${year} at ${hours}:${minutes}`;
+    };
+
+    if (activity.action_type === 'itqon_exam_created' || activity.action_type === 'itqon_exam_updated') {
+      const metadata = activity.metadata || {};
+      return `Itqon Exam created for ${metadata.student_name || 'Unknown Student'} on ${metadata.exam_name || 'Unknown Exam'} at ${formatDate(activity.created_at)}. Currently status is ${metadata.status || 'Scheduled'}`;
+    }
+    return activity.message;
+  };
 
   return (
     <div className="space-y-8">
@@ -163,6 +198,11 @@ export function DashboardStats() {
           </button>
         </div>
         <ActivityLog />
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h3 className="text-lg font-semibold text-gray-700">Total Activities</h3>
+        <p className="text-3xl font-bold text-indigo-600">{activityCount}</p>
       </div>
     </div>
   );

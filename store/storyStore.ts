@@ -229,15 +229,23 @@ export const useStoryStore = create<StoryStore>((set, get) => ({
     if (data) {
       set({
         storyActions: data.map(action => ({
-          ...action,
+          id: action.id,
           storyId: action.story_id,
           actionName: action.action_name,
           actionSummary: action.action_summary,
           actionDetails: action.action_details,
+          participants: action.participants,
           imageUrl: action.image_url,
           docUrl: action.doc_url,
           publishDate: action.publish_date,
-          story: action.story
+          status: action.status,
+          createdAt: action.created_at,
+          updatedAt: action.updated_at,
+          story: action.story ? {
+            ...action.story,
+            sessionStoryId: action.story.session_story_id,
+            publishDate: action.story.publish_date
+          } : undefined
         }))
       });
     }
@@ -268,23 +276,28 @@ export const useStoryStore = create<StoryStore>((set, get) => ({
 
     if (data && !error) {
       const newAction = {
-        ...data,
+        id: data.id,
         storyId: data.story_id,
         actionName: data.action_name,
         actionSummary: data.action_summary,
         actionDetails: data.action_details,
+        participants: data.participants,
         imageUrl: data.image_url,
         docUrl: data.doc_url,
         publishDate: data.publish_date,
-        story: data.story
+        status: data.status,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        story: data.story ? {
+          ...data.story,
+          sessionStoryId: data.story.session_story_id,
+          publishDate: data.story.publish_date
+        } : undefined
       };
 
       set(state => ({
         storyActions: [newAction, ...state.storyActions]
       }));
-
-      // Reload actions to ensure we have the latest data
-      await get().loadStoryActions();
     }
   },
 

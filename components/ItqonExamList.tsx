@@ -20,13 +20,13 @@ export function ItqonExamList() {
   }, [loadItqonExams]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'long' });
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day} ${month} ${year} at ${hours}:${minutes}`;
   };
 
   const handleDelete = (examId: string) => {
@@ -89,7 +89,7 @@ export function ItqonExamList() {
                   <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     exam.status === 'Passed' ? 'bg-green-100 text-green-800' :
                     exam.status === 'Failed' ? 'bg-red-100 text-red-800' :
-                    exam.status === 'Re-schedule' ? 'bg-yellow-100 text-yellow-800' :
+                    exam.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
                     {exam.status || 'Pending'}

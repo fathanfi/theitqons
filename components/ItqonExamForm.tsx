@@ -19,9 +19,9 @@ const SCORE_OPTIONS = [
 ] as const;
 
 const STATUS_OPTIONS = [
+  'Scheduled',
   'Passed',
-  'Failed',
-  'Re-schedule'
+  'Failed'
 ] as const;
 
 export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; onUpdate?: () => void }) {
@@ -47,15 +47,24 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
 
   const [formData, setFormData] = useState<Partial<ItqonExam>>(
     editExam || {
-      examDate: new Date().toISOString().slice(0, 16),
-      examId: '',
       studentId: '',
-      teacherId: '',
+      examId: '',
+      examDate: new Date().toISOString().slice(0, 16),
+      status: 'Scheduled',
       tahfidzScore: undefined,
       tajwidScore: undefined,
-      status: undefined
+      teacherId: ''
     }
   );
+
+  useEffect(() => {
+    if (editExam) {
+      setFormData({
+        ...editExam,
+        examDate: editExam.examDate.slice(0, 16)
+      });
+    }
+  }, [editExam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,19 +72,25 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
       showUnauthorized();
       return;
     }
+
+    const submitData = {
+      ...formData,
+      status: formData.status || 'Scheduled'
+    };
+
     if (editExam) {
-      await updateItqonExam({ ...editExam, ...formData } as ItqonExam);
+      await updateItqonExam({ ...editExam, ...submitData } as ItqonExam);
       onUpdate?.();
     } else {
-      await addItqonExam(formData as Omit<ItqonExam, 'id' | 'createdAt' | 'updatedAt'>);
+      await addItqonExam(submitData as Omit<ItqonExam, 'id' | 'createdAt' | 'updatedAt'>);
       setFormData({
-        examDate: new Date().toISOString().slice(0, 16),
-        examId: '',
         studentId: '',
-        teacherId: '',
+        examId: '',
+        examDate: new Date().toISOString().slice(0, 16),
+        status: 'Scheduled',
         tahfidzScore: undefined,
         tajwidScore: undefined,
-        status: undefined
+        teacherId: ''
       });
     }
   };
@@ -101,9 +116,20 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-semibold mb-6">
-        {editExam ? 'Edit Itqon Exam' : 'Add New Itqon Exam'}
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">
+          {editExam ? 'Edit Itqon Exam' : 'Add New Itqon Exam'}
+        </h2>
+        {editExam && (
+          <button
+            type="button"
+            onClick={() => onUpdate?.()}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Date and Time</label>

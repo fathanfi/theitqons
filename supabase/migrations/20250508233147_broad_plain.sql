@@ -44,7 +44,7 @@ CREATE TABLE itqon_exams (
   exam_date timestamptz NOT NULL,
   tahfidz_score text CHECK (tahfidz_score IN ('Outstanding', 'Very Good', 'Good', 'Need Improvement', 'Bad', 'Very Bad')),
   tajwid_score text CHECK (tajwid_score IN ('Outstanding', 'Very Good', 'Good', 'Need Improvement', 'Bad', 'Very Bad')),
-  status text CHECK (status IN ('Passed', 'Failed', 'Re-schedule')),
+  status text CHECK (status IN ('Scheduled', 'Passed', 'Failed')),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
