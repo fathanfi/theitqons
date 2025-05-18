@@ -50,6 +50,11 @@ export function StudentForm({
       phoneNumber: '',
       lastAchievement: '',
       totalPages: 0,
+      registration_number: '',
+      national_id: '',
+      family_id: '',
+      joined_date: '',
+      notes: '',
       badges: []
     }
   );
@@ -73,6 +78,11 @@ export function StudentForm({
         phoneNumber: initialData.phoneNumber || '',
         lastAchievement: initialData.lastAchievement || '',
         totalPages: initialData.totalPages || 0,
+        registration_number: initialData.registration_number || '',
+        national_id: initialData.national_id || '',
+        family_id: initialData.family_id || '',
+        joined_date: initialData.joined_date || '',
+        notes: initialData.notes || '',
         badges: initialData.badges || []
       });
     }
@@ -111,6 +121,11 @@ export function StudentForm({
         school_info: '',
         status: true,
         profileImageUrl: '',
+        registration_number: '',
+        national_id: '',
+        family_id: '',
+        joined_date: '',
+        notes: '',
         badges: []
       });
     }
@@ -333,6 +348,65 @@ export function StudentForm({
             min="0"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             placeholder="Enter total pages completed"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">NISP</label>
+          <input
+            type="text"
+            name="registration_number"
+            value={formData.registration_number}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Enter registration number"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">NIK</label>
+          <input
+            type="text"
+            name="national_id"
+            value={formData.national_id}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Enter national ID number"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">No. KK</label>
+          <input
+            type="text"
+            name="family_id"
+            value={formData.family_id}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Enter family ID number"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Joined Date</label>
+          <input
+            type="date"
+            name="joined_date"
+            value={formData.joined_date}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Notes</label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={3}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="Enter any additional notes"
           />
         </div>
 

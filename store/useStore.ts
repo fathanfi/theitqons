@@ -55,6 +55,11 @@ export const useStore = create<StudentStore>((set, get) => ({
         phoneNumber: student.phone_number || '',
         lastAchievement: student.last_achievement || '',
         totalPages: student.total_pages || 0,
+        registration_number: student.registration_number || '',
+        national_id: student.national_id || '',
+        family_id: student.family_id || '',
+        joined_date: student.joined_date || '',
+        notes: student.notes || '',
         badges: student.badges?.map((sb: any) => sb.badge) || [],
         redemptions: student.redemptions || [],
         createdAt: student.created_at,
@@ -104,7 +109,12 @@ export const useStore = create<StudentStore>((set, get) => ({
           date_of_birth: student.dateOfBirth,
           phone_number: student.phoneNumber,
           last_achievement: student.lastAchievement,
-          total_pages: student.totalPages || 0
+          total_pages: student.totalPages || 0,
+          registration_number: student.registration_number,
+          national_id: student.national_id,
+          family_id: student.family_id,
+          joined_date: student.joined_date,
+          notes: student.notes
         }])
         .select()
         .single();
@@ -128,6 +138,11 @@ export const useStore = create<StudentStore>((set, get) => ({
         phoneNumber: data.phone_number || '',
         lastAchievement: data.last_achievement || '',
         totalPages: data.total_pages || 0,
+        registration_number: data.registration_number || '',
+        national_id: data.national_id || '',
+        family_id: data.family_id || '',
+        joined_date: data.joined_date || '',
+        notes: data.notes || '',
         badges: [],
         redemptions: [],
         createdAt: data.created_at,
@@ -164,6 +179,11 @@ export const useStore = create<StudentStore>((set, get) => ({
           phone_number: student.phoneNumber,
           last_achievement: student.lastAchievement,
           total_pages: student.totalPages || 0,
+          registration_number: student.registration_number,
+          national_id: student.national_id,
+          family_id: student.family_id,
+          joined_date: student.joined_date,
+          notes: student.notes,
           updated_at: new Date().toISOString()
         })
         .eq('id', student.id);
@@ -186,7 +206,12 @@ export const useStore = create<StudentStore>((set, get) => ({
         dateOfBirth: student.dateOfBirth || '',
         phoneNumber: student.phoneNumber || '',
         lastAchievement: student.lastAchievement || '',
-        totalPages: student.totalPages || 0
+        totalPages: student.totalPages || 0,
+        registration_number: student.registration_number || '',
+        national_id: student.national_id || '',
+        family_id: student.family_id || '',
+        joined_date: student.joined_date || '',
+        notes: student.notes || ''
       };
 
       set(state => ({

@@ -12,10 +12,22 @@ import Link from 'next/link';
 import { ActivitySplash } from './ActivitySplash';
 import { ActivityLog as ActivityLogType } from '@/types/activity';
 
+const shimmer = `
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+`;
+
 export function DashboardStats() {
   const { currentAcademicYear } = useSession();
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
+  const [isLoading, setIsLoading] = useState(true);
   
   const teachers = useSchoolStore((state) => state.teachers);
   const groups = useSchoolStore((state) => state.groups);
@@ -32,10 +44,20 @@ export function DashboardStats() {
 
   // Load initial data
   useEffect(() => {
-    loadStudents();
-    loadTeachers();
-    loadStudentPoints();
-    loadLogs();
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          loadStudents(),
+          loadTeachers(),
+          loadStudentPoints(),
+          loadLogs()
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
   }, [loadStudents, loadTeachers, loadStudentPoints, loadLogs]);
 
   useEffect(() => {
@@ -136,6 +158,84 @@ export function DashboardStats() {
     }
     return activity.message;
   };
+
+  if (isLoading) {
+    return (
+      <>
+        <style>{shimmer}</style>
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="bg-white p-6 rounded-lg shadow-lg overflow-hidden relative">
+                <div className="h-8 w-8 bg-gray-200 rounded mb-2 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                </div>
+                <div className="h-6 w-16 bg-gray-200 rounded mb-2 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                </div>
+                <div className="h-4 w-24 bg-gray-200 rounded relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-lg overflow-hidden relative">
+            <div className="h-8 w-48 bg-gray-200 rounded mb-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {[...Array(18)].map((_, index) => (
+                <div key={index} className="flex flex-col items-center p-4">
+                  <div className="h-8 w-8 bg-gray-200 rounded-full mb-2 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                  </div>
+                  <div className="h-4 w-20 bg-gray-200 rounded relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-lg overflow-hidden relative">
+            <div className="flex justify-between items-center mb-4">
+              <div className="h-8 w-48 bg-gray-200 rounded relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+              </div>
+              <div className="h-8 w-24 bg-gray-200 rounded relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="h-6 w-32 bg-gray-200 rounded mb-2 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                  </div>
+                  <div className="h-4 w-48 bg-gray-200 rounded mb-2 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                  </div>
+                  <div className="h-4 w-24 bg-gray-200 rounded relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-lg overflow-hidden relative">
+            <div className="h-6 w-32 bg-gray-200 rounded mb-2 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+            </div>
+            <div className="h-8 w-16 bg-gray-200 rounded relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="space-y-8">

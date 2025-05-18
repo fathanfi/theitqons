@@ -65,6 +65,11 @@ export interface Student {
   phoneNumber?: string;
   lastAchievement?: string;
   totalPages?: number;
+  registration_number?: string;
+  national_id?: string;
+  family_id?: string;
+  joined_date?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
