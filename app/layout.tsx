@@ -8,6 +8,7 @@ import { StoreInitializer } from '@/components/StoreInitializer';
 import { Footer } from '@/components/Footer';
 import { RouteLoader } from '@/components/RouteLoader';
 import { UnauthorizedProvider } from '@/contexts/UnauthorizedContext';
+import FloatingChatButton from '@/components/FloatingChatButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -47,6 +48,7 @@ export default function RootLayout({
             </SessionProvider>
           </AuthProvider>
         </UnauthorizedProvider>
+        <FloatingChatButton />
       </body>
     </html>
   );
