@@ -433,12 +433,27 @@ ORDER BY category, gender;
       .replace(/\bWHERE\s+JOIN/gi, 'WHERE') // Fix mangled WHERE JOIN
       .replace(/\bGROUP\s+JOIN/gi, 'GROUP BY') // Fix mangled GROUP JOIN
       .replace(/\bUNION\s+JOIN/gi, 'UNION ALL') // Fix mangled UNION JOIN
-      .replace(/\bSELECT\s+.*?s\./gi, 'SELECT') // Remove table aliases
-      .replace(/\bFROM\s+.*?s\./gi, 'FROM') // Remove table aliases
-      .replace(/\bWHERE\s+.*?s\./gi, 'WHERE') // Remove table aliases
-      .replace(/\bGROUP\s+.*?s\./gi, 'GROUP BY') // Remove table aliases
-      .replace(/\bJOIN\s+.*?s\./gi, 'JOIN') // Remove table aliases
-      .replace(/\bON\s+.*?s\./gi, 'ON'); // Remove table aliases
+      // Fix specific badge query patterns
+      .replace(/SELECT.*?badge.*?student.*?/i, 'SELECT b.icon, b.description FROM badges b JOIN student_badges sb ON b.id = sb.badge_id JOIN students s ON s.id = sb.student_id WHERE s.name ILIKE')
+      .replace(/SELECT.*?student.*?badge.*?/i, 'SELECT b.icon, b.description FROM badges b JOIN student_badges sb ON b.id = sb.badge_id JOIN students s ON s.id = sb.student_id WHERE s.name ILIKE')
+      // Fix specific halaqoh/group query patterns
+      .replace(/SELECT.*?(?:halaqoh|kelompok|group).*?(?:guru|teacher).*?/i, 'SELECT s.id, s.name, s.gender, s.status, s.total_pages, s.registration_number, s.national_id, s.family_id, s.joined_date, s.notes, s.class_id, s.level_id, s.father_name, s.mother_name, s.wali_name, s.school_info, s.place_of_birth, s.date_of_birth, s.phone_number, s.last_achievement, g.name as group_name, g.description as group_description, t.name as teacher_name FROM students s JOIN group_students gs ON s.id = gs.student_id JOIN groups g ON gs.group_id = g.id JOIN teachers t ON g.teacher_id = t.id WHERE t.name ILIKE')
+      .replace(/SELECT.*?(?:guru|teacher).*?(?:halaqoh|kelompok|group).*?/i, 'SELECT s.id, s.name, s.gender, s.status, s.total_pages, s.registration_number, s.national_id, s.family_id, s.joined_date, s.notes, s.class_id, s.level_id, s.father_name, s.mother_name, s.wali_name, s.school_info, s.place_of_birth, s.date_of_birth, s.phone_number, s.last_achievement, g.name as group_name, g.description as group_description, t.name as teacher_name FROM students s JOIN group_students gs ON s.id = gs.student_id JOIN groups g ON gs.group_id = g.id JOIN teachers t ON g.teacher_id = t.id WHERE t.name ILIKE')
+      .replace(/SELECT.*?(?:halaqoh|kelompok|group).*?(?:name|nama).*?/i, 'SELECT s.id, s.name, s.gender, s.status, s.total_pages, s.registration_number, s.national_id, s.family_id, s.joined_date, s.notes, s.class_id, s.level_id, s.father_name, s.mother_name, s.wali_name, s.school_info, s.place_of_birth, s.date_of_birth, s.phone_number, s.last_achievement, g.name as group_name, g.description as group_description, t.name as teacher_name, COUNT(*) OVER() as total_students FROM students s JOIN group_students gs ON s.id = gs.student_id JOIN groups g ON gs.group_id = g.id JOIN teachers t ON g.teacher_id = t.id WHERE g.name ILIKE')
+      .replace(/SELECT.*?(?:name|nama).*?(?:halaqoh|kelompok|group).*?/i, 'SELECT s.id, s.name, s.gender, s.status, s.total_pages, s.registration_number, s.national_id, s.family_id, s.joined_date, s.notes, s.class_id, s.level_id, s.father_name, s.mother_name, s.wali_name, s.school_info, s.place_of_birth, s.date_of_birth, s.phone_number, s.last_achievement, g.name as group_name, g.description as group_description, t.name as teacher_name, COUNT(*) OVER() as total_students FROM students s JOIN group_students gs ON s.id = gs.student_id JOIN groups g ON gs.group_id = g.id JOIN teachers t ON g.teacher_id = t.id WHERE g.name ILIKE')
+      // Remove any remaining table aliases that might cause issues
+      .replace(/\b[a-z]+\.[a-z]+\.[a-z]+\b/gi, '') // Remove nested table references
+      .replace(/\b[a-z]+\.[a-z]+\b/gi, '') // Remove simple table references
+      // Clean up any remaining issues
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .replace(/\s*,\s*/g, ', ') // Normalize comma spacing
+      .replace(/\s*=\s*/g, ' = ') // Normalize equals spacing
+      .replace(/\s*LIKE\s*/gi, ' ILIKE ') // Normalize LIKE to ILIKE
+      .replace(/\s*ILIKE\s*/gi, ' ILIKE ') // Normalize ILIKE spacing
+      // Fix ILIKE patterns
+      .replace(/ILIKE\s+'%([^%]+)'/gi, "ILIKE '%$1%'") // Add missing closing % in ILIKE patterns
+      .replace(/ILIKE\s+'([^%]+)%'/gi, "ILIKE '%$1%'") // Add missing opening % in ILIKE patterns
+      .replace(/ILIKE\s+'([^%]+)'/gi, "ILIKE '%$1%'"); // Add both % if missing in ILIKE patterns
 
     // Validate and fix the query using GPT
     const validationCompletion = await openai.chat.completions.create({
@@ -462,19 +477,55 @@ Guidelines:
 8. For counting queries, always use COUNT(*) AS total
 9. For grouping queries, always include GROUP BY
 10. For complex queries, use UNION ALL to combine results
+11. IMPORTANT: Always fully qualify column names with their table names to avoid ambiguity
+12. For badge queries, ALWAYS use this exact format:
+    SELECT b.icon, b.description 
+    FROM badges b 
+    JOIN student_badges sb ON b.id = sb.badge_id 
+    JOIN students s ON s.id = sb.student_id 
+    WHERE s.name ILIKE '%name%'
+13. IMPORTANT: Always ensure ILIKE patterns have both opening and closing % symbols
+14. For halaqoh/group queries by teacher name, ALWAYS use this exact format:
+    SELECT 
+      g.name as group_name,
+      t.name as teacher_name,
+      COUNT(*) OVER() as total_students,
+      s.name as student_name,
+      l.name as level_name
+    FROM students s 
+    JOIN group_students gs ON s.id = gs.student_id 
+    JOIN groups g ON gs.group_id = g.id 
+    JOIN teachers t ON g.teacher_id = t.id 
+    JOIN levels l ON s.level_id = l.id
+    WHERE t.name ILIKE '%teacher_name%'
+    ORDER BY s.name
+15. For halaqoh/group queries by group name, ALWAYS use this exact format:
+    SELECT 
+      g.name as group_name,
+      t.name as teacher_name,
+      COUNT(*) OVER() as total_students,
+      s.name as student_name,
+      l.name as level_name
+    FROM students s 
+    JOIN group_students gs ON s.id = gs.student_id 
+    JOIN groups g ON gs.group_id = g.id 
+    JOIN teachers t ON g.teacher_id = t.id 
+    JOIN levels l ON s.level_id = l.id
+    WHERE g.name ILIKE '%group_name%'
+    ORDER BY s.name
+16. IMPORTANT: For any query containing 'group', 'groups', 'halaqoh', 'kelompok', or similar terms, ALWAYS use the group query format and NEVER treat it as an activity_logs query
+17. IMPORTANT: If the question contains any of these terms: 'group', 'groups', 'halaqoh', 'kelompok', 'list student on group', 'list santri di halaqoh', ALWAYS use the group query format regardless of other terms in the question
+18. IMPORTANT: For group queries, ONLY select these columns:
+    - g.name as group_name
+    - t.name as teacher_name
+    - COUNT(*) OVER() as total_students
+    - s.name as student_name
+    - l.name as level_name
 
-Example of fixing queries:
-Input: "SELECT gender"
-Output: "SELECT gender, COUNT(*) AS total FROM students GROUP BY gender"
-
-Input: "SELECT students"
-Output: "SELECT COUNT(*) AS total FROM students"
-
-Input: "Total santri"
-Output: "SELECT 'Total Santri' as category, gender, COUNT(*) AS total FROM students GROUP BY gender"
-
-Input: "count all total students"
-Output: "SELECT COUNT(*) AS total FROM students"`
+Example Queries:
+1. "lists student on group Asma" -> Use group query format with g.name ILIKE '%Asma%'
+2. "List santri di halaqoh guru: Rina" -> Use group query format with t.name ILIKE '%Rina%'
+3. "Badge list of student: John" -> Use badge query format with s.name ILIKE '%John%'`
         },
         {
           role: "user",
@@ -493,76 +544,204 @@ Output: "SELECT COUNT(*) AS total FROM students"`
       throw new Error('Failed to fix SQL query');
     }
 
-    // Broadened fallback: If the question is about recent activities of a student and the fixedQuery does not contain 'FROM activity_logs', use the fallback query
-    const studentActivityRegex = /recent activit(?:y|ies) of student[:\s]+([\w\s]+)/i;
-    const studentActivityRegexId = /aktivitas terakhir santri[:\s]+([\w\s]+)/i;
-    const matchEn = question.match(studentActivityRegex);
-    const matchId = question.match(studentActivityRegexId);
-    const studentName = (matchEn && matchEn[1]) || (matchId && matchId[1]);
-    if (studentName && !/FROM\s+activity_logs/i.test(fixedQuery)) {
-      const fallbackQuery = `SELECT a.action_type, a.message, a.created_at FROM activity_logs a JOIN students s ON a.student_id = s.id WHERE s.name ILIKE '%${studentName.trim()}%' ORDER BY a.created_at DESC LIMIT 10`;
-      // Save to chat history
-      await supabase
-        .from('chat_history')
-        .insert({
-          user_email: userEmail,
-          question,
-          sql_query: fallbackQuery,
-          result: null,
-          explanation: 'Auto-corrected query for student activities.',
-          created_at: new Date().toISOString()
-        })
-        .select();
-      // Execute the fallback query
-      const { data, error } = await supabase.rpc('execute_sql', { query: fallbackQuery });
-      if (error) {
-        return NextResponse.json({
-          error: 'Failed to execute SQL query',
-          details: error.message,
-          originalQuery: cleanQuery,
-          fixedQuery: fallbackQuery
-        }, { status: 500 });
-      }
-      // Get explanation from GPT
-      const explanation = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo-16k",
-        messages: [
-          {
-            role: "system",
-            content: `You are a helpful assistant that explains student data analysis results in a clear and concise way.`
-          },
-          {
-            role: "user",
-            content: `Question: "${question}"
+    // For group/halaqoh queries, force the exact query format we want
+    if (/group|groups|halaqoh|kelompok|teacher|guru/i.test(question)) {
+      // Extract group name or teacher name using more specific patterns
+      const groupName = question.match(/(?:group|halaqoh|kelompok)[:\s]+(\w+)/i)?.[1] || 
+                       question.match(/(?:from\s+group|from\s+halaqoh|from\s+kelompok)[:\s]+(\w+)/i)?.[1] ||
+                       question.match(/(\w+)(?:\s+group|\s+halaqoh|\s+kelompok)/i)?.[1];
+      
+      const teacherName = question.match(/(?:teacher|guru)[:\s]+(\w+)/i)?.[1] ||
+                         question.match(/(?:from\s+teacher|from\s+guru)[:\s]+(\w+)/i)?.[1] ||
+                         question.match(/(\w+)(?:\s+teacher|\s+guru)/i)?.[1];
+      
+      if (groupName || teacherName) {
+        const cleanedQuery = `SELECT 
+          g.name as group_name,
+          t.name as teacher_name,
+          COUNT(*) OVER(PARTITION BY g.name) as total_students,
+          s.name as student_name,
+          l.name as level_name
+        FROM students s 
+        JOIN group_students gs ON s.id = gs.student_id 
+        JOIN groups g ON gs.group_id = g.id 
+        JOIN teachers t ON g.teacher_id = t.id 
+        JOIN levels l ON s.level_id = l.id
+        WHERE ${groupName ? `g.name ILIKE '%${groupName}%'` : `t.name ILIKE '%${teacherName}%'`}
+        ORDER BY g.name, s.name`;
+        
+        // Execute the cleaned query on Supabase
+        const { data, error } = await supabase.rpc('execute_sql', { query: cleanedQuery });
+        
+        if (error) {
+          return NextResponse.json({
+            error: 'Failed to execute SQL query',
+            details: error.message,
+            originalQuery: cleanQuery,
+            fixedQuery: cleanedQuery
+          }, { status: 500 });
+        }
+
+        // Get explanation from GPT
+        const explanation = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo-16k",
+          messages: [
+            {
+              role: "system",
+              content: `You are a helpful assistant that explains student data analysis results in a clear and concise way.
+
+For group/halaqoh/teacher queries, ALWAYS format the response exactly like this:
+Halaqoh: [group_name]
+Teacher: [teacher_name]
+Total students: [total_students]
+List:
+1. [student_name], [level_name]
+2. [student_name], [level_name]
+...
+
+If no students are found, respond with:
+The list of students from teacher "[teacher_name]" is currently empty.
+
+IMPORTANT: When the data contains multiple groups, format each group's students separately with their own header:
+Halaqoh: [group_name]
+Teacher: [teacher_name]
+Total students: [total_students]
+List:
+1. [student_name], [level_name]
+2. [student_name], [level_name]
+...
+
+Halaqoh: [next_group_name]
+Teacher: [teacher_name]
+Total students: [total_students]
+List:
+1. [student_name], [level_name]
+2. [student_name], [level_name]
+...`
+            },
+            {
+              role: "user",
+              content: `Question: "${question}"
 Data: ${JSON.stringify(data)}
 
 Please provide a clear and concise explanation of these results, focusing only on what was specifically asked in the question.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      });
-      const explanationText = explanation.choices[0].message.content || '';
-      await supabase
-        .from('chat_history')
-        .insert({
-          user_email: userEmail,
-          question,
-          sql_query: fallbackQuery,
-          result: data,
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+        });
+
+        const explanationText = explanation.choices[0].message.content || '';
+
+        // Save the chat history
+        await supabase
+          .from('chat_history')
+          .insert({
+            user_email: userEmail,
+            question,
+            sql_query: cleanedQuery,
+            result: data,
+            explanation: explanationText,
+            created_at: new Date().toISOString()
+          })
+          .select();
+
+        return NextResponse.json({
+          data,
           explanation: explanationText,
-          created_at: new Date().toISOString()
-        })
-        .select();
-      return NextResponse.json({
-        data,
-        explanation: explanationText,
-        sqlQuery: fallbackQuery
-      });
+          sqlQuery: cleanedQuery
+        });
+      }
+    }
+
+    // Add class name filtering for marhalah queries
+    if (/marhalah|ibtidai|wustho|aly/i.test(question)) {
+      const classId = question.match(/ibtidai/i) ? 'b7a0d756-125d-46e6-8cc1-aa2ac1c736bd' :
+                     question.match(/wustho/i) ? 'bc0c439a-d9ef-44a4-8a88-bd840207b13d' :
+                     question.match(/aly/i) ? 'dcad05e4-87e4-4186-b4e4-53c184c50d7b' : null;
+      
+      if (classId) {
+        const cleanedQuery = `SELECT 
+          s.name as student_name,
+          c.name as class_name,
+          stp.total_points,
+          l.name as level_name
+        FROM students s
+        JOIN classes c ON s.class_id = c.id
+        JOIN student_total_points stp ON s.id = stp.student_id
+        JOIN levels l ON s.level_id = l.id
+        WHERE s.class_id = '${classId}'
+        ORDER BY stp.total_points DESC
+        LIMIT 5`;
+        
+        // Execute the cleaned query on Supabase
+        const { data, error } = await supabase.rpc('execute_sql', { query: cleanedQuery });
+        
+        if (error) {
+          return NextResponse.json({
+            error: 'Failed to execute SQL query',
+            details: error.message,
+            originalQuery: cleanQuery,
+            fixedQuery: cleanedQuery
+          }, { status: 500 });
+        }
+
+        // Get explanation from GPT
+        const explanation = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo-16k",
+          messages: [
+            {
+              role: "system",
+              content: `You are a helpful assistant that explains student data analysis results in a clear and concise way.
+
+For top students by points queries, ALWAYS format the response exactly like this:
+Top 5 students in [class_name]:
+1. [student_name], [level_name] - [total_points] points
+2. [student_name], [level_name] - [total_points] points
+3. [student_name], [level_name] - [total_points] points
+4. [student_name], [level_name] - [total_points] points
+5. [student_name], [level_name] - [total_points] points
+
+If no students are found, respond with:
+No students found in [class_name].`
+            },
+            {
+              role: "user",
+              content: `Question: "${question}"
+Data: ${JSON.stringify(data)}
+
+Please provide a clear and concise explanation of these results, focusing only on what was specifically asked in the question.`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+        });
+
+        const explanationText = explanation.choices[0].message.content || '';
+
+        // Save the chat history
+        await supabase
+          .from('chat_history')
+          .insert({
+            user_email: userEmail,
+            question,
+            sql_query: cleanedQuery,
+            result: data,
+            explanation: explanationText,
+            created_at: new Date().toISOString()
+          })
+          .select();
+
+        return NextResponse.json({
+          data,
+          explanation: explanationText,
+          sqlQuery: cleanedQuery
+        });
+      }
     }
 
     // Block forbidden activity_logs queries with a friendly message
-    if (/FROM\s+activity_logs/i.test(fixedQuery)) {
+    if (/FROM\s+activity_logs/i.test(fixedQuery) && !/FROM\s+groups/i.test(fixedQuery) && !/FROM\s+group_students/i.test(fixedQuery) && !/group|groups|halaqoh|kelompok/i.test(question)) {
       const explanationText = 'Sorry, you do not have permission to view student activities.';
       // Save to chat history
       await supabase
@@ -614,35 +793,25 @@ Please provide a clear and concise explanation of these results, focusing only o
       );
     }
 
-    // Get a natural language explanation from GPT-3.5-turbo-16k
+    // Get explanation from GPT
     const explanation = await openai.chat.completions.create({
       model: "gpt-3.5-turbo-16k",
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that explains student data analysis results in a clear and concise way. 
+          content: `You are a helpful assistant that explains student data analysis results in a clear and concise way.
 
-Guidelines:
-1. Only provide the information that was specifically requested in the question
-2. If the question asks for specific details (like achievements, recommendations, etc.), include those
-3. If the question is simple (like "show top students"), just show the basic information
-4. Keep explanations brief and to the point
-5. Use simple, clear language
+For group/halaqoh/teacher queries, ALWAYS format the response exactly like this:
+Halaqoh: [group_name]
+Teacher: [teacher_name]
+Total students: [total_students]
+List:
+1. [student_name], [level_name]
+2. [student_name], [level_name]
+...
 
-Example responses:
-Q: "Show top 3 students by points"
-A: "Here are the top 3 students by points:
-1. John Doe - 500 points
-2. Jane Smith - 450 points
-3. Bob Johnson - 400 points"
-
-Q: "Show student with highest points and their achievements"
-A: "John Doe has the highest points (500) and has achieved:
-- Completed 5 juz memorization
-- Won 3 competitions
-- Maintained perfect attendance"
-
-If the data is empty or null, simply state that no matching records were found.`
+If no students are found, respond with:
+The list of students from teacher "[teacher_name]" is currently empty.`
         },
         {
           role: "user",
@@ -687,4 +856,4 @@ Please provide a clear and concise explanation of these results, focusing only o
       { status: 500 }
     );
   }
-} 
+}
