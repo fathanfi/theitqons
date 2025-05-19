@@ -185,6 +185,7 @@ export function Navigation() {
 
             <Link href="/groups" className="hover:text-gray-300 font-semibold">Groups</Link>
             <Link href="/badges" className="hover:text-gray-300">Badges</Link>
+            <Link href="/student-reports" className="hover:text-gray-300">Reports</Link>
             
             {renderDropdown(
               isPointsOpen,
@@ -301,6 +302,14 @@ export function Navigation() {
                 onClick={handleMobileLinkClick}
               >
                 Badges
+              </Link>
+
+              <Link
+                href="/student-reports"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={handleMobileLinkClick}
+              >
+                Reports
               </Link>
 
               {renderMobileDropdown(
