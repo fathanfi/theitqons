@@ -8,10 +8,22 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const SESSIONS = [
-  { id: 1, name: 'SM1' },
-  { id: 2, name: 'SM2' },
+  { id: 1, name: '1' },
+  { id: 2, name: '2' },
 ];
-const PREDICATES = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Basic 2", "100%"];
+const PREDICATES = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "100%"];
+
+// Helper to load image as base64 at runtime
+function getBase64FromUrl(url: string): Promise<string> {
+  return fetch(url)
+    .then(response => response.blob())
+    .then(blob => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    }));
+}
 
 export default function StudentReportsPage() {
   const reportRef = useRef<HTMLDivElement>(null);
@@ -42,6 +54,13 @@ export default function StudentReportsPage() {
   const [levelName, setLevelName] = useState<string>('');
   const [groupName, setGroupName] = useState<string>('');
   const [teacherName, setTeacherName] = useState<string>('');
+
+  // Student search filter
+  const [studentSearch, setStudentSearch] = useState('');
+  const filteredStudents = students.filter((s) =>
+    (!classId || s.class_id === classId) &&
+    (!studentSearch || s.name.toLowerCase().includes(studentSearch.toLowerCase()))
+  );
 
   // Section 2: Student Info
   const student = students.find((s) => s.id === studentId);
@@ -76,6 +95,21 @@ export default function StudentReportsPage() {
     principal: "",
     teacher: "",
   });
+
+  // --- Overall Score Calculation for UI/Print ---
+  const numericScores = scores
+    .map(s => parseFloat(s.value))
+    .filter(v => !isNaN(v));
+  let overallScore = 0;
+  let overallPredicate = '-';
+  if (numericScores.length > 0) {
+    overallScore = numericScores.reduce((a, b) => a + b, 0) / numericScores.length;
+    if (overallScore > 90) overallPredicate = 'Mumtaz';
+    else if (overallScore >= 85 && overallScore <= 90) overallPredicate = 'Jayyid Jiddan';
+    else if (overallScore >= 66 && overallScore < 85) overallPredicate = 'Jayyid';
+    else if (overallScore >= 50 && overallScore < 66) overallPredicate = 'Dhoif';
+    else if (overallScore < 50) overallPredicate = 'Nafis';
+  }
 
   useEffect(() => {
     loadAcademicYears();
@@ -156,7 +190,7 @@ export default function StudentReportsPage() {
         target: { predicate: "", description: "" },
       });
       setTahfidzNotes("");
-      setScores([{ name: "Tahfizh", value: "", predicate: "" }]);
+      setScores([{ name: "Materi Ujian", value: "", predicate: "" }]);
       setAttendance({ present: 0, permit: 0, absence: 0 });
       setSignatures(prev => ({
         ...prev,
@@ -168,7 +202,6 @@ export default function StudentReportsPage() {
 
   // Filter classes by academic year if needed (if classes have academicYearId)
   const filteredClasses = classes; // adjust if you have academicYearId
-  const filteredStudents = students.filter((s) => !classId || s.class_id === classId);
 
   // Save/Update handler
   const handleSave = async () => {
@@ -215,76 +248,85 @@ export default function StudentReportsPage() {
     window.print();
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!reportRef.current) return;
+
+    // Get logo and arabic title as base64 at runtime
+    const logoBase64 = await getBase64FromUrl('/images/pptq-logo.png');
+    const arabicBase64 = await getBase64FromUrl('/images/arabicword.png');
+
+    // --- Capitalize First Letter ---
+    const capitalizeFirst = (text: string) => {
+      if (!text) return '';
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    };
+
+    // --- Snake Case Helper ---
+    const toSnakeCase = (str: string) =>
+      str
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
 
     // A4 size
     const doc = new jsPDF({ format: 'a4', unit: 'mm' });
     let y = 15;
 
     // --- Custom Header ---
-    // Logo (placeholder, add base64 if available)
-    // doc.addImage('logo_base64', 'PNG', 15, y, 25, 25); // Uncomment and set logo_base64 if available
-    // School Info
-    doc.setFontSize(14);
-    doc.setTextColor(80, 90, 110);
+    doc.addImage(logoBase64, 'PNG', 20, y, 22, 20);
     doc.setFont('helvetica', 'bold');
-    doc.text('Yayasan Miftahul Khoir Al Islamy', 60, y + 5);
-    doc.setFontSize(18);
-    doc.text('PPTQ MIFTAHUL KHOIR', 60, y + 13);
-    doc.setFontSize(12);
+    doc.setFontSize(13);
+    doc.setTextColor(60, 70, 90);
+    doc.text('Yayasan Miftahul Khoir Al Islamy', 55, y + 7);
+    doc.setFontSize(16);
+    doc.text('Pondok Pesantren Tahfizh Al Qur\'an Miftahul Khoir', 55, y + 16);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('Kp Pasirjaya, Sukajaya, Purbatu, Tasikmalaya', 60, y + 20);
-    // Double line
+    doc.text('Jalan KH. Tubagus Abdullah, Kp. Pasirjaya, Sukajaya, Purbaratu, Kota Tasikmalaya, 46196', 55, y + 23);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(1.2);
-    doc.line(15, y + 27, 195, y + 27);
+    doc.line(20, y + 28, 190, y + 28);
     doc.setLineWidth(0.5);
-    doc.line(15, y + 29, 195, y + 29);
-    y += 35;
-    // Arabic & Indonesian Title
-    doc.setFontSize(14);
-    // Use a font that supports Arabic if available
-    // If you have a base64 font, you can add it to jsPDF and use it here
-    // For now, use default font and hope system font supports Arabic
+    doc.line(20, y + 30, 190, y + 30);
+    y += 31;
+
+    // --- Arabic & Indonesian Title as image ---
+    doc.addImage(arabicBase64, 'PNG', 55, y, 100, 10); // adjust width/height as needed
+    y += 16;
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(80, 90, 110);
-    doc.text('تقرير نتائج الامتحان النهائي في تحسين القرآن وتحفيظه', 105, y, { align: 'center' });
-    y += 8;
     doc.setFontSize(13);
-    doc.text('LAPORAN PENILAIAN UJIAN AKHIR SEMESTER TAHSIN DAN TAHFIDZ AL-QUR\'AN', 105, y, { align: 'center' });
+    doc.setTextColor(60, 70, 90);
+    doc.text('RAPOT HASIL BELAJAR TAHFIDZ AL-QUR\'AN', 105, y, { align: 'center' });
     y += 10;
 
-    // --- Student Info Table (3 rows x 2 columns, but Class and Level combined, Level replaced with Session) ---
+    // --- Student Info Table as 3 rows, 5 columns ---
     const infoRows = [
-      [
-        `Nama: ${student?.name || ''}`,
-        `Kelas: ${classObj?.name || ''} / Sesi: ${sessionObj?.name || ''}`
-      ],
-      [
-        `Group: ${groupName}`,
-        `Tahun Akademik: ${academicYearObj?.name || ''}`
-      ],
-      [
-        `Guru: ${teacherName}`,
-        ''
-      ]
+      ['Nama:', student?.name || '', '', 'Muhafidz:', teacherName],
+      ['Kelas:', classObj?.name || '', '', 'Semester:', sessionObj?.name || ''],
+      ['Halaqoh:', groupName, '', 'Tahun Akademik:', academicYearObj?.name || '']
     ];
     autoTable(doc, {
       startY: y,
       head: [],
       body: infoRows,
       theme: 'grid',
-      styles: { fontSize: 11, cellPadding: 2 },
+      styles: { font: 'helvetica', fontSize: 11, cellPadding: 0, halign: 'left', lineWidth: 0 },
+      columnStyles: {
+        0: { cellWidth: 20, minCellHeight: 5, fontStyle: 'bold', textColor: [60, 70, 90], halign: 'left' },
+        1: { cellWidth: 50, minCellHeight: 5, fontStyle: 'normal', textColor: [60, 70, 90], halign: 'left' },
+        2: { cellWidth: 1, minCellHeight: 5 },
+        3: { cellWidth: 40, minCellHeight: 5, fontStyle: 'bold', textColor: [60, 70, 90], halign: 'left' },
+        4: { cellWidth: 50, minCellHeight: 5, fontStyle: 'normal', textColor: [60, 70, 90], halign: 'left' },
+      },
       margin: { left: 25, right: 25 },
-      tableLineColor: [180, 180, 180],
-      tableLineWidth: 0.2,
+      tableLineColor: [255, 255, 255],
+      tableLineWidth: 0,
     });
     y = (doc as any).lastAutoTable.finalY + 5;
 
     // --- Ziyadah Table ---
     const ziyadahData = Object.entries(ziyadah).map(([aspect, val]) => [
-      aspect,
+      capitalizeFirst(aspect),
       val.predicate,
       val.description
     ]);
@@ -292,23 +334,44 @@ export default function StudentReportsPage() {
       startY: y,
       head: [['Aspek', 'Predikat', 'Deskripsi']],
       body: ziyadahData,
-      styles: { fontSize: 11 },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 25 },
+      tableLineColor: [180, 180, 180],
+      tableLineWidth: 0.2,
+      theme: 'grid',
     });
     y = (doc as any).lastAutoTable.finalY + 5;
 
-    // --- Scores Table ---
     const scoresData = scores.map(score => [
-      score.name,
+      capitalizeFirst(score.name),
       score.value,
       score.predicate
     ]);
     autoTable(doc, {
       startY: y,
-      head: [['Mata Pelajaran', 'Nilai', 'Predikat']],
+      head: [['Materi Ujian', 'Nilai', 'Predikat']],
       body: scoresData,
-      styles: { fontSize: 11 },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 25 },
+      tableLineColor: [180, 180, 180],
+      tableLineWidth: 0.2,
+      theme: 'grid',
+    });
+    y = (doc as any).lastAutoTable.finalY + 5;
+
+    // --- Overall Score Row (UI/Print) ---
+    autoTable(doc, {
+      startY: y,
+      head: [['Nilai Akhir', 'Predikat']],
+      body: [[overallScore ? overallScore.toFixed(2) : '-', overallPredicate]],
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
+      margin: { left: 25, right: 25 },
+      tableLineColor: [180, 180, 180],
+      tableLineWidth: 0.2,
+      theme: 'grid',
     });
     y = (doc as any).lastAutoTable.finalY + 5;
 
@@ -319,47 +382,60 @@ export default function StudentReportsPage() {
       ['Izin', attendance.permit],
       ['Alpa', attendance.absence],
     ];
-    // Notes Table
-    const notesTable = [
-      ['Catatan', tahfidzNotes || '-']
-    ];
     autoTable(doc, {
       startY: y,
       head: [['Kehadiran', 'Jumlah']],
       body: attendanceTable,
-      styles: { fontSize: 11 },
-      margin: { left: 25, right: 120 },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', fontSize: 12 },
+      margin: { left: 25, right: 140 },
       tableLineColor: [180, 180, 180],
       tableLineWidth: 0.2,
       theme: 'grid',
     });
+    // Notes Table (single, not double)
+    const notesTable = [
+      [tahfidzNotes || '-']
+    ];
     autoTable(doc, {
       startY: y,
       head: [['Catatan', '']],
       body: notesTable,
-      styles: { fontSize: 11 },
-      margin: { left: 120, right: 25 },
-      tableLineColor: [180, 180, 180],
+      styles: { font: 'helvetica', fontSize: 11, halign: 'left' },
+      headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', fontSize: 12 },
+      margin: { left: 80, right: 25 },
       tableLineWidth: 0.2,
       theme: 'grid',
     });
     y = Math.max((doc as any).lastAutoTable.finalY, y + 25) + 10;
 
-    // --- Signatures ---
+    // --- Place and Date above signatures ---
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    const sigY = y + 10;
-    doc.text('Orang Tua', 35, sigY);
-    doc.text('Direktur PPTQ', 95, sigY);
-    doc.text('Muhafidz', 155, sigY);
-    doc.text(`( ${signatures.parent || '.............'} )`, 30, sigY + 25);
-    doc.text(`( ${signatures.principal || '.............'} )`, 90, sigY + 25);
-    doc.text(`( ${signatures.teacher || '.............'} )`, 150, sigY + 25);
-    // Place and Date
-    doc.text(`Tempat: ${signatures.place || ''}`, 25, sigY + 40);
-    doc.text(`Tanggal: ${signatures.date || ''}`, 80, sigY + 40);
+    // Fixed date: 23 June 2025
+    const fixedDate = '23 June 2025 / 27 Dzulhijjah 1446 H';
+    doc.text(`${signatures.place || ''}, ${fixedDate}`, 105, y, { align: 'center' });
+    y += 2;
 
-    doc.save('student-report.pdf');
+    // --- Signatures ---
+    const sigY = y + 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor(60, 70, 90);
+    doc.text('Orang Tua', 40, sigY);
+    doc.text('Direktur PPTQ', 105, sigY, { align: 'center' });
+    doc.text('Muhafidz', 170, sigY, { align: 'right' });
+    doc.setFontSize(11);
+    doc.text(`( ${signatures.parent || '..........................'} )`, 40, sigY + 25);
+    doc.text(`( ${signatures.principal || '..........................'} )`, 105, sigY + 25, { align: 'center' });
+    doc.text(`( ${signatures.teacher || '..........................'} )`, 190, sigY + 25, { align: 'right' });
+
+    // Build file name (UPPERCASE)
+    const studentNameSnake = toSnakeCase(student?.name || 'student').toUpperCase();
+    const sessionName = (sessionObj?.name || 'session').toUpperCase();
+    const academicYearName = (academicYearObj?.name || '').replace(/\//g, '').replace(/\s+/g, '').toUpperCase();
+    const fileName = `${studentNameSnake}-${sessionName}-${academicYearName}.pdf`;
+    doc.save(fileName);
   };
 
   return (
@@ -396,27 +472,31 @@ export default function StudentReportsPage() {
       <div className="print-header" style={{ display: 'block', marginBottom: 24 }}>
         <div className="flex items-center justify-between">
           {/* Logo placeholder, replace src with your logo if available */}
-          <img src="/logo.png" alt="Logo" style={{ width: 70, height: 70, objectFit: 'contain' }} />
+          <img src="/images/pptq-logo.png" alt="Logo" style={{ width: 70, height: 70, objectFit: 'contain' }} />
           <div className="flex-1 text-center">
             <div className="font-bold text-lg md:text-xl" style={{ color: '#50606e' }}>Yayasan Miftahul Khoir Al Islamy</div>
             <div className="font-bold text-2xl md:text-3xl" style={{ color: '#50606e' }}>PPTQ MIFTAHUL KHOIR</div>
-            <div className="text-base md:text-lg" style={{ color: '#50606e' }}>Kp Pasirjaya, Sukajaya, Purbatu, Tasikmalaya</div>
+            <div className="text-base md:text-lg" style={{ color: '#50606e' }}>Kp. Pasirjaya, Sukajaya, Purbaratu, Kota Tasikmalaya, 46196</div>
           </div>
           <div style={{ width: 70 }} />
         </div>
         <div className="header-lines" style={{ borderTop: '3px solid #222', borderBottom: '1.5px solid #222', margin: '12px 0 16px 0' }} />
-        <div className="header-title-arabic" style={{ fontFamily: 'serif', fontSize: '1.1rem', textAlign: 'center', marginTop: 8 }}>
+        <div className="header-title-arabic" style={{ fontFamily: '"Segoe UI", Tahoma, Arial, sans-serif', fontSize: '1.1rem', textAlign: 'center', marginTop: 8, direction: 'rtl' }}>
           تقرير نتائج الامتحان النهائي في تحسين القرآن وتحفيظه
         </div>
         <div className="header-title-id" style={{ fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', marginTop: 4 }}>
-          LAPORAN PENILAIAN UJIAN AKHIR SEMESTER TAHSIN DAN TAHFIDZ AL-QUR'AN
+          LAPORAN PENILAIAN UJIAN AKHIR SEMESTER TAHFIDZ DAN TAHSIN AL-QUR'AN
         </div>
       </div>
 
       {/* Add print styles */}
       <style jsx global>{`
+        .print-only {
+          display: none;
+        }
+
         @media print {
-          .no-print {
+          nav, footer, .no-print {
             display: none !important;
           }
           .print-only {
@@ -480,6 +560,13 @@ export default function StudentReportsPage() {
         </div>
         <div className="w-full md:w-auto">
           <label className="block text-sm font-medium">Student</label>
+          <input
+            type="text"
+            placeholder="Search student by name..."
+            value={studentSearch}
+            onChange={e => setStudentSearch(e.target.value)}
+            className="mb-2 w-full border rounded px-2 py-1"
+          />
           <select 
             value={studentId} 
             onChange={e => setStudentId(e.target.value)} 
@@ -501,27 +588,25 @@ export default function StudentReportsPage() {
       {/* Section 2: Student Info */}
       <div ref={reportRef} className="bg-white rounded shadow p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div><span className="font-semibold">Name:</span> {student?.name}</div>
-          <div><span className="font-semibold">Class:</span> {classObj?.name}</div>
-          <div><span className="font-semibold">Level:</span> {levelName}</div>
-          <div><span className="font-semibold">Group:</span> {groupName}</div>
-          <div><span className="font-semibold">Teacher:</span> {teacherName}</div>
-          <div><span className="font-semibold">Session:</span> {sessionObj?.name}</div>
-          <div><span className="font-semibold">Academic Year:</span> {academicYearObj?.name}</div>
+          <div><span className="font-semibold">Nama:</span> {student?.name}</div>
+          <div><span className="font-semibold">Marhalah:</span> {classObj?.name}{levelName ? ` / ${levelName}` : ''}</div>
+          <div><span className="font-semibold">Halaqoh:</span> {groupName}</div>
+          <div><span className="font-semibold">Muhafidz/ah:</span> {teacherName}</div>
+          <div><span className="font-semibold">Semester:</span> {sessionObj?.name}</div>
+          <div><span className="font-semibold">Tahun Akademik:</span> {academicYearObj?.name}</div>
         </div>
       </div>
 
       {/* Section 3 & 4: Ziyadah & Catatan Tahfidz */}
-      <div className="flex gap-8">
+      <div className="flex flex-col md:flex-row gap-8">
         {/* Ziyadah Table */}
-        <div className="flex-1 bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">Evaluasi Ziyadah</h2>
+        <div className="flex-1 bg-white rounded shadow p-4 w-full">
+          <h2 className="font-semibold mb-2">Evaluasi Tahfidz dan Tahsin</h2>
           <table className="w-full border">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border px-2 py-1">Aspek</th>
                 <th className="border px-2 py-1">Predikat</th>
-                <th className="border px-2 py-1">Deskripsi</th>
               </tr>
             </thead>
             <tbody>
@@ -533,9 +618,7 @@ export default function StudentReportsPage() {
                       <option value="">-</option>
                       {PREDICATES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
-                  </td>
-                  <td className="border px-2 py-1 no-print">
-                    <input value={val.description} onChange={e => handleZiyadahChange(aspect, "description", e.target.value)} className="border rounded px-1 w-full" />
+                    <input value={val.description} onChange={e => handleZiyadahChange(aspect, "description", e.target.value)} className="border rounded px-1 w-full min-h-[40px]" />
                   </td>
                   <td className="border px-2 py-1 print-only">{val.predicate}</td>
                   <td className="border px-2 py-1 print-only">{val.description}</td>
@@ -545,32 +628,40 @@ export default function StudentReportsPage() {
           </table>
         </div>
         {/* Catatan Tahfidz */}
-        <div className="flex-1 bg-white rounded shadow p-4">
+        <div className="flex-1 bg-white rounded shadow p-4 w-full">
           <h2 className="font-semibold mb-2">Catatan Tahfidz</h2>
-          <textarea value={tahfidzNotes} onChange={e => setTahfidzNotes(e.target.value)} className="w-full border rounded min-h-[120px]" />
+          <textarea value={tahfidzNotes} onChange={e => setTahfidzNotes(e.target.value)} className="w-full border rounded min-h-[150px]" />
         </div>
       </div>
 
       {/* Section 5 & 6: Score & Attendance */}
-      <div className="flex gap-8">
+      <div className="flex flex-col md:flex-row gap-8">
         {/* Score Repeater */}
-        <div className="flex-1 bg-white rounded shadow p-4">
+        <div className="flex-1 bg-white rounded shadow p-4 w-full min-w-0">
           <h2 className="font-semibold mb-2">Score</h2>
           {scores.map((score, idx) => (
-            <div key={idx} className="flex gap-2 mb-2 items-center">
-              <input value={score.name} onChange={e => handleScoreChange(idx, "name", e.target.value)} placeholder="Name" className="border rounded px-1" />
-              <input value={score.value} onChange={e => handleScoreChange(idx, "value", e.target.value)} placeholder="Value" className="border rounded px-1 w-16" />
-              <select value={score.predicate} onChange={e => handleScoreChange(idx, "predicate", e.target.value)} className="border rounded px-1">
+            <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch w-full">
+              <input value={score.name} onChange={e => handleScoreChange(idx, "name", e.target.value)} placeholder="Name" className="border rounded px-1 w-full sm:w-32" />
+              <input value={score.value} onChange={e => handleScoreChange(idx, "value", e.target.value)} placeholder="Value" className="border rounded px-1 w-full sm:w-16" />
+              <select value={score.predicate} onChange={e => handleScoreChange(idx, "predicate", e.target.value)} className="border rounded px-1 w-full sm:w-32">
                 <option value="">-</option>
                 {PREDICATES.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
-              <button onClick={() => removeScore(idx)} className="text-red-500">Remove</button>
+              <button onClick={() => removeScore(idx)} className="text-red-500 no-print w-full sm:w-auto">Remove</button>
             </div>
           ))}
-          <button onClick={addScore} className="mt-2 bg-green-500 text-white px-2 py-1 rounded">Add Score</button>
+          <button onClick={addScore} className="mt-2 bg-green-500 text-white px-2 py-1 rounded no-print w-full sm:w-auto">Add Score</button>
+
+          {/* Overall Score Row (UI/Print) */}
+          <div className="bg-white rounded shadow p-4 flex flex-col md:flex-row gap-4 items-center mb-2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div className="font-semibold">Overall Score:</div>
+            <div className="ml-2">{numericScores.length > 0 ? overallScore.toFixed(2) : '-'}</div>
+            <div className="ml-4 font-semibold">Predicate:</div>
+            <div className="ml-2">{overallPredicate}</div>
+          </div>
         </div>
         {/* Attendance Table */}
-        <div className="flex-1 bg-white rounded shadow p-4">
+        <div className="flex-1 bg-white rounded shadow p-4 w-full min-w-0">
           <h2 className="font-semibold mb-2">Attendance</h2>
           <table className="w-full border">
             <tbody>
@@ -592,54 +683,36 @@ export default function StudentReportsPage() {
       </div>
 
       {/* Section 7: Signatures */}
+      {/* Place and Date above signature names (UI/Print) */}
+      <div className="bg-white rounded shadow p-4 flex flex-col items-center mb-2">
+        <div className="flex items-center gap-4 mb-2">
+          <span className="font-medium">{signatures.place}, 23 June 2025 / 27 Dzulhijjah 1446 H</span>
+        </div>
+      </div>
       <div className="bg-white rounded shadow p-4 grid grid-cols-3 gap-8 items-end">
         {/* Left: Parent */}
         <div className="flex flex-col items-center">
           <div className="font-semibold">Orang Tua</div>
           <div className="h-8" />
-          <div className="mt-8 mb-2">( {signatures.parent || '.............'} )</div>
+          <div className="mt-8 mb-2">( {signatures.parent || '..........................'} )</div>
         </div>
         {/* Center: Principal */}
         <div className="flex flex-col items-center">
           <div className="font-semibold">Direktur PPTQ</div>
           <div className="h-8" />
-          <div className="mt-8 mb-2">( {signatures.principal || '.............'} )</div>
+          <div className="mt-8 mb-2">( {signatures.principal || '..........................'} )</div>
         </div>
         {/* Right: Teacher */}
         <div className="flex flex-col items-center">
           <div className="font-semibold">Muhafidz</div>
           <div className="h-8" />
-          <div className="mt-8 mb-2">( {signatures.teacher || '.............'} )</div>
-        </div>
-      </div>
-
-      {/* Place and Date */}
-      <div className="bg-white rounded shadow p-4 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <label className="font-medium">Place:</label>
-          <input
-            type="text"
-            value={signatures.place}
-            onChange={(e) => setSignatures(prev => ({ ...prev, place: e.target.value }))}
-            className="border rounded px-2 py-1"
-            placeholder="Enter place"
-          />
-        </div>
-        <div className="flex items-center gap-4">
-          <label className="font-medium">Date:</label>
-          <input
-            type="date"
-            value={signatures.date}
-            onChange={(e) => setSignatures(prev => ({ ...prev, date: e.target.value }))}
-            className="border rounded px-2 py-1"
-          />
+          <div className="mt-8 mb-2">( {signatures.teacher || '..........................'} )</div>
         </div>
       </div>
 
       {/* View | Download | Print */}
       <div className="flex justify-end gap-4 mt-4 no-print">
-        <button onClick={handleDownload} className="text-blue-600 hover:underline">Download</button>
-        <button onClick={handlePrint} className="text-blue-600 hover:underline">Print</button>
+        <button onClick={handleDownload} className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Download</button>
       </div>
     </div>
   );
