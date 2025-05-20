@@ -21,6 +21,7 @@ export interface Teacher {
   createdAt: string;
   username: string;
   password: string;
+  email: string;
 }
 
 export interface Class {

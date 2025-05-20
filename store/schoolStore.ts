@@ -157,7 +157,8 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
           roles: teacher.teacher_roles.map((tr: any) => tr.role),
           createdAt: teacher.created_at,
           username: teacher.username,
-          password: teacher.password
+          password: teacher.password,
+          email: teacher.email
         }))
       });
     }
@@ -176,7 +177,8 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         gender: teacher.gender,
         status: teacher.status,
         username: teacher.username,
-        password: teacher.password
+        password: teacher.password,
+        email: teacher.email
       }])
       .select()
       .single();
@@ -204,7 +206,8 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         roles,
         createdAt: data.created_at,
         username: data.username,
-        password: data.password
+        password: data.password,
+        email: data.email
       };
 
       set(state => ({
@@ -226,7 +229,8 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         gender: teacher.gender,
         status: teacher.status,
         username: teacher.username,
-        password: teacher.password
+        password: teacher.password,
+        email: teacher.email
       })
       .eq('id', teacher.id);
 
@@ -294,10 +298,11 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
             joinDate: class_.teacher.join_date,
             gender: class_.teacher.gender,
             status: class_.teacher.status,
-            roles: [],
+            roles: class_.teacher.roles || [],
             createdAt: class_.teacher.created_at,
-            username: class_.teacher.username,
-            password: class_.teacher.password
+            username: class_.teacher.username || '',
+            password: class_.teacher.password || '',
+            email: class_.teacher.email || ''
           } : undefined,
           createdAt: class_.created_at
         }))
@@ -335,8 +340,11 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
           joinDate: data.teacher.join_date,
           gender: data.teacher.gender,
           status: data.teacher.status,
-          roles: [],
-          createdAt: data.teacher.created_at
+          roles: data.teacher.roles || [],
+          createdAt: data.teacher.created_at,
+          username: data.teacher.username || '',
+          password: data.teacher.password || '',
+          email: data.teacher.email || ''
         } : undefined,
         createdAt: data.created_at
       };
