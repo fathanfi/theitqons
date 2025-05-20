@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'user' | 'teacher';
 
 interface User {
   id: string;
   email: string;
   role: UserRole;
+  name: string;
 }
 
 interface AuthState {
@@ -16,6 +17,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: () => boolean;
+  isTeacher: () => boolean;
   canEdit: () => boolean;
 }
 
@@ -70,6 +72,7 @@ export const useAuthStore = create<AuthState>()(
               id: user.id,
               email: user.email!,
               role: roleData.role as UserRole,
+              name: user.user_metadata.name || '',
             },
             loading: false,
           });
@@ -96,9 +99,14 @@ export const useAuthStore = create<AuthState>()(
         return user?.role === 'admin';
       },
 
+      isTeacher: () => {
+        const { user } = get();
+        return user?.role === 'teacher';
+      },
+
       canEdit: () => {
         const { user } = get();
-        return user?.role === 'admin';
+        return user?.role === 'admin' || user?.role === 'teacher';
       },
     }),
     {

@@ -11,6 +11,8 @@ import { useActivityLogStore } from '@/store/activityLogStore';
 import Link from 'next/link';
 import { ActivitySplash } from './ActivitySplash';
 import { ActivityLog as ActivityLogType } from '@/types/activity';
+import { useAuthStore } from '@/store/authStore';
+import { TeacherGreeting } from './TeacherGreeting';
 
 const shimmer = `
   @keyframes shimmer {
@@ -28,6 +30,7 @@ export function DashboardStats() {
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuthStore();
   
   const teachers = useSchoolStore((state) => state.teachers);
   const groups = useSchoolStore((state) => state.groups);
@@ -224,7 +227,7 @@ export function DashboardStats() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-lg overflow-hidden relative">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
             <div className="h-6 w-32 bg-gray-200 rounded mb-2 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-[shimmer_2s_infinite] bg-[length:200%_100%]"></div>
             </div>
@@ -240,6 +243,24 @@ export function DashboardStats() {
   return (
     <div className="space-y-8">
       <ActivitySplash activity={splashActivity} onClose={() => setSplashActivity(null)} />
+      
+      {/* User Profile Section */}
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="text-4xl">
+              {user?.role === 'teacher' ? '👨‍🏫' : user?.role === 'admin' ? '👑' : '👤'}
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {user?.role === 'teacher' ? `Assalamualaikum ${user.name}` : `Welcome ${user?.name}`}
+              </h2>
+              <p className="text-gray-600 capitalize">{user?.role}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <div className="text-4xl mb-2">👥</div>

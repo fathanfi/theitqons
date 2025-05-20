@@ -30,7 +30,9 @@ export function TeacherForm({ editTeacher, onUpdate }: { editTeacher?: Teacher; 
       joinDate: '',
       gender: 'Ikhwan',
       status: true,
-      roles: []
+      roles: [],
+      username: '',
+      password: ''
     }
   );
 
@@ -57,7 +59,9 @@ export function TeacherForm({ editTeacher, onUpdate }: { editTeacher?: Teacher; 
         joinDate: '',
         gender: 'Ikhwan',
         status: true,
-        roles: []
+        roles: [],
+        username: '',
+        password: ''
       });
     }
   };
@@ -165,6 +169,28 @@ export function TeacherForm({ editTeacher, onUpdate }: { editTeacher?: Teacher; 
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Username</label>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            required={!editTeacher}
           />
         </div>
         <div>

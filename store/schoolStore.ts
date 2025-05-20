@@ -155,7 +155,9 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
           gender: teacher.gender,
           status: teacher.status,
           roles: teacher.teacher_roles.map((tr: any) => tr.role),
-          createdAt: teacher.created_at
+          createdAt: teacher.created_at,
+          username: teacher.username,
+          password: teacher.password
         }))
       });
     }
@@ -172,7 +174,9 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         phone: teacher.phone,
         join_date: teacher.joinDate,
         gender: teacher.gender,
-        status: teacher.status
+        status: teacher.status,
+        username: teacher.username,
+        password: teacher.password
       }])
       .select()
       .single();
@@ -198,7 +202,9 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         gender: data.gender,
         status: data.status,
         roles,
-        createdAt: data.created_at
+        createdAt: data.created_at,
+        username: data.username,
+        password: data.password
       };
 
       set(state => ({
@@ -218,7 +224,9 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
         phone: teacher.phone,
         join_date: teacher.joinDate,
         gender: teacher.gender,
-        status: teacher.status
+        status: teacher.status,
+        username: teacher.username,
+        password: teacher.password
       })
       .eq('id', teacher.id);
 
@@ -287,7 +295,9 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
             gender: class_.teacher.gender,
             status: class_.teacher.status,
             roles: [],
-            createdAt: class_.teacher.created_at
+            createdAt: class_.teacher.created_at,
+            username: class_.teacher.username,
+            password: class_.teacher.password
           } : undefined,
           createdAt: class_.created_at
         }))

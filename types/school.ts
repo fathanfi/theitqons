@@ -19,6 +19,8 @@ export interface Teacher {
   status: boolean;
   roles: string[];
   createdAt: string;
+  username: string;
+  password: string;
 }
 
 export interface Class {

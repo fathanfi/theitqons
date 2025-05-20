@@ -54,7 +54,7 @@ export function Navigation() {
     items: { href: string; label: string }[],
     icon?: string
   ) => (
-    <div className="relative">
+    <div className="relative group">
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="hover:text-gray-300 flex items-center gap-1"
@@ -63,25 +63,23 @@ export function Navigation() {
         {icon && <span className="text-xl">{icon}</span>}
         <span className="text-xs">▼</span>
       </button>
-      {isOpen && (
-        <div className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-          <div className="py-1" role="menu">
-            {items.map((item) => (
-              <Link 
-                key={item.href}
-                href={item.href} 
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={() => {
-                  setIsOpen(false);
-                  handleMobileLinkClick();
-                }}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
+      <div className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+        <div className="py-1" role="menu">
+          {items.map((item) => (
+            <Link 
+              key={item.href}
+              href={item.href} 
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => {
+                setIsOpen(false);
+                handleMobileLinkClick();
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 
@@ -240,12 +238,25 @@ export function Navigation() {
           <div className="hidden lg:flex items-center space-x-4">
             {user && <AcademicYearSelector />}
             {user && (
-              <button
-                onClick={handleLogout}
-                className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Logout
-              </button>
+              <div className="relative group">
+                <button className="flex items-center space-x-2 text-white hover:text-gray-200">
+                  <span>{user.name}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Profile Settings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -380,12 +391,21 @@ export function Navigation() {
                 </div>
                 <div className="mt-4 px-4">
                   {user && (
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
+                    <>
+                      <Link
+                        href="/profile"
+                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        onClick={handleMobileLinkClick}
+                      >
+                        Profile Settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

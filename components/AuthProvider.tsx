@@ -29,7 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user: {
               id: session.user.id,
               email: session.user.email!,
-              role: roleData.role as 'admin' | 'user',
+              role: roleData.role as 'admin' | 'user' | 'teacher',
+              name: session.user.user_metadata.name || ''
             },
             loading: false,
           });
