@@ -33,6 +33,9 @@ export default function GroupsPage() {
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('ALL');
   const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showInactive, setShowInactive] = useState(false);
+  const [showLevel, setShowLevel] = useState(false);
+  const [showPoints, setShowPoints] = useState(false);
+  const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
 
@@ -43,8 +46,23 @@ export default function GroupsPage() {
       loadTeachers();
       loadAcademicYears();
       loadLevels();
+      loadStudentPoints();
     }
   }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears, loadLevels]);
+
+  const loadStudentPoints = async () => {
+    const { data } = await supabase
+      .from('student_total_points')
+      .select('*');
+    
+    if (data) {
+      const points = data.reduce((acc: {[key: string]: number}, curr) => {
+        acc[curr.student_id] = curr.total_points;
+        return acc;
+      }, {});
+      setStudentPoints(points);
+    }
+  };
 
   const handleDelete = async (groupId: string) => {
     if (!user || user.role !== 'admin') {
@@ -148,15 +166,35 @@ export default function GroupsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
-            <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={showInactive}
-                onChange={(e) => setShowInactive(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <span>Show Inactive Students</span>
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Inactive</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showLevel}
+                  onChange={(e) => setShowLevel(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Level</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showPoints}
+                  onChange={(e) => setShowPoints(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Points</span>
+              </label>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <select
@@ -257,6 +295,7 @@ export default function GroupsPage() {
                 <ul className="space-y-1">
                   {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
+                    const points = studentPoints[student.id] || 0;
                     return (
                       <li 
                         key={student.id} 
@@ -269,11 +308,18 @@ export default function GroupsPage() {
                         {!student.status && (
                           <span className="text-xs text-gray-400">(Inactive)</span>
                         )}
-                        {level && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-md">
-                            {level.name}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {showLevel && level && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-md">
+                              {level.name}
+                            </span>
+                          )}
+                          {showPoints && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md">
+                              {points} pts
+                            </span>
+                          )}
+                        </div>
                       </li>
                     );
                   })}
