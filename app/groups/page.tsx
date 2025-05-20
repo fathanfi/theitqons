@@ -25,12 +25,14 @@ export default function GroupsPage() {
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
   const loadAcademicYears = useSchoolStore((state) => state.loadAcademicYears);
+  const loadLevels = useSchoolStore((state) => state.loadLevels);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('ALL');
   const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showInactive, setShowInactive] = useState(false);
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
 
@@ -40,8 +42,9 @@ export default function GroupsPage() {
       loadClasses();
       loadTeachers();
       loadAcademicYears();
+      loadLevels();
     }
-  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears]);
+  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears, loadLevels]);
 
   const handleDelete = async (groupId: string) => {
     if (!user || user.role !== 'admin') {
@@ -107,6 +110,7 @@ export default function GroupsPage() {
     return studentIds
       .map(id => students.find(s => s.id === id))
       .filter((student): student is Student => student !== undefined)
+      .filter(student => showInactive || student.status)
       .sort((a, b) => {
         const comparison = a.name.localeCompare(b.name);
         return studentSortOrder === 'asc' ? comparison : -comparison;
@@ -144,6 +148,15 @@ export default function GroupsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
+            <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span>Show Inactive Students</span>
+            </label>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <select
@@ -209,6 +222,8 @@ export default function GroupsPage() {
           const class_ = classes.find(c => c.id === group.classId);
           const teacher = useSchoolStore.getState().teachers.find(t => t.id === group.teacherId);
           const sortedStudents = getSortedStudents(group.students);
+          const totalStudents = group.students?.length || 0;
+          const visibleStudents = sortedStudents.length;
 
           return (
             <div key={group.id} className="rounded-lg shadow-md p-6 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
@@ -217,7 +232,7 @@ export default function GroupsPage() {
                   <h3 className="text-lg font-semibold">{group.name}</h3>
                   <p className="text-sm text-gray-300 flex items-center gap-2 flex-wrap">
                     {class_ ? class_.name : 'No Class'} • {teacher ? teacher.name : 'No Teacher'}
-                    <span className="text-xs text-blue-300 font-bold">• {sortedStudents.length}</span>
+                    <span className="text-xs text-blue-300 font-bold">• {visibleStudents}</span>
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -243,9 +258,17 @@ export default function GroupsPage() {
                   {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
                     return (
-                      <li key={student.id} className="text-sm flex items-center gap-2 text-gray-100">
+                      <li 
+                        key={student.id} 
+                        className={`text-sm flex items-center gap-2 ${
+                          !student.status ? 'text-gray-400' : 'text-gray-100'
+                        }`}
+                      >
                         <span className="text-gray-400 w-6">{index + 1}.</span>
                         <span>{student.name}</span>
+                        {!student.status && (
+                          <span className="text-xs text-gray-400">(Inactive)</span>
+                        )}
                         {level && (
                           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-md">
                             {level.name}
@@ -257,7 +280,12 @@ export default function GroupsPage() {
                 </ul>
                 {sortedStudents.length > 0 && (
                   <p className="text-sm text-gray-300 mt-2 font-semibold">
-                    Total Students: {sortedStudents.length}
+                    Total Students: {visibleStudents}
+                    {!showInactive && totalStudents > visibleStudents && (
+                      <span className="ml-2 text-gray-400">
+                        ({totalStudents - visibleStudents} inactive hidden)
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
