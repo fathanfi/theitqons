@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
+import { CheckCircleIcon, ExclamationCircleIcon, MinusCircleIcon } from '@heroicons/react/24/solid';
 
 export default function GroupsPage() {
   const { currentAcademicYear } = useSession();
@@ -38,6 +39,9 @@ export default function GroupsPage() {
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
+  const [showReportProgress, setShowReportProgress] = useState(false);
+  const [reportSessionFilter, setReportSessionFilter] = useState<'ALL' | 1 | 2>('ALL');
+  const [studentReports, setStudentReports] = useState<{ [studentId: string]: { [sessionId: number]: string } }>({});
 
   useEffect(() => {
     if (currentAcademicYear) {
@@ -135,6 +139,29 @@ export default function GroupsPage() {
       });
   };
 
+  // Fetch student_reports for all students in filtered groups when showReportProgress is enabled
+  useEffect(() => {
+    const fetchReports = async () => {
+      if (!showReportProgress || !currentAcademicYear) return;
+      const studentIds = Array.from(new Set(filteredGroups.flatMap(g => g.students)));
+      if (studentIds.length === 0) return;
+      const { data, error } = await supabase
+        .from('student_reports')
+        .select('student_id, session_id, completion_status')
+        .eq('academic_year_id', currentAcademicYear.id)
+        .in('student_id', studentIds);
+      if (error) return;
+      // Map: { studentId: { sessionId: completion_status } }
+      const reports: { [studentId: string]: { [sessionId: number]: string } } = {};
+      data.forEach((r: any) => {
+        if (!reports[r.student_id]) reports[r.student_id] = {};
+        reports[r.student_id][r.session_id] = r.completion_status;
+      });
+      setStudentReports(reports);
+    };
+    fetchReports();
+  }, [showReportProgress, filteredGroups, currentAcademicYear]);
+
   if (!currentAcademicYear) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -194,6 +221,26 @@ export default function GroupsPage() {
                 />
                 <span>Show Points</span>
               </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showReportProgress}
+                  onChange={(e) => setShowReportProgress(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Report Progress</span>
+              </label>
+              {showReportProgress && (
+                <select
+                  value={reportSessionFilter}
+                  onChange={e => setReportSessionFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value) as 1 | 2)}
+                  className="px-2 py-1 border rounded-md text-sm"
+                >
+                  <option value="ALL">All</option>
+                  <option value={1}>Semester 1</option>
+                  <option value={2}>Semester 2</option>
+                </select>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -317,6 +364,24 @@ export default function GroupsPage() {
                           {showPoints && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md">
                               {points} pts
+                            </span>
+                          )}
+                          {/* Report Progress Icons */}
+                          {showReportProgress && (
+                            <span className="flex items-center gap-1">
+                              {(['ALL', 1, 2] as const)
+                                .filter(sessionId => reportSessionFilter === 'ALL' ? sessionId !== 'ALL' : sessionId === reportSessionFilter)
+                                .map(sessionId => {
+                                  if (sessionId === 'ALL') return null;
+                                  const status = studentReports[student.id]?.[sessionId] || 'empty';
+                                  if (status === 'complete') {
+                                    return <CheckCircleIcon key={sessionId} className="w-4 h-4 text-green-400" title={`Semester ${sessionId}: Complete`} />;
+                                  } else if (status === 'incomplete') {
+                                    return <ExclamationCircleIcon key={sessionId} className="w-4 h-4 text-yellow-400" title={`Semester ${sessionId}: Incomplete`} />;
+                                  } else {
+                                    return <MinusCircleIcon key={sessionId} className="w-4 h-4 text-gray-400" title={`Semester ${sessionId}: Empty`} />;
+                                  }
+                                })}
                             </span>
                           )}
                         </div>

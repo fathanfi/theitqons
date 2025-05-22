@@ -13,7 +13,7 @@ interface StudentReport {
       tahsin: { predicate: string; description: string };
       target: { predicate: string; description: string };
     };
-    score: Array<{ name: string; value: string; predicate: string }>;
+    score: Array<{ name: string; tahfidz_score: string; tahsin_score: string; customName: string }>;
     attendance: { present: number; permit: number; absence: number };
     notes: string;
     signatures: {
@@ -25,6 +25,7 @@ interface StudentReport {
     };
   };
   status?: string;
+  completion_status?: 'complete' | 'incomplete' | 'empty';
 }
 
 interface StudentReportsStore {
@@ -37,10 +38,68 @@ interface StudentReportsStore {
   getParentName: (studentId: string) => Promise<string>;
   getLevelName: (levelId: string) => Promise<string>;
   getGroupName: (studentId: string) => Promise<string>;
+  calculateCompletionStatus: (report: Omit<StudentReport, 'id' | 'status'>) => 'complete' | 'incomplete' | 'empty';
 }
 
 export const useStudentReportsStore = create<StudentReportsStore>((set, get) => ({
   currentReport: null,
+
+  calculateCompletionStatus: (report) => {
+    const { meta_values } = report;
+    
+    // Check if any field is filled
+    const hasAnyData = 
+      meta_values.ziyadah.adab.predicate ||
+      meta_values.ziyadah.murajaah.predicate ||
+      meta_values.ziyadah.tahsin.predicate ||
+      meta_values.ziyadah.target.predicate ||
+      meta_values.score.length > 0 ||
+      meta_values.attendance.present > 0 ||
+      meta_values.attendance.permit > 0 ||
+      meta_values.attendance.absence > 0 ||
+      meta_values.notes ||
+      meta_values.signatures.place ||
+      meta_values.signatures.parent ||
+      meta_values.signatures.principal ||
+      meta_values.signatures.teacher;
+
+    if (!hasAnyData) return 'empty';
+
+    // Check ziyadah completion
+    const ziyadahComplete = 
+      meta_values.ziyadah.adab.predicate &&
+      meta_values.ziyadah.murajaah.predicate &&
+      meta_values.ziyadah.tahsin.predicate &&
+      meta_values.ziyadah.target.predicate &&
+      meta_values.ziyadah.adab.description.split(' ').length <= 10 &&
+      meta_values.ziyadah.murajaah.description.split(' ').length <= 10 &&
+      meta_values.ziyadah.tahsin.description.split(' ').length <= 10 &&
+      meta_values.ziyadah.target.description.split(' ').length <= 10;
+
+    // Check score completion (minimum 1 score)
+    const scoreComplete = meta_values.score.length >= 1 && meta_values.score.every(s => s.name && s.tahfidz_score && s.tahsin_score);
+
+    // Check notes completion (20-60 words)
+    const notesWordCount = meta_values.notes.trim().split(/\s+/).length;
+    const notesComplete = notesWordCount >= 20 && notesWordCount <= 40;
+
+    // Check attendance completion
+    const attendanceComplete = 
+      meta_values.attendance.present >= 0 &&
+      meta_values.attendance.permit >= 0 &&
+      meta_values.attendance.absence >= 0;
+
+    // Check signatures completion
+    const signaturesComplete = 
+      meta_values.signatures.place &&
+      meta_values.signatures.parent &&
+      meta_values.signatures.principal &&
+      meta_values.signatures.teacher;
+
+    return (ziyadahComplete && scoreComplete && notesComplete && attendanceComplete && signaturesComplete) 
+      ? 'complete' 
+      : 'incomplete';
+  },
 
   loadReport: async (academicYearId: string, sessionId: number, studentId: string) => {
     console.log('academicYearId', academicYearId);
@@ -67,9 +126,10 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
 
   saveReport: async (report) => {
     try {
+      const { completion_status, ...rest } = report;
       const { error } = await supabase
         .from('student_reports')
-        .insert([{ ...report, status: 'draft' }]);
+        .insert([{ ...rest, status: 'draft', completion_status }]);
 
       if (error) throw error;
       return { error: null };
@@ -81,9 +141,10 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
 
   updateReport: async (report) => {
     try {
+      const { completion_status, ...rest } = report;
       const { error } = await supabase
         .from('student_reports')
-        .update(report)
+        .update({ ...rest, completion_status })
         .eq('id', report.id);
 
       if (error) throw error;

@@ -9,12 +9,13 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Select from 'react-select';
 import { supabase } from '@/lib/supabase';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 const SESSIONS = [
   { id: 1, name: '1' },
   { id: 2, name: '2' },
 ];
-const PREDICATES = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "100%"];
+const PREDICATES = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "100%", "75%", "50%", "25%", "0%"];
 
 // Helper to load image as base64 at runtime
 function getBase64FromUrl(url: string): Promise<string> {
@@ -27,6 +28,48 @@ function getBase64FromUrl(url: string): Promise<string> {
       reader.readAsDataURL(blob);
     }));
 }
+
+// Ziyadah predicate to description mapping
+const ZIYADAH_DESCRIPTIONS: Record<string, string> = {
+  'Mumtaz': 'Sempurna! Pertahankan dan semoga Istiqomah',
+  'Jayyid Jiddan': 'Baik Sekali! Pertahankan',
+  'Jayyid': 'Baik! Tingkatkan dengan lebih baik',
+  'Dhoif': 'Kurang Baik! Segera Perbaiki Ya.',
+  '100%': 'Target Tercapai!',
+  '75%': 'Sudah Baik! Tingkatan lagi',
+  '50%': 'Perlu di Tingkatan lagi.',
+  '25%': 'Jangan patah semangat!',
+  '0%': 'Harus diperbaik!'
+};
+
+const SCORE_NAMES = [
+  'PILIH MATERI',
+  'CUSTOM',
+  'IQ-0 HIJAIYAH, TAHSIN DASAR',
+  'ITQON 1 ANNAAS - AL A\'LA',
+  'ITQON 2 AT THORIQ  - AN-NABA',
+  'ITQON 3 AL MURSALAT - AL JINN',
+  'ITQON 4 NUH - AL MULK',
+  'ITQON 5 AT TAHRIM - AS SHAFF',
+  'ITQON 6 AL MUMTAHANAH - AL MUJADALAH',
+  'ITQON 7 AL FATIHAH - AL BAQARAH 141',
+  'IQ-1.1 ANNAAS  - AL BAYYINAH',
+  'IQ-1.2 AL QODR - AL A\'LA',
+  'IQ-2.1 AT THORIQ  - AL INFITAAR',
+  'IQ-2.2 AT TAKWIR  - AN-NABA',
+  'IQ-3.1 AL MURSALAT  - AL QIYAMAH',
+  'IQ-3.2 AL MUDATSIR - AL JINN',
+  'IQ-4.1 NUH  - AL HAQQOH',
+  'IQ-4.2 AL QOLAM - AL MULK',
+  'IQ-5.1 AT TAHRIM  - AT TAGOOBUN',
+  'IQ-5.2 AL MUNAFIQUN - ASH-SHAFF',
+  'IQ-6.1 AL MUMTAHANAH  - AL HASYR AYAT 9',
+  'IQ-6.2 AL HASYR 10 - AL MUJADALAH',
+  'IQ-7.1 AL FATIHAH  - AL BAQARAH 76',
+  'IQ-7.2 AL BAQARAH 77 - AL BAQARAH 141',
+];
+
+const PREDICATES_MAIN = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "Nafis"];
 
 export default function StudentReportsPage() {
   const reportRef = useRef<HTMLDivElement>(null);
@@ -76,11 +119,11 @@ export default function StudentReportsPage() {
 
   // Section 5: Score
   const [scores, setScores] = useState([
-    { name: "Tahfizh", value: "", predicate: "" },
+    { name: "PILIH MATERI", tahfidz_score: "", tahsin_score: "", customName: "" }
   ]);
 
   // Section 6: Attendance
-  const [attendance, setAttendance] = useState({ present: 0, permit: 0, absence: 0 });
+  const [attendance, setAttendance] = useState({ present: 90, permit: 0, absence: 0 });
 
   // Section 7: Signatures
   const [signatures, setSignatures] = useState({
@@ -91,24 +134,22 @@ export default function StudentReportsPage() {
     teacher: "",
   });
 
-  // --- Overall Score Calculation for UI/Print ---
-  const calculateOverallScore = (scores: { value: string }[]) => {
-    const numericScores = scores
-      .map(s => parseFloat(s.value))
-      .filter(v => !isNaN(v));
-    
-    if (numericScores.length === 0) return 0;
-    return numericScores.reduce((sum, score) => sum + score, 0) / numericScores.length;
-  };
+  // Add ref for the textarea
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const getOverallPredicate = (score: number) => {
-    if (score > 90) return 'Mumtaz';
-    if (score >= 85 && score <= 90) return 'Jayyid Jiddan';
-    if (score >= 66 && score < 85) return 'Jayyid';
-    if (score >= 50 && score < 66) return 'Dhoif';
-    if (score < 50) return 'Nafis';
-    return '-';
-  };
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (textareaRef.current && !textareaRef.current.contains(event.target as Node)) {
+        calculateCompletionProgress();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch teacher ID when user changes
   useEffect(() => {
@@ -170,9 +211,6 @@ export default function StudentReportsPage() {
   const classObj = classes.find((c) => c.id === classId);
   const academicYearObj = academicYears.find((y) => y.id === academicYear);
   const sessionObj = SESSIONS.find((s) => s.id === sessionId);
-
-  const overallScore = calculateOverallScore(scores);
-  const overallPredicate = getOverallPredicate(overallScore);
 
   // Load initial data
   useEffect(() => {
@@ -252,6 +290,11 @@ export default function StudentReportsPage() {
       setScores(currentReport.meta_values.score);
       setAttendance(currentReport.meta_values.attendance);
       setSignatures(currentReport.meta_values.signatures);
+      // Force completion calculation after loading data
+      setTimeout(() => {
+        setIsEditing(false);
+        calculateCompletionProgress();
+      }, 0);
     } else {
       // Reset form when no report is found
       setZiyadah({
@@ -261,21 +304,166 @@ export default function StudentReportsPage() {
         target: { predicate: "", description: "" },
       });
       setTahfidzNotes("");
-      setScores([{ name: "Materi Ujian", value: "", predicate: "" }]);
-      setAttendance({ present: 0, permit: 0, absence: 0 });
+      setScores([{ name: "PILIH MATERI", tahfidz_score: "", tahsin_score: "", customName: "" }]);
+      setAttendance({ present: 90, permit: 0, absence: 0 });
       setSignatures(prev => ({
         ...prev,
         place: "",
         date: new Date().toISOString().slice(0, 10),
       }));
+      // Reset completion status
+      setIsEditing(false);
+      calculateCompletionProgress();
     }
   }, [currentReport]);
 
   // Filter classes by academic year if needed (if classes have academicYearId)
   const filteredClasses = classes; // adjust if you have academicYearId
 
-  // Save/Update handler
+  // Add state to track if fields are being edited
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Update completion status calculation
+  const calculateCompletionProgress = () => {
+    // If no student selected or no data entered at all, return empty
+    if (!studentId || (!currentReport && !Object.values(ziyadah).some(val => val.predicate || val.description))) {
+      return {
+        progress: 0,
+        sections: [
+          { name: 'Ziyadah', complete: false },
+          { name: 'Score', complete: false },
+          { name: 'Notes', complete: false },
+          { name: 'Attendance', complete: false }
+        ],
+        status: 'empty'
+      };
+    }
+
+    const sections = [
+      {
+        name: 'Ziyadah',
+        complete: Object.values(ziyadah).every(val => 
+          val.predicate && 
+          val.description && 
+          val.description.trim().split(/\s+/).length <= 10
+        )
+      },
+      {
+        name: 'Score',
+        complete: scores.length >= 1 && scores.every(score => 
+          score.name && 
+          score.tahfidz_score && 
+          score.tahsin_score
+        )
+      },
+      {
+        name: 'Notes',
+        complete: (() => {
+          const wordCount = tahfidzNotes.trim().split(/\s+/).length;
+          return wordCount >= 20 && wordCount <= 40;
+        })()
+      },
+      {
+        name: 'Attendance',
+        complete: attendance.present >= 0 && attendance.permit >= 0 && attendance.absence >= 0
+      }
+    ];
+
+    const completedSections = sections.filter(s => s.complete).length;
+    const progress = (completedSections / sections.length) * 100;
+
+    return {
+      progress,
+      sections,
+      status: completedSections === sections.length ? 'complete' : 'incomplete'
+    };
+  };
+
+  // Attendance handlers
+  const handleAttendanceChange = (field: 'present' | 'permit' | 'absence', value: number) => {
+    if (field === 'permit' || field === 'absence') {
+      const newPermit = field === 'permit' ? value : attendance.permit;
+      const newAbsence = field === 'absence' ? value : attendance.absence;
+      setAttendance({
+        present: Math.max(0, 90 - newPermit - newAbsence),
+        permit: newPermit,
+        absence: newAbsence
+      });
+    } else {
+      setAttendance(a => ({ ...a, present: value }));
+    }
+  };
+
+  // Ziyadah handler
+  const handleZiyadahChange = (aspect: string, field: string, value: string) => {
+    setIsEditing(true);
+    setZiyadah((prev) => {
+      let newVal = value;
+      if (field === 'predicate' && ZIYADAH_DESCRIPTIONS[value]) {
+        newVal = value;
+        return {
+          ...prev,
+          [aspect]: {
+            ...prev[aspect as keyof typeof prev],
+            predicate: value,
+            description: ZIYADAH_DESCRIPTIONS[value]
+          }
+        };
+      }
+      return {
+        ...prev,
+        [aspect]: {
+          ...prev[aspect as keyof typeof prev],
+          [field]: value
+        }
+      };
+    });
+  };
+
+  // Score handlers
+  const handleScoreChange = (idx: number, field: string, value: string) => {
+    setIsEditing(true);
+    setScores((prev) => prev.map((s, i) => {
+      if (i !== idx) return s;
+      if (field === 'name') {
+        return { ...s, name: value, customName: value === 'CUSTOM' ? s.customName || '' : '' };
+      }
+      return { ...s, [field]: value };
+    }));
+  };
+
+  const handleCustomScoreNameChange = (idx: number, value: string) => {
+    setIsEditing(true);
+    setScores((prev) => prev.map((s, i) => i === idx ? { ...s, customName: value } : s));
+  };
+
+  const addScore = () => {
+    setIsEditing(true);
+    setScores((prev) => [...prev, { name: "PILIH MATERI", tahfidz_score: "", tahsin_score: "", customName: "" }]);
+  };
+
+  const removeScore = (idx: number) => {
+    setIsEditing(true);
+    setScores((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // Add blur handlers for all input fields
+  const handleFieldBlur = () => {
+    setIsEditing(false);
+    calculateCompletionProgress();
+  };
+
+  // Add loading state for Save/Update
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Update save handler
   const handleSave = async () => {
+    setIsEditing(false);
+    setIsSaving(true);
+    // Calculate completion status before saving
+    const completion = calculateCompletionProgress();
+    const completion_status = completion.status as 'empty' | 'complete' | 'incomplete';
     const reportData = {
       academic_year_id: academicYear,
       student_id: studentId,
@@ -287,6 +475,7 @@ export default function StudentReportsPage() {
         notes: tahfidzNotes,
         signatures,
       },
+      completion_status,
     };
 
     let result;
@@ -296,24 +485,24 @@ export default function StudentReportsPage() {
       result = await saveReport(reportData);
     }
 
+    setIsSaving(false);
     if (!result.error) {
-      alert(currentReport ? "Report updated successfully!" : "Report saved successfully!");
-      // Reload the report to get the latest data
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
       loadReport(academicYear, sessionId, studentId);
     } else {
       alert("Error saving report. Please try again.");
     }
   };
 
-  // Handlers for dynamic fields
-  const handleZiyadahChange = (aspect: string, field: string, value: string) => {
-    setZiyadah((prev) => ({ ...prev, [aspect]: { ...prev[aspect as keyof typeof prev], [field]: value } }));
-  };
-  const handleScoreChange = (idx: number, field: string, value: string) => {
-    setScores((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
-  };
-  const addScore = () => setScores((prev) => [...prev, { name: "", value: "", predicate: "" }]);
-  const removeScore = (idx: number) => setScores((prev) => prev.filter((_, i) => i !== idx));
+  const completion = calculateCompletionProgress();
+
+  // Attendance percentage calculation
+  const totalDays = 90 + attendance.permit + attendance.absence;
+  const attendancePercent = totalDays > 0 ? Math.round((90 / totalDays) * 100) : 100;
+  let attendanceColor = 'bg-red-500';
+  if (attendancePercent >= 75) attendanceColor = 'bg-green-500';
+  else if (attendancePercent >= 50) attendanceColor = 'bg-yellow-400';
 
   const handlePrint = () => {
     window.print();
@@ -325,6 +514,8 @@ export default function StudentReportsPage() {
     // Get logo and arabic title as base64 at runtime
     const logoBase64 = await getBase64FromUrl('/images/pptq-logo.png');
     const arabicBase64 = await getBase64FromUrl('/images/arabicword.png');
+    // Get watermark logo as base64
+    const watermarkBase64 = await getBase64FromUrl('/images/watermarklogo.png');
 
     // --- Capitalize First Letter ---
     const capitalizeFirst = (text: string) => {
@@ -342,6 +533,20 @@ export default function StudentReportsPage() {
     // A4 size
     const doc = new jsPDF({ format: 'a4', unit: 'mm' });
     let y = 15;
+
+    // Background Image Watermark
+    const pageWidths = doc.internal.pageSize.getWidth();
+    const pageHeights = doc.internal.pageSize.getHeight();
+    const logoWidth = 120;  // Adjust as needed
+    const logoHeight = 120;
+    doc.addImage(
+      watermarkBase64,
+      'PNG',
+      (pageWidths - logoWidth) / 2,
+      (pageHeights - logoHeight) / 2,
+      logoWidth,
+      logoHeight
+    );
 
     // --- Custom Header ---
     doc.addImage(logoBase64, 'PNG', 20, y, 22, 20);
@@ -405,7 +610,7 @@ export default function StudentReportsPage() {
       startY: y,
       head: [['Aspek', 'Predikat', 'Deskripsi']],
       body: ziyadahData,
-      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center', fillColor: false },
       headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 25 },
       tableLineColor: [180, 180, 180],
@@ -416,40 +621,44 @@ export default function StudentReportsPage() {
 
     const scoresData = scores.map(score => [
       capitalizeFirst(score.name),
-      score.value,
-      score.predicate
+      score.tahfidz_score,
+      score.tahsin_score
     ]);
     autoTable(doc, {
       startY: y,
-      head: [['Materi Ujian', 'Nilai', 'Predikat']],
+      head: [['Materi Ujian', 'Tahfidz', 'Tahsin']],
       body: scoresData,
-      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center', fillColor: false },
       headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 25 },
       tableLineColor: [180, 180, 180],
       tableLineWidth: 0.2,
       theme: 'grid',
     });
-    y = (doc as any).lastAutoTable.finalY + 5;
+    y = (doc as any).lastAutoTable.finalY + 10;
 
-    // --- Overall Score Row (UI/Print) ---
-    autoTable(doc, {
-      startY: y,
-      head: [['Nilai Akhir', 'Predikat']],
-      body: [[overallScore ? overallScore.toFixed(2) : '-', overallPredicate]],
-      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
-      headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
-      margin: { left: 25, right: 25 },
-      tableLineColor: [180, 180, 180],
-      tableLineWidth: 0.2,
-      theme: 'grid',
-    });
-    y = (doc as any).lastAutoTable.finalY + 5;
+    // Add Overal Score
+    const overalScoreText = 'Overal Score: ' + overallPredicate + ' ( ' + overallDescription + ' )';
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(12);
+    doc.text(overalScoreText.toUpperCase(), 105, y, { align: 'center' });
+    y += 4;
+    
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const lineWidth = 120;
+    const startX = (pageWidth - lineWidth) / 2;
+    const endX = startX + lineWidth;
+    doc.line(startX, y, endX, y);
+    y += 10;
+
 
     // --- Attendance and Notes as side-by-side tables ---
     // Attendance Table
     const attendanceTable = [
-      ['Hadir', attendance.present],
+      ['Hadir', 90],
       ['Izin', attendance.permit],
       ['Alpa', attendance.absence],
     ];
@@ -464,6 +673,10 @@ export default function StudentReportsPage() {
       tableLineWidth: 0.2,
       theme: 'grid',
     });
+    // Add Attendance Percentage
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text('Kehadiran: ' + attendancePercent + '%', 25, (doc as any).lastAutoTable.finalY + 5);
     // Notes Table (single, not double)
     const notesTable = [
       [tahfidzNotes || '-']
@@ -472,11 +685,11 @@ export default function StudentReportsPage() {
       startY: y,
       head: [['Catatan', '']],
       body: notesTable,
-      styles: { font: 'helvetica', fontSize: 11, halign: 'left' },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center', textColor: [60, 70, 90] },
       headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 80, right: 25 },
       tableLineWidth: 0.2,
-      theme: 'grid',
+      theme: 'plain',
     });
     y = Math.max((doc as any).lastAutoTable.finalY, y + 25) + 10;
 
@@ -497,9 +710,9 @@ export default function StudentReportsPage() {
     doc.text('Direktur PPTQ', 105, sigY, { align: 'center' });
     doc.text('Muhafidz', 170, sigY, { align: 'right' });
     doc.setFontSize(11);
-    doc.text(`( ${signatures.parent || '..........................'} )`, 40, sigY + 25);
-    doc.text(`( ${signatures.principal || '..........................'} )`, 105, sigY + 25, { align: 'center' });
-    doc.text(`( ${signatures.teacher || '..........................'} )`, 190, sigY + 25, { align: 'right' });
+    doc.text(`( ${signatures.parent || '.......................................'} )`, 25, sigY + 25);
+    doc.text(`( ${signatures.principal || '..........................'} )`,105, sigY + 25, { align: 'center' });
+    doc.text(`( ${signatures.teacher || '..........................'} )`, 185, sigY + 25, { align: 'right' });
 
     // Build file name (UPPERCASE)
     const studentNameSnake = toSnakeCase(student?.name || 'student').toUpperCase();
@@ -509,8 +722,55 @@ export default function StudentReportsPage() {
     doc.save(fileName);
   };
 
+  // Add getOverallPredicate function
+  const getOverallPredicate = () => {
+    // Collect all tahfidz_score and tahsin_score
+    const allScores = scores
+      .flatMap(s => [s.tahfidz_score, s.tahsin_score])
+      .filter(Boolean);
+    if (allScores.length === 0) return '-';
+    // Count occurrences
+    const counts: Record<string, number> = {};
+    allScores.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
+    // Helper to check if all are the same
+    const allAre = (val: string) => allScores.every(s => s === val);
+    // Helper to check if highest is val and next is nextVal
+    const hasPair = (val: string, nextVal: string) =>
+      allScores.includes(val) && allScores.includes(nextVal) &&
+      allScores.every(s => s === val || s === nextVal);
+    if (allAre('Mumtaz')) return 'Mumtaz';
+    if (hasPair('Mumtaz', 'Jayyid Jiddan')) return 'Jayyid Jiddan+';
+    if (allAre('Jayyid Jiddan')) return 'Jayyid Jiddan';
+    if (hasPair('Jayyid Jiddan', 'Jayyid')) return 'Jayyid+';
+    if (allAre('Jayyid')) return 'Jayyid';
+    if (hasPair('Jayyid', 'Dhoif')) return 'Dhoif+';
+    if (allAre('Dhoif')) return 'Dhoif';
+    if (hasPair('Nafis', 'Dhoif')) return 'Nafis+';
+    if (allAre('Nafis')) return 'Nafis';
+    return allScores[0];
+  };
+
+  // Add getOverallDescription function
+  const getOverallDescription = (predicate: string) => {
+    switch (predicate) {
+      case 'Mumtaz': return 'Excellent!, Sempurna';
+      case 'Jayyid Jiddan+': return 'Super Brilliant!, Luar Biasa Baik';
+      case 'Jayyid Jiddan': return 'Brilliant, Sangat Baik Sekali';
+      case 'Jayyid+': return 'Really Good, Sangat Baik';
+      case 'Jayyid': return 'Good, Baik';
+      case 'Dhoif+': return 'Need Improvement, Cukup Baik';
+      case 'Dhoif': return 'Bad, Tidak Terlalu Baik';
+      case 'Nafis+': return 'Really Bad, Buruk';
+      case 'Nafis': return 'Worst, Sangat Buruk';
+      default: return '';
+    }
+  };
+
+  const overallPredicate = getOverallPredicate();
+  const overallDescription = getOverallDescription(overallPredicate);
+
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4 md:space-y-8">
+    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4 md:space-y-8">
       {/* Print and screen header, always visible */}
       <style jsx global>{`
         @media print {
@@ -641,7 +901,10 @@ export default function StudentReportsPage() {
           />
         </div>
         <button 
-          onClick={handleSave} 
+          onClick={() => {
+            calculateCompletionProgress();
+            handleSave();
+          }} 
           className="w-full md:w-auto ml-auto bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           disabled={!academicYear || !studentId}
         >
@@ -678,11 +941,22 @@ export default function StudentReportsPage() {
                 <tr key={aspect}>
                   <td className="border px-2 py-1 capitalize">{aspect}</td>
                   <td className="border px-2 py-1 no-print">
-                    <select value={val.predicate} onChange={e => handleZiyadahChange(aspect, "predicate", e.target.value)} className="border rounded px-1">
+                    <select 
+                      value={val.predicate} 
+                      onChange={e => handleZiyadahChange(aspect, "predicate", e.target.value)}
+                      onBlur={handleFieldBlur}
+                      className="border rounded px-3 py-2 w-full sm:w-48"
+                    >
                       <option value="">-</option>
                       {PREDICATES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
-                    <input value={val.description} onChange={e => handleZiyadahChange(aspect, "description", e.target.value)} className="border rounded px-1 w-full min-h-[40px]" />
+                    <input 
+                      value={val.description} 
+                      onChange={e => handleZiyadahChange(aspect, "description", e.target.value)}
+                      onBlur={handleFieldBlur}
+                      className="border rounded px-3 py-2 w-full min-h-[40px]" 
+                    />
+                    <span className="ml-2 text-xs text-gray-500">Word count: {val.description.trim().split(/\s+/).filter(Boolean).length} (min: 2, max: 10)</span>
                   </td>
                   <td className="border px-2 py-1 print-only">{val.predicate}</td>
                   <td className="border px-2 py-1 print-only">{val.description}</td>
@@ -694,55 +968,119 @@ export default function StudentReportsPage() {
         {/* Catatan Tahfidz */}
         <div className="flex-1 bg-white rounded shadow p-4 w-full">
           <h2 className="font-semibold mb-2">Catatan Tahfidz</h2>
-          <textarea value={tahfidzNotes} onChange={e => setTahfidzNotes(e.target.value)} className="w-full border rounded min-h-[150px]" />
+          <textarea 
+            value={tahfidzNotes} 
+            onChange={e => {
+              setIsEditing(true);
+              setTahfidzNotes(e.target.value);
+            }}
+            onBlur={handleFieldBlur}
+            className="w-full border rounded px-3 py-2 min-h-[300px]"
+          />
+          <div className="mt-2 text-sm text-gray-500">
+            Word count: {tahfidzNotes.trim().split(/\s+/).length} (min: 20, max: 40)
+          </div>
         </div>
       </div>
 
       {/* Section 5 & 6: Score & Attendance */}
       <div className="flex flex-col md:flex-row gap-8">
         {/* Score Repeater */}
-        <div className="flex-1 bg-white rounded shadow p-4 w-full min-w-0">
+        <div className="w-full md:w-3/4 bg-white rounded shadow p-4">
           <h2 className="font-semibold mb-2">Score</h2>
           {scores.map((score, idx) => (
             <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch w-full">
-              <input value={score.name} onChange={e => handleScoreChange(idx, "name", e.target.value)} placeholder="Name" className="border rounded px-1 w-full sm:w-32" />
-              <input value={score.value} onChange={e => handleScoreChange(idx, "value", e.target.value)} placeholder="Value" className="border rounded px-1 w-full sm:w-16" />
-              <select value={score.predicate} onChange={e => handleScoreChange(idx, "predicate", e.target.value)} className="border rounded px-1 w-full sm:w-32">
-                <option value="">-</option>
-                {PREDICATES.map(p => <option key={p} value={p}>{p}</option>)}
+              <select
+                value={score.name}
+                onChange={e => handleScoreChange(idx, "name", e.target.value)}
+                onBlur={handleFieldBlur}
+                className="border rounded px-3 py-2 w-full sm:w-48"
+              >
+                {SCORE_NAMES.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              {score.name === 'CUSTOM' && (
+                <input
+                  value={score.customName || ''}
+                  onChange={e => handleCustomScoreNameChange(idx, e.target.value)}
+                  onBlur={handleFieldBlur}
+                  placeholder="Custom Materi"
+                  className="border rounded px-3 py-2 w-full sm:w-48"
+                />
+              )}
+              <select
+                value={score.tahfidz_score}
+                onChange={e => handleScoreChange(idx, "tahfidz_score", e.target.value)}
+                onBlur={handleFieldBlur}
+                className="border rounded px-3 py-2 w-full sm:w-32"
+              >
+                <option value="">Tahfidz Score</option>
+                {PREDICATES_MAIN.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <select
+                value={score.tahsin_score}
+                onChange={e => handleScoreChange(idx, "tahsin_score", e.target.value)}
+                onBlur={handleFieldBlur}
+                className="border rounded px-3 py-2 w-full sm:w-32"
+              >
+                <option value="">Tahsin Score</option>
+                {PREDICATES_MAIN.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
               <button onClick={() => removeScore(idx)} className="text-red-500 no-print w-full sm:w-auto">Remove</button>
             </div>
           ))}
           <button onClick={addScore} className="mt-2 bg-green-500 text-white px-2 py-1 rounded no-print w-full sm:w-auto">Add Score</button>
-
-          {/* Overall Score Row (UI/Print) */}
-          <div className="bg-white rounded shadow p-4 flex flex-col md:flex-row gap-4 items-center mb-2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <div className="font-semibold">Overall Score:</div>
-            <div className="ml-2">{overallScore ? overallScore.toFixed(2) : '-'}</div>
-            <div className="ml-4 font-semibold">Predicate:</div>
+          <div className="mt-4 flex flex-col md:flex-row gap-4 items-center">
+            <div className="font-semibold">Overall Predicate:</div>
             <div className="ml-2">{overallPredicate}</div>
+            <div className="font-semibold ml-4">Overall Description:</div>
+            <div className="ml-2">{overallDescription}</div>
           </div>
         </div>
         {/* Attendance Table */}
-        <div className="flex-1 bg-white rounded shadow p-4 w-full min-w-0">
+        <div className="w-full md:w-1/4 bg-white rounded shadow p-4">
           <h2 className="font-semibold mb-2">Attendance</h2>
           <table className="w-full border">
             <tbody>
               <tr>
                 <td className="border px-2 py-1">Present</td>
-                <td className="border px-2 py-1"><input type="number" value={attendance.present} onChange={e => setAttendance(a => ({ ...a, present: +e.target.value }))} className="border rounded px-1 w-16" /></td>
+                <td className="border px-2 py-1">
+                  <input 
+                    type="number" 
+                    value={90} 
+                    readOnly
+                    className="border rounded px-3 py-2 w-16 bg-gray-100 cursor-not-allowed" 
+                  />
+                </td>
               </tr>
               <tr>
                 <td className="border px-2 py-1">Permit</td>
-                <td className="border px-2 py-1"><input type="number" value={attendance.permit} onChange={e => setAttendance(a => ({ ...a, permit: +e.target.value }))} className="border rounded px-1 w-16" /></td>
+                <td className="border px-2 py-1">
+                  <input 
+                    type="number" 
+                    value={attendance.permit} 
+                    onChange={e => handleAttendanceChange('permit', +e.target.value)}
+                    onBlur={handleFieldBlur}
+                    className="border rounded px-3 py-2 w-16" 
+                  />
+                </td>
               </tr>
               <tr>
                 <td className="border px-2 py-1">Absence</td>
-                <td className="border px-2 py-1"><input type="number" value={attendance.absence} onChange={e => setAttendance(a => ({ ...a, absence: +e.target.value }))} className="border rounded px-1 w-16" /></td>
+                <td className="border px-2 py-1">
+                  <input 
+                    type="number" 
+                    value={attendance.absence} 
+                    onChange={e => handleAttendanceChange('absence', +e.target.value)}
+                    onBlur={handleFieldBlur}
+                    className="border rounded px-3 py-2 w-16" 
+                  />
+                </td>
               </tr>
             </tbody>
           </table>
+          <div className={`mt-2 text-sm font-semibold text-white px-2 py-1 rounded ${attendanceColor}`}>Attendance: {attendancePercent}%</div>
         </div>
       </div>
 
@@ -774,9 +1112,73 @@ export default function StudentReportsPage() {
         </div>
       </div>
 
+      {/* Add completion status indicator */}
+      <div className="bg-white rounded shadow p-4 no-print">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold">Report Completion</h3>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            isEditing ? 'bg-blue-100 text-blue-800' :
+            completion.status === 'complete' ? 'bg-green-100 text-green-800' :
+            completion.status === 'incomplete' ? 'bg-yellow-100 text-yellow-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {isEditing ? 'Editing...' : completion.status.charAt(0).toUpperCase() + completion.status.slice(1)}
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+          <div 
+            className={`h-2.5 rounded-full ${
+              isEditing ? 'bg-blue-600' :
+              completion.status === 'complete' ? 'bg-green-600' :
+              completion.status === 'incomplete' ? 'bg-yellow-500' :
+              'bg-gray-400'
+            }`}
+            style={{ width: `${completion.progress}%` }}
+          ></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          {completion.sections.map((section, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                section.complete ? 'bg-green-500' : 'bg-gray-300'
+              }`}></div>
+              <span className="text-sm text-gray-600">{section.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Success Popup */}
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-8 flex flex-col items-center">
+            <CheckCircleIcon className="h-16 w-16 text-green-500 mb-4" />
+            <div className="text-lg font-semibold mb-2">Report Saved!</div>
+          </div>
+        </div>
+      )}
+
       {/* View | Download | Print */}
       <div className="flex justify-end gap-4 mt-4 no-print">
-        <button onClick={handleDownload} className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Download</button>
+        <button
+          onClick={handleDownload}
+          className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          Download
+        </button>
+        <button
+          onClick={handleSave}
+          className="bg-green-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2"
+          disabled={!academicYear || !studentId || isSaving}
+        >
+          {isSaving && (
+            <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+            </svg>
+          )}
+          {currentReport ? 'Update' : 'Save'}
+        </button>
       </div>
     </div>
   );
