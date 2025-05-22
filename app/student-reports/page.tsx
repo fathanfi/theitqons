@@ -724,30 +724,32 @@ export default function StudentReportsPage() {
 
   // Add getOverallPredicate function
   const getOverallPredicate = () => {
+    // Numeric mapping
+    const predicateToScore: Record<string, number> = {
+      'Mumtaz': 92,
+      'Jayyid Jiddan': 85,
+      'Jayyid': 75,
+      'Dhoif': 60,
+      'Nafis': 50
+    };
     // Collect all tahfidz_score and tahsin_score
     const allScores = scores
       .flatMap(s => [s.tahfidz_score, s.tahsin_score])
-      .filter(Boolean);
+      .map(val => predicateToScore[val] || 0)
+      .filter(v => v > 0);
     if (allScores.length === 0) return '-';
-    // Count occurrences
-    const counts: Record<string, number> = {};
-    allScores.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
-    // Helper to check if all are the same
-    const allAre = (val: string) => allScores.every(s => s === val);
-    // Helper to check if highest is val and next is nextVal
-    const hasPair = (val: string, nextVal: string) =>
-      allScores.includes(val) && allScores.includes(nextVal) &&
-      allScores.every(s => s === val || s === nextVal);
-    if (allAre('Mumtaz')) return 'Mumtaz';
-    if (hasPair('Mumtaz', 'Jayyid Jiddan')) return 'Jayyid Jiddan+';
-    if (allAre('Jayyid Jiddan')) return 'Jayyid Jiddan';
-    if (hasPair('Jayyid Jiddan', 'Jayyid')) return 'Jayyid+';
-    if (allAre('Jayyid')) return 'Jayyid';
-    if (hasPair('Jayyid', 'Dhoif')) return 'Dhoif+';
-    if (allAre('Dhoif')) return 'Dhoif';
-    if (hasPair('Nafis', 'Dhoif')) return 'Nafis+';
-    if (allAre('Nafis')) return 'Nafis';
-    return allScores[0];
+    const avg = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+    const roundedAvg = Math.round(avg);
+    if (avg > 90) return `Mumtaz (${roundedAvg})`;
+    if (avg >= 85 && avg <= 90) return `Jayyid Jiddan+`;
+    if (avg >= 81 && avg <= 84) return `Jayyid Jiddan`;
+    if (avg >= 75 && avg <= 80) return `Jayyid+`;
+    if (avg >= 66 && avg <= 74) return `Jayyid`;
+    if (avg >= 60 && avg <= 65) return `Dhoif+`;
+    if (avg >= 55 && avg <= 59) return `Dhoif`;
+    if (avg >= 52 && avg <= 54) return `Nafis+`;
+    if (avg < 52) return `Nafis (${roundedAvg})`;
+    return '-';
   };
 
   // Add getOverallDescription function
