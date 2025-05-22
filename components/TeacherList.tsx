@@ -85,20 +85,20 @@ export function TeacherList() {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
         <h2 className="text-2xl font-semibold">Teachers List</h2>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-600">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end md:gap-4">
+          <div className="text-sm text-gray-600 flex justify-between sm:justify-start sm:gap-4">
             <span className="mr-4">Male: {maleCount}</span>
             <span>Female: {femaleCount}</span>
           </div>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <input
               type="text"
               placeholder="Search teachers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full sm:w-64 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             {searchQuery && (
               <button

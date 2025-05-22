@@ -4,8 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { useSchoolStore } from '@/store/schoolStore';
 import { useStore } from '@/store/useStore';
 import { useStudentReportsStore } from '@/store/studentReportsStore';
+import { useAuthStore } from '@/store/authStore';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Select from 'react-select';
+import { supabase } from '@/lib/supabase';
 
 const SESSIONS = [
   { id: 1, name: '1' },
@@ -35,6 +38,9 @@ export default function StudentReportsPage() {
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const students = useStore((state) => state.students);
   const loadStudents = useStore((state) => state.loadStudents);
+  const groups = useSchoolStore((state) => state.groups);
+  const loadGroups = useSchoolStore((state) => state.loadGroups);
+  const { user } = useAuthStore();
   const { 
     currentReport, 
     loadReport, 
@@ -46,6 +52,7 @@ export default function StudentReportsPage() {
     getLevelName,
     getGroupName
   } = useStudentReportsStore();
+  const [teacherId, setTeacherId] = useState<string>('');
 
   const [academicYear, setAcademicYear] = useState<string>('');
   const [sessionId, setSessionId] = useState<number>(2); // Fixed to SM2
@@ -54,19 +61,7 @@ export default function StudentReportsPage() {
   const [levelName, setLevelName] = useState<string>('');
   const [groupName, setGroupName] = useState<string>('');
   const [teacherName, setTeacherName] = useState<string>('');
-
-  // Student search filter
   const [studentSearch, setStudentSearch] = useState('');
-  const filteredStudents = students.filter((s) =>
-    (!classId || s.class_id === classId) &&
-    (!studentSearch || s.name.toLowerCase().includes(studentSearch.toLowerCase()))
-  );
-
-  // Section 2: Student Info
-  const student = students.find((s) => s.id === studentId);
-  const classObj = classes.find((c) => c.id === classId);
-  const academicYearObj = academicYears.find((y) => y.id === academicYear);
-  const sessionObj = SESSIONS.find((s) => s.id === sessionId);
 
   // Section 3: Ziyadah
   const [ziyadah, setZiyadah] = useState({
@@ -97,25 +92,101 @@ export default function StudentReportsPage() {
   });
 
   // --- Overall Score Calculation for UI/Print ---
-  const numericScores = scores
-    .map(s => parseFloat(s.value))
-    .filter(v => !isNaN(v));
-  let overallScore = 0;
-  let overallPredicate = '-';
-  if (numericScores.length > 0) {
-    overallScore = numericScores.reduce((a, b) => a + b, 0) / numericScores.length;
-    if (overallScore > 90) overallPredicate = 'Mumtaz';
-    else if (overallScore >= 85 && overallScore <= 90) overallPredicate = 'Jayyid Jiddan';
-    else if (overallScore >= 66 && overallScore < 85) overallPredicate = 'Jayyid';
-    else if (overallScore >= 50 && overallScore < 66) overallPredicate = 'Dhoif';
-    else if (overallScore < 50) overallPredicate = 'Nafis';
-  }
+  const calculateOverallScore = (scores: { value: string }[]) => {
+    const numericScores = scores
+      .map(s => parseFloat(s.value))
+      .filter(v => !isNaN(v));
+    
+    if (numericScores.length === 0) return 0;
+    return numericScores.reduce((sum, score) => sum + score, 0) / numericScores.length;
+  };
 
+  const getOverallPredicate = (score: number) => {
+    if (score > 90) return 'Mumtaz';
+    if (score >= 85 && score <= 90) return 'Jayyid Jiddan';
+    if (score >= 66 && score < 85) return 'Jayyid';
+    if (score >= 50 && score < 66) return 'Dhoif';
+    if (score < 50) return 'Nafis';
+    return '-';
+  };
+
+  // Fetch teacher ID when user changes
+  useEffect(() => {
+    const fetchTeacherId = async () => {
+      if (user?.email) {
+        const { data, error } = await supabase
+          .from('teachers')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+        
+        if (data && !error) {
+          console.log('Found teacher ID:', data.id);
+          setTeacherId(data.id);
+        } else {
+          console.error('Error fetching teacher ID:', error);
+        }
+      }
+    };
+
+    fetchTeacherId();
+  }, [user?.email]);
+
+  // Student search filter
+  const filteredStudents = students.filter((s) => {
+    // If user is a teacher, only show their students
+    if (user?.role === 'teacher') {
+      // Get all groups for this teacher using the correct teacher ID
+      const teacherGroups = groups.filter(g => g.teacherId === teacherId);
+      
+      // If no groups found for this teacher, show no students
+      if (teacherGroups.length === 0) {
+        return false;
+      }
+
+      // Get all student IDs from the teacher's groups
+      const teacherStudentIds = teacherGroups.flatMap(g => g.students || []);
+      
+      // If class is selected, only show students from that class
+      if (classId) {
+        return s.class_id === classId && teacherStudentIds.includes(s.id);
+      }
+      
+      // If no class selected, show all students from teacher's groups
+      return teacherStudentIds.includes(s.id);
+    }
+    
+    // For non-teachers (admin), just filter by class if selected
+    return !classId || s.class_id === classId;
+  });
+
+  const studentOptions = filteredStudents.map(student => ({
+    value: student.id,
+    label: student.name
+  }));
+
+  // Section 2: Student Info
+  const student = students.find((s) => s.id === studentId);
+  const classObj = classes.find((c) => c.id === classId);
+  const academicYearObj = academicYears.find((y) => y.id === academicYear);
+  const sessionObj = SESSIONS.find((s) => s.id === sessionId);
+
+  const overallScore = calculateOverallScore(scores);
+  const overallPredicate = getOverallPredicate(overallScore);
+
+  // Load initial data
   useEffect(() => {
     loadAcademicYears();
     loadClasses();
     loadStudents();
   }, [loadAcademicYears, loadClasses, loadStudents]);
+
+  // Load groups when academic year changes
+  useEffect(() => {
+    if (academicYear) {
+      loadGroups(academicYear);
+    }
+  }, [academicYear, loadGroups]);
 
   // Set active academic year on load
   useEffect(() => {
@@ -560,21 +631,14 @@ export default function StudentReportsPage() {
         </div>
         <div className="w-full md:w-auto">
           <label className="block text-sm font-medium">Student</label>
-          <input
-            type="text"
-            placeholder="Search student by name..."
-            value={studentSearch}
-            onChange={e => setStudentSearch(e.target.value)}
-            className="mb-2 w-full border rounded px-2 py-1"
+          <Select
+            options={studentOptions}
+            value={studentOptions.find(option => option.value === studentId)}
+            onChange={(selected) => setStudentId(selected?.value || '')}
+            className="mt-1"
+            placeholder="Search and select student..."
+            isClearable
           />
-          <select 
-            value={studentId} 
-            onChange={e => setStudentId(e.target.value)} 
-            className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-          >
-            <option value="">Select</option>
-            {filteredStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
         </div>
         <button 
           onClick={handleSave} 
@@ -655,7 +719,7 @@ export default function StudentReportsPage() {
           {/* Overall Score Row (UI/Print) */}
           <div className="bg-white rounded shadow p-4 flex flex-col md:flex-row gap-4 items-center mb-2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <div className="font-semibold">Overall Score:</div>
-            <div className="ml-2">{numericScores.length > 0 ? overallScore.toFixed(2) : '-'}</div>
+            <div className="ml-2">{overallScore ? overallScore.toFixed(2) : '-'}</div>
             <div className="ml-4 font-semibold">Predicate:</div>
             <div className="ml-2">{overallPredicate}</div>
           </div>

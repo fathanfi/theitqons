@@ -100,7 +100,7 @@ export function LevelBoard() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row">
         <input
           type="text"
           placeholder="Search students by name..."

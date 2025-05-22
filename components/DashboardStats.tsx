@@ -124,25 +124,35 @@ export function DashboardStats() {
     total + student.redemptions.reduce((sum, redemption) => sum + redemption.points, 0), 0);
 
   const menuItems = [
-    { href: '/academic-years', label: 'Academic Years', icon: '📅' },
-    { href: '/teachers', label: 'Teachers', icon: '👨‍🏫' },
-    { href: '/classes', label: 'Classes', icon: '🏫' },
-    { href: '/levels-management', label: 'Levels', icon: '📊' },
-    { href: '/students', label: 'Students', icon: '👥' },
-    { href: '/groups', label: 'Groups', icon: '👥' },
-    { href: '/badges', label: 'Badges', icon: '🏆' },
-    { href: '/points', label: 'Points', icon: '⭐' },
-    { href: '/student-points', label: 'Student Points', icon: '📝' },
-    { href: '/redeem', label: 'Redeem', icon: '🎁' },
-    { href: '/levels', label: 'Itqon', icon: '📚' },
-    { href: '/billing', label: 'Billing', icon: '💰' },
-    { href: '/itqon-exam', label: 'Itqon Exam', icon: '📝' },
-    { href: '/story-timeline', label: 'Story Timeline', icon: '📅' },
-    { href: '/stories', label: 'Stories', icon: '📖' },
-    { href: '/story-actions', label: 'Story Actions', icon: '🎯' },
-    { href: '/school-settings', label: 'School Settings', icon: '⚙️' },
-    { href: '/school-information', label: 'School Information', icon: '🏫' }
+    { href: '/academic-years', label: 'Academic Years', icon: '📅', role: 'admin' },
+    { href: '/teachers', label: 'Teachers', icon: '👨‍🏫', role: 'admin' },
+    { href: '/classes', label: 'Classes', icon: '🏫', role: 'admin' },
+    { href: '/levels-management', label: 'Levels', icon: '📊', role: 'admin' },
+    { href: '/students', label: 'Students', icon: '👥', role: 'admin' },
+    { href: '/groups', label: 'Groups', icon: '👥', role: 'all' },
+    { href: '/badges', label: 'Badges', icon: '🏆', role: ['admin', 'teacher'] },
+    { href: '/points', label: 'Points', icon: '⭐', role: ['admin', 'teacher'] },
+    { href: '/student-points', label: 'Student Points', icon: '📝', role: ['admin', 'teacher'] },
+    { href: '/redeem', label: 'Redeem', icon: '🎁', role: ['admin', 'teacher'] },
+    { href: '/levels', label: 'Itqon', icon: '📚', role: 'all' },
+    { href: '/billing', label: 'Billing', icon: '💰', role: ['admin', 'teacher'] },
+    { href: '/itqon-exam', label: 'Itqon Exam', icon: '📝', role: 'all' },
+    { href: '/story-timeline', label: 'Story Timeline', icon: '📅', role: 'all' },
+    { href: '/stories', label: 'Stories', icon: '📖', role: 'admin' },
+    { href: '/story-actions', label: 'Story Actions', icon: '🎯', role: 'admin' },
+    { href: '/school-settings', label: 'School Settings', icon: '⚙️', role: 'admin' },
+    { href: '/school-information', label: 'School Information', icon: '🏫', role: 'admin' }
   ];
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!user) return false;
+    if (item.role === 'all') return true;
+    if (Array.isArray(item.role)) {
+      return item.role.includes(user.role);
+    }
+    return item.role === user.role;
+  });
 
   const formatActivityMessage = (activity: ActivityLogType) => {
     const formatDate = (dateString: string) => {
@@ -292,7 +302,7 @@ export function DashboardStats() {
       <div className="bg-white p-6 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-6">Quick Access Menu</h2>
         <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

@@ -8,6 +8,8 @@ import { useSession } from '@/components/SessionProvider';
 import type { BillingRecord } from '@/store/billingStore';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/lib/supabase';
+import Select from 'react-select';
 
 const MONTHS = [
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
@@ -21,11 +23,16 @@ export default function BillingPage() {
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const isTeacher = user?.role === 'teacher';
   
   const classes = useSchoolStore((state) => state.classes);
   const levels = useSchoolStore((state) => state.levels);
+  const groups = useSchoolStore((state) => state.groups);
+  const teachers = useSchoolStore((state) => state.teachers);
   const loadClasses = useSchoolStore((state) => state.loadClasses);
   const loadLevels = useSchoolStore((state) => state.loadLevels);
+  const loadGroups = useSchoolStore((state) => state.loadGroups);
+  const loadTeachers = useSchoolStore((state) => state.loadTeachers);
 
   const { settings, records, loadSettings, loadRecords, updateSingleRecord } = useBillingStore();
 
@@ -33,8 +40,10 @@ export default function BillingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('');
   const [showInactive, setShowInactive] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [teacherId, setTeacherId] = useState<string | null>(null);
 
   // Billing state
   const [billingChecks, setBillingChecks] = useState<{[key: string]: boolean[]}>({});
@@ -43,11 +52,35 @@ export default function BillingPage() {
     loadStudents();
     loadClasses();
     loadLevels();
+    loadTeachers();
     if (currentAcademicYear) {
       loadSettings(currentAcademicYear.id);
       loadRecords(currentAcademicYear.id);
+      loadGroups(currentAcademicYear.id);
     }
-  }, [loadStudents, loadClasses, loadLevels, currentAcademicYear, loadSettings, loadRecords]);
+  }, [loadStudents, loadClasses, loadLevels, loadTeachers, currentAcademicYear, loadSettings, loadRecords, loadGroups]);
+  
+  // Fetch teacher ID when user changes
+  useEffect(() => {
+    const getTeacherId = async () => {
+      if (user?.email) {
+        const { data, error } = await supabase
+          .from('teachers')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+        
+        if (data && !error) {
+          console.log('Found teacher ID:', data.id);
+          setTeacherId(data.id);
+        } else {
+          console.error('Error fetching teacher ID:', error);
+        }
+      }
+    };
+
+    getTeacherId();
+  }, [user?.email]);
 
   useEffect(() => {
     // Initialize billing checks from records
@@ -134,8 +167,39 @@ export default function BillingPage() {
     const matchesClass = !selectedClass || student.class_id === selectedClass;
     const matchesLevel = !selectedLevel || student.level_id === selectedLevel;
     const matchesStatus = showInactive || student.status;
+
+    // If user is a teacher, only show students from their groups
+    if (isTeacher && teacherId) {
+      // Get all groups for this teacher
+      const teacherGroups = groups.filter(g => g.teacherId === teacherId);
+      
+      // If no groups found for this teacher, show no students
+      if (teacherGroups.length === 0) {
+        return false;
+      }
+
+      // Get all student IDs from the teacher's groups
+      const teacherStudentIds = teacherGroups.flatMap(g => g.students || []);
+      
+      // Check if the student is in any of the teacher's groups
+      const isInTeacherGroup = teacherStudentIds.includes(student.id);
+      
+      return matchesSearch && matchesClass && matchesLevel && matchesStatus && isInTeacherGroup;
+    }
+
+    // For admin users, filter by selected teacher if any
+    if (selectedTeacher) {
+      const teacherGroups = groups.filter(g => g.teacherId === selectedTeacher);
+      const teacherStudentIds = teacherGroups.flatMap(g => g.students || []);
+      const isInTeacherGroup = teacherStudentIds.includes(student.id);
+      return matchesSearch && matchesClass && matchesLevel && matchesStatus && isInTeacherGroup;
+    }
+
     return matchesSearch && matchesClass && matchesLevel && matchesStatus;
   });
+
+  // Add debug logging for the final filtered students
+  console.log('Filtered students:', filteredStudents);
 
   if (!settings) {
     return (
@@ -174,7 +238,7 @@ export default function BillingPage() {
             </label>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
@@ -200,6 +264,27 @@ export default function BillingPage() {
                 </option>
               ))}
             </select>
+
+            {isAdmin && (
+              <Select
+                value={teachers.find(t => t.id === selectedTeacher) ? {
+                  value: selectedTeacher,
+                  label: teachers.find(t => t.id === selectedTeacher)?.name || ''
+                } : null}
+                onChange={(option) => setSelectedTeacher(option?.value || '')}
+                options={[
+                  { value: '', label: 'All Teachers' },
+                  ...teachers.map(teacher => ({
+                    value: teacher.id,
+                    label: teacher.name
+                  }))
+                ]}
+                isClearable
+                placeholder="Select Teacher"
+                className="w-full"
+                classNamePrefix="select"
+              />
+            )}
           </div>
         </div>
 

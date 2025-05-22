@@ -507,32 +507,40 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
 
   // Group actions
   loadGroups: async (academicYearId) => {
-    const { data } = await supabase
+    console.log('Loading groups for academic year:', academicYearId); // Debug log
+    const { data, error } = await supabase
       .from('groups')
       .select(`
         *,
         academic_year:academic_years(*),
         class:classes(*),
         teacher:teachers(*),
-        students:group_students(student_id)
+        group_students!inner(
+          student_id,
+          students(*)
+        )
       `)
       .eq('academic_year_id', academicYearId);
 
+    if (error) {
+      console.error('Error loading groups:', error); // Debug log
+      return;
+    }
+
     if (data) {
-      set({
-        groups: data.map(group => ({
-          id: group.id,
-          name: group.name,
-          academicYearId: group.academic_year_id,
-          classId: group.class_id,
-          teacherId: group.teacher_id,
-          createdAt: group.created_at,
-          academicYear: group.academic_year,
-          class: group.class,
-          teacher: group.teacher,
-          students: group.students.map((s: any) => s.student_id)
-        }))
-      });
+      const transformedGroups = data.map(group => ({
+        id: group.id,
+        name: group.name,
+        academicYearId: group.academic_year_id,
+        classId: group.class_id,
+        teacherId: group.teacher_id,
+        createdAt: group.created_at,
+        academicYear: group.academic_year,
+        class: group.class,
+        teacher: group.teacher,
+        students: group.group_students.map((gs: any) => gs.student_id)
+      }));
+      set({ groups: transformedGroups });
     }
   },
 

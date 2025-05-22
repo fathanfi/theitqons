@@ -128,6 +128,19 @@ export function Navigation() {
     { href: '/billing', label: 'Billing', icon: '💰', bg: 'bg-red-500' }
   ];
 
+  // Filter quick access items based on user role
+  const filteredQuickAccessItems = quickAccessItems.filter(item => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (user.role === 'teacher') {
+      return ['/groups', '/levels', '/student-points', '/redeem', '/billing'].includes(item.href);
+    }
+    if (user.role === 'user') {
+      return ['/groups', '/levels'].includes(item.href);
+    }
+    return false;
+  });
+
   return (
     <nav className="bg-gray-800 text-white">
       <div className="container mx-auto px-4">
@@ -150,7 +163,7 @@ export function Navigation() {
 
           {/* Quick Access Menu - Mobile */}
           <div className="lg:hidden flex items-center gap-2 overflow-x-auto p-1">
-            {quickAccessItems.map((item) => (
+            {filteredQuickAccessItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -166,7 +179,8 @@ export function Navigation() {
           <div className="hidden lg:flex items-center space-x-4">
             <Link href="/" className="hover:text-gray-300">Home</Link>
             
-            {renderDropdown(
+            {/* Master Data - Admin only */}
+            {user?.role === 'admin' && renderDropdown(
               isOpen,
               setIsOpen,
               'Master Data',
@@ -181,11 +195,23 @@ export function Navigation() {
               ]
             )}
 
+            {/* Groups - All users */}
+            <Link href="/students" className="hover:text-gray-300 font-semibold">Students</Link>
+
             <Link href="/groups" className="hover:text-gray-300 font-semibold">Groups</Link>
-            <Link href="/badges" className="hover:text-gray-300">Badges</Link>
-            <Link href="/student-reports" className="hover:text-gray-300">Reports</Link>
+
+            {/* Badges - Admin and Teacher */}
+            {(user?.role === 'admin' || user?.role === 'teacher') && (
+              <Link href="/badges" className="hover:text-gray-300">Badges</Link>
+            )}
+
+            {/* Reports - Admin and Teacher */}
+            {(user?.role === 'admin' || user?.role === 'teacher') && (
+              <Link href="/student-reports" className="hover:text-gray-300">Reports</Link>
+            )}
             
-            {renderDropdown(
+            {/* Points - Admin and Teacher */}
+            {(user?.role === 'admin' || user?.role === 'teacher') && renderDropdown(
               isPointsOpen,
               setIsPointsOpen,
               'Points',
@@ -195,39 +221,51 @@ export function Navigation() {
               ]
             )}
             
-            <Link href="/redeem" className="hover:text-gray-300">Redeem</Link>
+            {/* Redeem - Admin and Teacher */}
+            {(user?.role === 'admin' || user?.role === 'teacher') && (
+              <Link href="/redeem" className="hover:text-gray-300">Redeem</Link>
+            )}
 
+            {/* Itqon - All users */}
             {renderDropdown(
               isItqonOpen,
               setIsItqonOpen,
               'Itqon',
-              [
+              user?.role === 'admin' ? [
                 { href: '/levels', label: 'Itqon Board' },
                 { href: '/exam-management', label: 'Exam Management' },
                 { href: '/itqon-exam', label: 'Itqon Exam' }
+              ] : [
+                { href: '/levels', label: 'Itqon Board' }
               ],
               '💥'
             )}
 
-            {renderDropdown(
+            {/* Billing - Admin and Teacher */}
+            {(user?.role === 'admin' || user?.role === 'teacher') && renderDropdown(
               isBillingOpen,
               setIsBillingOpen,
               'Billing',
-              [
+              user?.role === 'admin' ? [
                 { href: '/billing', label: 'Billing List' },
                 { href: '/billing/settings', label: 'Billing Settings' }
+              ] : [
+                { href: '/billing', label: 'Billing List' }
               ],
               '💰'
             )}
 
+            {/* Stories - All users */}
             {renderDropdown(
               isStoriesOpen,
               setIsStoriesOpen,
               'Stories',
-              [
+              user?.role === 'admin' ? [
                 { href: '/session-stories', label: 'Session Stories' },
                 { href: '/stories', label: 'Stories' },
                 { href: '/story-actions', label: 'Story Actions' },
+                { href: '/story-timeline', label: 'Story Timeline' }
+              ] : [
                 { href: '/story-timeline', label: 'Story Timeline' }
               ],
               '📚'
@@ -236,7 +274,7 @@ export function Navigation() {
 
           {/* Desktop right side */}
           <div className="hidden lg:flex items-center space-x-4">
-            {user && <AcademicYearSelector />}
+            {user?.role === 'admin' && <AcademicYearSelector />}
             {user && (
               <div className="relative group">
                 <button className="flex items-center space-x-2 text-white hover:text-gray-200">
@@ -266,23 +304,18 @@ export function Navigation() {
           <div className="lg:hidden bg-white text-gray-800">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {/* Quick Access Buttons */}
-              <div className="flex gap-2 p-2">
-                <Link
-                  href="/groups"
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-base"
-                  onClick={handleMobileLinkClick}
-                >
-                  <span className="text-xl">👥</span>
-                  <span className="text-sm font-medium">Groups</span>
-                </Link>
-                <Link
-                  href="/levels"
-                  className="flex items-center gap-2 px-3 py-2 bg-purple-400 text-white rounded-lg hover:bg-purple-500 transition-colors text-base"
-                  onClick={handleMobileLinkClick}
-                >
-                  <span className="text-xl">💥</span>
-                  <span className="text-sm font-medium">Itqon</span>
-                </Link>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 p-2 sm:p-3 md:p-4">
+                {filteredQuickAccessItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 md:px-5 md:py-3 ${item.bg} text-white rounded-lg hover:opacity-80 transition-colors text-sm sm:text-base md:text-lg`}
+                    onClick={handleMobileLinkClick}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                ))}
               </div>
 
               {/* Regular Menu Items */}
@@ -294,7 +327,8 @@ export function Navigation() {
                 Home
               </Link>
 
-              {renderMobileDropdown(
+              {/* Master Data - Admin only */}
+              {user?.role === 'admin' && renderMobileDropdown(
                 isOpen,
                 setIsOpen,
                 'Master Data',
@@ -303,27 +337,45 @@ export function Navigation() {
                   { href: '/teachers', label: 'Teachers' },
                   { href: '/classes', label: 'Classes' },
                   { href: '/levels-management', label: 'Levels' },
-                  { href: '/students', label: 'Students' }
+                  { href: '/students', label: 'Students' },
+                  { href: '/school-settings', label: 'School Settings' },
+                  { href: '/school-information', label: 'School Information' }
                 ]
               )}
 
+              {/* Groups - All users */}
               <Link
-                href="/badges"
+                href="/groups"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={handleMobileLinkClick}
               >
-                Badges
+                Groups
               </Link>
 
-              <Link
-                href="/student-reports"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={handleMobileLinkClick}
-              >
-                Reports
-              </Link>
+              {/* Badges - Admin and Teacher */}
+              {(user?.role === 'admin' || user?.role === 'teacher') && (
+                <Link
+                  href="/badges"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={handleMobileLinkClick}
+                >
+                  Badges
+                </Link>
+              )}
 
-              {renderMobileDropdown(
+              {/* Reports - Admin and Teacher */}
+              {(user?.role === 'admin' || user?.role === 'teacher') && (
+                <Link
+                  href="/student-reports"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={handleMobileLinkClick}
+                >
+                  Reports
+                </Link>
+              )}
+
+              {/* Points - Admin and Teacher */}
+              {(user?.role === 'admin' || user?.role === 'teacher') && renderMobileDropdown(
                 isPointsOpen,
                 setIsPointsOpen,
                 'Points',
@@ -333,46 +385,58 @@ export function Navigation() {
                 ]
               )}
 
-              <Link
-                href="/redeem"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={handleMobileLinkClick}
-              >
-                Redeem
-              </Link>
+              {/* Redeem - Admin and Teacher */}
+              {(user?.role === 'admin' || user?.role === 'teacher') && (
+                <Link
+                  href="/redeem"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={handleMobileLinkClick}
+                >
+                  Redeem
+                </Link>
+              )}
 
+              {/* Itqon - All users */}
               {renderMobileDropdown(
                 isItqonOpen,
                 setIsItqonOpen,
                 'Itqon',
-                [
+                user?.role === 'admin' ? [
                   { href: '/levels', label: 'Itqon Board' },
                   { href: '/exam-management', label: 'Exam Management' },
                   { href: '/itqon-exam', label: 'Itqon Exam' }
+                ] : [
+                  { href: '/levels', label: 'Itqon Board' }
                 ],
                 '💥',
                 true
               )}
 
-              {renderMobileDropdown(
+              {/* Billing - Admin and Teacher */}
+              {(user?.role === 'admin' || user?.role === 'teacher') && renderMobileDropdown(
                 isBillingOpen,
                 setIsBillingOpen,
                 'Billing',
-                [
+                user?.role === 'admin' ? [
                   { href: '/billing', label: 'Billing List' },
                   { href: '/billing/settings', label: 'Billing Settings' }
+                ] : [
+                  { href: '/billing', label: 'Billing List' }
                 ],
                 '💰'
               )}
 
+              {/* Stories - All users */}
               {renderMobileDropdown(
                 isStoriesOpen,
                 setIsStoriesOpen,
                 'Stories',
-                [
+                user?.role === 'admin' ? [
                   { href: '/session-stories', label: 'Session Stories' },
                   { href: '/stories', label: 'Stories' },
                   { href: '/story-actions', label: 'Story Actions' },
+                  { href: '/story-timeline', label: 'Story Timeline' }
+                ] : [
                   { href: '/story-timeline', label: 'Story Timeline' }
                 ],
                 '📚'
@@ -380,7 +444,7 @@ export function Navigation() {
 
               <div className="border-t border-gray-200 pt-4 pb-3">
                 <div className="px-4">
-                  {user && (
+                  {user?.role === 'admin' && (
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium text-gray-800">Academic Year:</label>
                       <div className="w-full">
