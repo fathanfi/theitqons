@@ -125,10 +125,10 @@ export function DashboardStats() {
 
   const menuItems = [
     { href: '/academic-years', label: 'Academic Years', icon: '📅', role: 'admin' },
-    { href: '/teachers', label: 'Teachers', icon: '👨‍🏫', role: 'admin' },
+    { href: '/teachers', label: 'Teachers', icon: '👨‍🏫', role: ['admin', 'teacher'] },
     { href: '/classes', label: 'Classes', icon: '🏫', role: 'admin' },
     { href: '/levels-management', label: 'Levels', icon: '📊', role: 'admin' },
-    { href: '/students', label: 'Students', icon: '👥', role: 'admin' },
+    { href: '/students', label: 'Students', icon: '👥', role: ['admin', 'teacher'] },
     { href: '/groups', label: 'Groups', icon: '👥', role: 'all' },
     { href: '/badges', label: 'Badges', icon: '🏆', role: ['admin', 'teacher'] },
     { href: '/points', label: 'Points', icon: '⭐', role: ['admin', 'teacher'] },
@@ -141,7 +141,8 @@ export function DashboardStats() {
     { href: '/stories', label: 'Stories', icon: '📖', role: 'admin' },
     { href: '/story-actions', label: 'Story Actions', icon: '🎯', role: 'admin' },
     { href: '/school-settings', label: 'School Settings', icon: '⚙️', role: 'admin' },
-    { href: '/school-information', label: 'School Information', icon: '🏫', role: 'admin' }
+    { href: '/school-information', label: 'School Information', icon: '🏫', role: 'admin' },
+    { href: '/student-reports', label: 'Student Reports', icon: '📝', role: ['admin', 'teacher'] }
   ];
 
   // Filter menu items based on user role

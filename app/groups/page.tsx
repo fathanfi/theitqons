@@ -193,7 +193,7 @@ export default function GroupsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
-            <div className="flex items-center gap-4">
+            <div className="flex items-left gap-4flex flex-col gap-4 sm:flex-row sm:items-left">
               <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
                 <input
                   type="checkbox"

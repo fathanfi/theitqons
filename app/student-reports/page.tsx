@@ -1044,11 +1044,11 @@ export default function StudentReportsPage() {
         </div>
         {/* Attendance Table */}
         <div className="w-full md:w-1/4 bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">Attendance</h2>
+          <h2 className="font-semibold mb-2">Kehadiran</h2>
           <table className="w-full border">
             <tbody>
               <tr>
-                <td className="border px-2 py-1">Present</td>
+                <td className="border px-2 py-1">Hadir</td>
                 <td className="border px-2 py-1">
                   <input 
                     type="number" 
@@ -1059,27 +1059,55 @@ export default function StudentReportsPage() {
                 </td>
               </tr>
               <tr>
-                <td className="border px-2 py-1">Permit</td>
+                <td className="border px-2 py-1">Izin</td>
                 <td className="border px-2 py-1">
-                  <input 
-                    type="number" 
-                    value={attendance.permit} 
-                    onChange={e => handleAttendanceChange('permit', +e.target.value)}
-                    onBlur={handleFieldBlur}
-                    className="border rounded px-3 py-2 w-16" 
-                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAttendanceChange('permit', Math.max(0, attendance.permit - 1))}
+                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    –
+                  </button>
+                    <input 
+                      type="number" 
+                      value={attendance.permit} 
+                      onChange={e => handleAttendanceChange('permit', +e.target.value)}
+                      onBlur={handleFieldBlur}
+                      className="border rounded px-3 py-2 w-16 text-center" 
+                    />
+                  <button
+                    type="button"
+                    onClick={() => handleAttendanceChange('permit', attendance.permit + 1)}
+                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    +
+                  </button>
                 </td>
               </tr>
               <tr>
-                <td className="border px-2 py-1">Absence</td>
+                <td className="border px-2 py-1">Alfa</td>
                 <td className="border px-2 py-1">
-                  <input 
-                    type="number" 
-                    value={attendance.absence} 
-                    onChange={e => handleAttendanceChange('absence', +e.target.value)}
-                    onBlur={handleFieldBlur}
-                    className="border rounded px-3 py-2 w-16" 
-                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAttendanceChange('absence', Math.max(0, attendance.absence - 1))}
+                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    –
+                  </button>
+                    <input 
+                      type="number" 
+                      value={attendance.absence ?? 0} 
+                      onChange={e => handleAttendanceChange('absence', +e.target.value)}
+                      onBlur={handleFieldBlur}
+                      className="border rounded px-3 py-2 w-16 text-center" 
+                    />
+                  <button
+                    type="button"
+                    onClick={() => handleAttendanceChange('absence', attendance.absence + 1)}
+                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    +
+                  </button>
                 </td>
               </tr>
             </tbody>

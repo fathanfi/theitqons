@@ -125,7 +125,8 @@ export function Navigation() {
     { href: '/itqon-exam', label: 'Itqon Exam', icon: '📝', bg: 'bg-green-500' },
     { href: '/student-points', label: 'Points', icon: '⭐', bg: 'bg-yellow-400' },
     { href: '/redeem', label: 'Redeem', icon: '🎁', bg: 'bg-blue-600' },
-    { href: '/billing', label: 'Billing', icon: '💰', bg: 'bg-red-500' }
+    { href: '/billing', label: 'Billing', icon: '💰', bg: 'bg-red-500' },
+    { href: '/student-reports', label: 'Reports', icon: '📝', bg: 'bg-green-500' }
   ];
 
   // Filter quick access items based on user role
@@ -133,7 +134,7 @@ export function Navigation() {
     if (!user) return false;
     if (user.role === 'admin') return true;
     if (user.role === 'teacher') {
-      return ['/groups', '/levels', '/student-points', '/redeem', '/billing'].includes(item.href);
+      return ['/groups', '/levels', '/student-points', '/redeem', '/billing', '/student-reports'].includes(item.href);
     }
     if (user.role === 'user') {
       return ['/groups', '/levels'].includes(item.href);
