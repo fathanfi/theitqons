@@ -9,7 +9,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Select from 'react-select';
 import { supabase } from '@/lib/supabase';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon, TrashIcon } from '@heroicons/react/24/solid';
 
 const SESSIONS = [
   { id: 1, name: '1' },
@@ -71,6 +71,11 @@ const SCORE_NAMES = [
 
 const PREDICATES_MAIN = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "Nafis"];
 
+// Add this helper function after the existing helper functions
+const countWords = (text: string) => {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+};
+
 export default function StudentReportsPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   
@@ -92,6 +97,7 @@ export default function StudentReportsPage() {
     getPrincipalName,
     getTeacherName,
     getParentName,
+    getClassName,
     getLevelName,
     getGroupName
   } = useStudentReportsStore();
@@ -101,6 +107,7 @@ export default function StudentReportsPage() {
   const [sessionId, setSessionId] = useState<number>(2); // Fixed to SM2
   const [classId, setClassId] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
+  const [className, setClassName] = useState<string>('');
   const [levelName, setLevelName] = useState<string>('');
   const [groupName, setGroupName] = useState<string>('');
   const [teacherName, setTeacherName] = useState<string>('');
@@ -245,12 +252,14 @@ export default function StudentReportsPage() {
   useEffect(() => {
     const loadAdditionalData = async () => {
       if (studentId) {
-        const [levelName, groupName, teacherName] = await Promise.all([
+        const [className, levelName, groupName, teacherName] = await Promise.all([
+          getClassName(student?.class_id || ''),
           getLevelName(student?.level_id || ''),
           getGroupName(studentId),
           getTeacherName(studentId)
         ]);
 
+        setClassName(className);
         setLevelName(levelName);
         setGroupName(groupName);
         setTeacherName(teacherName);
@@ -258,7 +267,7 @@ export default function StudentReportsPage() {
     };
 
     loadAdditionalData();
-  }, [studentId, student?.level_id, getLevelName, getGroupName, getTeacherName]);
+  }, [studentId, student?.level_id, getClassName, getLevelName, getGroupName, getTeacherName]);
 
   // Load signature data when student changes
   useEffect(() => {
@@ -408,6 +417,12 @@ export default function StudentReportsPage() {
           }
         };
       }
+      if (field === 'description') {
+        const wordCount = countWords(value);
+        if (wordCount > 10) {
+          return prev; // Don't update if word count exceeds limit
+        }
+      }
       return {
         ...prev,
         [aspect]: {
@@ -436,6 +451,10 @@ export default function StudentReportsPage() {
   };
 
   const addScore = () => {
+    if (scores.length >= 3) {
+      alert('Maximum 3 materi ujian allowed');
+      return;
+    }
     setIsEditing(true);
     setScores((prev) => [...prev, { name: "PILIH MATERI", tahfidz_score: "", tahsin_score: "", customName: "" }]);
   };
@@ -517,11 +536,20 @@ export default function StudentReportsPage() {
     const arabicBase64 = await getBase64FromUrl('/images/arabicword.png');
     // Get watermark logo as base64
     const watermarkBase64 = await getBase64FromUrl('/images/watermarklogo.png');
+    // Get principal signature and stamp as base64
+    const principalSignatureBase64 = await getBase64FromUrl('/images/ttdujq.png');
+    const stampBase64 = await getBase64FromUrl('/images/cappptq.png');
 
     // --- Capitalize First Letter ---
     const capitalizeFirst = (text: string) => {
       if (!text) return '';
       return text.charAt(0).toUpperCase() + text.slice(1);
+    };
+
+    // --- Uppercase All Letters ---
+    const toUpperCase = (text: string) => {
+      if (!text) return '';
+      return text.toUpperCase();
     };
 
     // --- Snake Case Helper ---
@@ -554,17 +582,17 @@ export default function StudentReportsPage() {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.setTextColor(60, 70, 90);
-    doc.text('Yayasan Miftahul Khoir Al Islamy', 55, y + 7);
+    doc.text('Yayasan Miftahul Khoir Al Islamy', 55, y + 5);
     doc.setFontSize(16);
-    doc.text('Pondok Pesantren Tahfizh Al Qur\'an Miftahul Khoir', 55, y + 16);
+    doc.text('Pondok Pesantren Tahfizh Al Qur\'an Miftahul Khoir', 55, y + 12);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('Jalan KH. Tubagus Abdullah, Kp. Pasirjaya, Sukajaya, Purbaratu, Kota Tasikmalaya, 46196', 55, y + 23);
+    doc.text('Jalan KH. Tubagus Abdullah, Kp. Pasirjaya, Sukajaya, Purbaratu, Kota Tasikmalaya, 46196', 55, y + 18);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(1.2);
-    doc.line(20, y + 28, 190, y + 28);
+    doc.line(20, y + 24, 190, y + 24);
     doc.setLineWidth(0.5);
-    doc.line(20, y + 30, 190, y + 30);
+    doc.line(20, y + 26, 190, y + 26);
     y += 31;
 
     // --- Arabic & Indonesian Title as image ---
@@ -577,9 +605,10 @@ export default function StudentReportsPage() {
     y += 10;
 
     // --- Student Info Table as 3 rows, 5 columns ---
+    const classNameRecord = className ? `${className} / ${levelName}` : levelName;
     const infoRows = [
       ['Nama:', student?.name || '', '', 'Muhafidz:', teacherName],
-      ['Kelas:', classObj?.name || '', '', 'Semester:', sessionObj?.name || ''],
+      ['Kelas:', classNameRecord || '', '', 'Semester:', sessionObj?.name || ''],
       ['Halaqoh:', groupName, '', 'Tahun Akademik:', academicYearObj?.name || '']
     ];
     autoTable(doc, {
@@ -589,11 +618,11 @@ export default function StudentReportsPage() {
       theme: 'grid',
       styles: { font: 'helvetica', fontSize: 11, cellPadding: 0, halign: 'left', lineWidth: 0 },
       columnStyles: {
-        0: { cellWidth: 20, minCellHeight: 5, fontStyle: 'bold', textColor: [60, 70, 90], halign: 'left' },
-        1: { cellWidth: 50, minCellHeight: 5, fontStyle: 'normal', textColor: [60, 70, 90], halign: 'left' },
-        2: { cellWidth: 1, minCellHeight: 5 },
-        3: { cellWidth: 40, minCellHeight: 5, fontStyle: 'bold', textColor: [60, 70, 90], halign: 'left' },
-        4: { cellWidth: 50, minCellHeight: 5, fontStyle: 'normal', textColor: [60, 70, 90], halign: 'left' },
+        0: { cellWidth: 20, minCellHeight: 7, fontStyle: 'bold', textColor: [60, 70, 90], halign: 'left' },
+        1: { cellWidth: 50, minCellHeight: 7, fontStyle: 'normal', textColor: [60, 70, 90], halign: 'left' },
+        2: { cellWidth: 1, minCellHeight: 7 },
+        3: { cellWidth: 40, minCellHeight: 7, fontStyle: 'bold', textColor: [60, 70, 90], halign: 'left' },
+        4: { cellWidth: 50, minCellHeight: 7, fontStyle: 'normal', textColor: [60, 70, 90], halign: 'left' },
       },
       margin: { left: 25, right: 25 },
       tableLineColor: [255, 255, 255],
@@ -621,7 +650,7 @@ export default function StudentReportsPage() {
     y = (doc as any).lastAutoTable.finalY + 5;
 
     const scoresData = scores.map(score => [
-      capitalizeFirst(score.name),
+      toUpperCase(score.name === "CUSTOM" ? score.customName : score.name),
       score.tahfidz_score,
       score.tahsin_score
     ]);
@@ -636,10 +665,15 @@ export default function StudentReportsPage() {
       tableLineWidth: 0.2,
       theme: 'grid',
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 8;
 
     // Add Overal Score
-    const overalScoreText = 'Overal Score: ' + overallPredicate + ' ( ' + overallDescription + ' )';
+    doc.setTextColor(60, 70, 90);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.text('Overall Score / Hasil Akhir', 105, y, { align: 'center' });
+    y += 5;
+    const overalScoreText = overallPredicate + ' ( ' + overallDescription + ' )';
     doc.setTextColor(60, 70, 90);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
@@ -659,7 +693,7 @@ export default function StudentReportsPage() {
     // --- Attendance and Notes as side-by-side tables ---
     // Attendance Table
     const attendanceTable = [
-      ['Hadir', 90],
+      ['Hadir', attendance.present],
       ['Izin', attendance.permit],
       ['Alpa', attendance.absence],
     ];
@@ -699,8 +733,9 @@ export default function StudentReportsPage() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
     // Fixed date: 23 June 2025
-    const fixedDate = '23 June 2025 / 27 Dzulhijjah 1446 H';
-    doc.text(`${signatures.place || ''}, ${fixedDate}`, 105, y, { align: 'center' });
+    const place = signatures.place || 'Kota Tasikmalaya';
+    const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+    doc.text(`${place}, ${fixedDate}`, 105, y, { align: 'center' });
     y += 2;
 
     // --- Signatures ---
@@ -713,7 +748,12 @@ export default function StudentReportsPage() {
     doc.text('Muhafidz', 170, sigY, { align: 'right' });
     doc.setFontSize(11);
     doc.text(`( ${signatures.parent || '.......................................'} )`, 25, sigY + 25);
-    doc.text(`( ${signatures.principal || '..........................'} )`,105, sigY + 25, { align: 'center' });
+    
+    // Add principal signature and stamp
+    doc.addImage(stampBase64, 'PNG', 72, sigY - 3, 28, 28);
+    doc.addImage(principalSignatureBase64, 'PNG', 88, sigY - 4, 30, 30);
+    doc.text(`( ${signatures.principal || '..........................'} )`, 105, sigY + 25, { align: 'center' });
+    
     doc.text(`( ${signatures.teacher || '..........................'} )`, 185, sigY + 25, { align: 'right' });
 
     // Build file name (UPPERCASE)
@@ -772,6 +812,16 @@ export default function StudentReportsPage() {
 
   const overallPredicate = getOverallPredicate();
   const overallDescription = getOverallDescription(overallPredicate);
+
+  // Modify the notes change handler
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const wordCount = countWords(value);
+    if (wordCount <= 40) {
+      setIsEditing(true);
+      setTahfidzNotes(value);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4 md:space-y-8">
@@ -909,10 +959,10 @@ export default function StudentReportsPage() {
             calculateCompletionProgress();
             handleSave();
           }} 
-          className="w-full md:w-auto ml-auto bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="w-full md:w-48 ml-auto bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           disabled={!academicYear || !studentId}
         >
-          {currentReport ? 'Update' : 'Save'}
+          {currentReport ? 'Update' : 'Simpan'}
         </button>
       </div>
 
@@ -920,7 +970,7 @@ export default function StudentReportsPage() {
       <div ref={reportRef} className="bg-white rounded shadow p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div><span className="font-semibold">Nama:</span> {student?.name}</div>
-          <div><span className="font-semibold">Marhalah:</span> {classObj?.name}{levelName ? ` / ${levelName}` : ''}</div>
+          <div><span className="font-semibold">Kelas:</span> {className}{levelName ? ` / ${levelName}` : ''}</div>
           <div><span className="font-semibold">Halaqoh:</span> {groupName}</div>
           <div><span className="font-semibold">Muhafidz/ah:</span> {teacherName}</div>
           <div><span className="font-semibold">Semester:</span> {sessionObj?.name}</div>
@@ -931,7 +981,7 @@ export default function StudentReportsPage() {
       {/* Section 3 & 4: Ziyadah & Catatan Tahfidz */}
       <div className="flex flex-col md:flex-row gap-8">
         {/* Ziyadah Table */}
-        <div className="flex-1 bg-white rounded shadow p-4 w-full">
+        <div className="bg-white rounded shadow p-4 w-full md:w-[60%]">
           <h2 className="font-semibold mb-2">Evaluasi Tahfidz dan Tahsin</h2>
           <table className="w-full border">
             <thead>
@@ -959,8 +1009,11 @@ export default function StudentReportsPage() {
                       onChange={e => handleZiyadahChange(aspect, "description", e.target.value)}
                       onBlur={handleFieldBlur}
                       className="border rounded px-3 py-2 w-full min-h-[40px]" 
+                      maxLength={100}
                     />
-                    <span className="ml-2 text-xs text-gray-500">Word count: {val.description.trim().split(/\s+/).filter(Boolean).length} (min: 2, max: 10)</span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      Word count: {countWords(val.description)}/10
+                    </span>
                   </td>
                   <td className="border px-2 py-1 print-only">{val.predicate}</td>
                   <td className="border px-2 py-1 print-only">{val.description}</td>
@@ -970,149 +1023,161 @@ export default function StudentReportsPage() {
           </table>
         </div>
         {/* Catatan Tahfidz */}
-        <div className="flex-1 bg-white rounded shadow p-4 w-full">
+        <div className="bg-white rounded shadow p-4 w-full md:w-[40%]">
           <h2 className="font-semibold mb-2">Catatan Tahfidz</h2>
           <textarea 
             value={tahfidzNotes} 
-            onChange={e => {
-              setIsEditing(true);
-              setTahfidzNotes(e.target.value);
-            }}
+            onChange={handleNotesChange}
             onBlur={handleFieldBlur}
-            className="w-full border rounded px-3 py-2 min-h-[300px]"
+            className="w-full border rounded px-3 py-2 min-h-[250px]"
+            maxLength={500}
           />
           <div className="mt-2 text-sm text-gray-500">
-            Word count: {tahfidzNotes.trim().split(/\s+/).length} (min: 20, max: 40)
+            Word count: {countWords(tahfidzNotes)}/40
+          </div>
+
+          {/* Section 6: Attendance */}
+          <div className="w-full bg-white mt-8">
+            <h2 className="font-semibold mb-2">Kehadiran</h2>
+            <table className="w-full border">
+              <tbody>
+                <tr>
+                  <td className="border px-2 py-1">Hadir</td>
+                  <td className="border px-2 py-1">
+                    <input 
+                      type="number" 
+                      value={attendance.present} 
+                      readOnly
+                      className="border rounded px-3 py-2 w-16 bg-gray-100 cursor-not-allowed" 
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border px-2 py-1">Izin</td>
+                  <td className="border px-2 py-1">
+                    <button
+                      type="button"
+                      onClick={() => handleAttendanceChange('permit', Math.max(0, attendance.permit - 1))}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      –
+                    </button>
+                      <input 
+                        type="number" 
+                        value={attendance.permit} 
+                        onChange={e => handleAttendanceChange('permit', +e.target.value)}
+                        onBlur={handleFieldBlur}
+                        className="border rounded px-3 py-2 w-16 text-center" 
+                      />
+                    <button
+                      type="button"
+                      onClick={() => handleAttendanceChange('permit', attendance.permit + 1)}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      +
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border px-2 py-1">Alfa</td>
+                  <td className="border px-2 py-1">
+                    <button
+                      type="button"
+                      onClick={() => handleAttendanceChange('absence', Math.max(0, attendance.absence - 1))}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      –
+                    </button>
+                      <input 
+                        type="number" 
+                        value={attendance.absence ?? 0} 
+                        onChange={e => handleAttendanceChange('absence', +e.target.value)}
+                        onBlur={handleFieldBlur}
+                        className="border rounded px-3 py-2 w-16 text-center" 
+                      />
+                    <button
+                      type="button"
+                      onClick={() => handleAttendanceChange('absence', attendance.absence + 1)}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      +
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div className={`mt-2 text-sm font-semibold text-white px-2 py-1 rounded ${attendanceColor}`}>
+              Attendance: {attendancePercent}%
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Section 5 & 6: Score & Attendance */}
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Score Repeater */}
-        <div className="w-full md:w-3/4 bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">Score</h2>
-          {scores.map((score, idx) => (
-            <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch w-full">
-              <select
-                value={score.name}
-                onChange={e => handleScoreChange(idx, "name", e.target.value)}
-                onBlur={handleFieldBlur}
-                className="border rounded px-3 py-2 w-full sm:w-48"
-              >
-                {SCORE_NAMES.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
-              {score.name === 'CUSTOM' && (
-                <input
-                  value={score.customName || ''}
-                  onChange={e => handleCustomScoreNameChange(idx, e.target.value)}
-                  onBlur={handleFieldBlur}
-                  placeholder="Custom Materi"
-                  className="border rounded px-3 py-2 w-full sm:w-48"
-                />
-              )}
-              <select
-                value={score.tahfidz_score}
-                onChange={e => handleScoreChange(idx, "tahfidz_score", e.target.value)}
-                onBlur={handleFieldBlur}
-                className="border rounded px-3 py-2 w-full sm:w-32"
-              >
-                <option value="">Tahfidz Score</option>
-                {PREDICATES_MAIN.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <select
-                value={score.tahsin_score}
-                onChange={e => handleScoreChange(idx, "tahsin_score", e.target.value)}
-                onBlur={handleFieldBlur}
-                className="border rounded px-3 py-2 w-full sm:w-32"
-              >
-                <option value="">Tahsin Score</option>
-                {PREDICATES_MAIN.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <button onClick={() => removeScore(idx)} className="text-red-500 no-print w-full sm:w-auto">Remove</button>
-            </div>
-          ))}
-          <button onClick={addScore} className="mt-2 bg-green-500 text-white px-2 py-1 rounded no-print w-full sm:w-auto">Add Score</button>
-          <div className="mt-4 flex flex-col md:flex-row gap-4 items-center">
-            <div className="font-semibold">Overall Predicate:</div>
-            <div className="ml-2">{overallPredicate}</div>
-            <div className="font-semibold ml-4">Overall Description:</div>
-            <div className="ml-2">{overallDescription}</div>
-          </div>
+      {/* Section 5: Score */}
+      <div className="w-full bg-white rounded shadow p-4">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="font-semibold">Materi Ujian</h2>
+          <span className="text-sm text-gray-500">Maximum 3 materi ujian</span>
         </div>
-        {/* Attendance Table */}
-        <div className="w-full md:w-1/4 bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">Kehadiran</h2>
-          <table className="w-full border">
-            <tbody>
-              <tr>
-                <td className="border px-2 py-1">Hadir</td>
-                <td className="border px-2 py-1">
-                  <input 
-                    type="number" 
-                    value={attendance.present} 
-                    readOnly
-                    className="border rounded px-3 py-2 w-16 bg-gray-100 cursor-not-allowed" 
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="border px-2 py-1">Izin</td>
-                <td className="border px-2 py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleAttendanceChange('permit', Math.max(0, attendance.permit - 1))}
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    –
-                  </button>
-                    <input 
-                      type="number" 
-                      value={attendance.permit} 
-                      onChange={e => handleAttendanceChange('permit', +e.target.value)}
-                      onBlur={handleFieldBlur}
-                      className="border rounded px-3 py-2 w-16 text-center" 
-                    />
-                  <button
-                    type="button"
-                    onClick={() => handleAttendanceChange('permit', attendance.permit + 1)}
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    +
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td className="border px-2 py-1">Alfa</td>
-                <td className="border px-2 py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleAttendanceChange('absence', Math.max(0, attendance.absence - 1))}
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    –
-                  </button>
-                    <input 
-                      type="number" 
-                      value={attendance.absence ?? 0} 
-                      onChange={e => handleAttendanceChange('absence', +e.target.value)}
-                      onBlur={handleFieldBlur}
-                      className="border rounded px-3 py-2 w-16 text-center" 
-                    />
-                  <button
-                    type="button"
-                    onClick={() => handleAttendanceChange('absence', attendance.absence + 1)}
-                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    +
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div className={`mt-2 text-sm font-semibold text-white px-2 py-1 rounded ${attendanceColor}`}>Attendance: {attendancePercent}%</div>
+        {scores.map((score, idx) => (
+          <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch w-full">
+            <select
+              value={score.name}
+              onChange={e => handleScoreChange(idx, "name", e.target.value)}
+              onBlur={handleFieldBlur}
+              className="border rounded px-3 py-2 w-full sm:w-auto"
+            >
+              {SCORE_NAMES.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            {score.name === 'CUSTOM' && (
+              <input
+                value={score.customName || ''}
+                onChange={e => handleCustomScoreNameChange(idx, e.target.value)}
+                onBlur={handleFieldBlur}
+                placeholder="Custom Materi"
+                className="border rounded px-3 py-2 w-full"
+              />
+            )}
+            <select
+              value={score.tahfidz_score}
+              onChange={e => handleScoreChange(idx, "tahfidz_score", e.target.value)}
+              onBlur={handleFieldBlur}
+              className="border rounded px-3 py-2 w-full sm:w-auto"
+            >
+              <option value="">Tahfidz Score</option>
+              {PREDICATES_MAIN.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select
+              value={score.tahsin_score}
+              onChange={e => handleScoreChange(idx, "tahsin_score", e.target.value)}
+              onBlur={handleFieldBlur}
+              className="border rounded px-3 py-2 w-full sm:w-48"
+            >
+              <option value="">Tahsin Score</option>
+              {PREDICATES_MAIN.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button 
+              onClick={() => removeScore(idx)} 
+              className="text-red-500 hover:text-red-700 no-print w-full sm:w-auto flex items-center justify-center"
+            >
+              <TrashIcon className="h-5 w-5" />
+            </button>
+          </div>
+        ))}
+        <button 
+          onClick={addScore} 
+          className="mt-2 bg-green-500 text-white px-2 py-1 rounded no-print w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={scores.length >= 3}
+        >
+          + Tambah Materi Ujian
+        </button>
+        <div className="mt-4 flex flex-col md:flex-row gap-4 items-center">
+          <div className="font-semibold">Predikat:</div>
+          <div className="ml-2">{overallPredicate}</div>
+          <div className="font-semibold ml-4">Deskripsi:</div>
+          <div className="ml-2">{overallDescription}</div>
         </div>
       </div>
 
@@ -1120,7 +1185,7 @@ export default function StudentReportsPage() {
       {/* Place and Date above signature names (UI/Print) */}
       <div className="bg-white rounded shadow p-4 flex flex-col items-center mb-2">
         <div className="flex items-center gap-4 mb-2">
-          <span className="font-medium">{signatures.place}, 23 June 2025 / 27 Dzulhijjah 1446 H</span>
+          <span className="font-medium">{signatures.place || 'Kota Tasikmalaya'}, 23 Juni 2025 / 27 Dzulhijjah 1446 H</span>
         </div>
       </div>
       <div className="bg-white rounded shadow p-4 grid grid-cols-3 gap-8 items-end">
@@ -1131,10 +1196,14 @@ export default function StudentReportsPage() {
           <div className="mt-8 mb-2">( {signatures.parent || '..........................'} )</div>
         </div>
         {/* Center: Principal */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center relative">
           <div className="font-semibold">Direktur PPTQ</div>
           <div className="h-8" />
-          <div className="mt-8 mb-2">( {signatures.principal || '..........................'} )</div>
+          <div className="mt-8 mb-4 relative">
+            <img src="/images/ttdujq.png" alt="Principal Signature" className="absolute -top-20 left-1/2 transform -translate-x-1/2 w-40 h-40 object-contain" />
+            <img src="/images/cappptq.png" alt="Stamp" className="absolute -top-20 transform -translate-x-1/2 w-40 h-40 object-contain opacity-80" />
+            ( {signatures.principal || '..........................'} )
+          </div>
         </div>
         {/* Right: Teacher */}
         <div className="flex flex-col items-center">
@@ -1191,7 +1260,7 @@ export default function StudentReportsPage() {
       )}
 
       {/* View | Download | Print */}
-      <div className="flex justify-end gap-4 mt-4 no-print">
+      <div className="flex justify-center gap-4 mt-4 no-print">
         <button
           onClick={handleDownload}
           className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -1200,7 +1269,7 @@ export default function StudentReportsPage() {
         </button>
         <button
           onClick={handleSave}
-          className="bg-green-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2"
+          className="bg-green-600 w-48 text-white justify-center font-semibold px-6 py-2 rounded shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center text-center gap-2"
           disabled={!academicYear || !studentId || isSaving}
         >
           {isSaving && (
@@ -1209,7 +1278,7 @@ export default function StudentReportsPage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
             </svg>
           )}
-          {currentReport ? 'Update' : 'Save'}
+          {currentReport ? 'Update' : 'Simpan'}
         </button>
       </div>
     </div>

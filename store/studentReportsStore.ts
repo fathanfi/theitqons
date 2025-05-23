@@ -36,6 +36,7 @@ interface StudentReportsStore {
   getPrincipalName: () => Promise<string>;
   getTeacherName: (studentId: string) => Promise<string>;
   getParentName: (studentId: string) => Promise<string>;
+  getClassName: (classId: string) => Promise<string>;
   getLevelName: (levelId: string) => Promise<string>;
   getGroupName: (studentId: string) => Promise<string>;
   calculateCompletionStatus: (report: Omit<StudentReport, 'id' | 'status'>) => 'complete' | 'incomplete' | 'empty';
@@ -214,6 +215,22 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
       return data?.father_name || '';
     } catch (error) {
       console.error('Error getting parent name:', error);
+      return '';
+    }
+  },
+
+  getClassName: async (classId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('name')
+        .eq('id', classId)
+        .single();
+
+      if (error) throw error;
+      return data?.name || '';
+    } catch (error) {
+      console.error('Error getting class name:', error);
       return '';
     }
   },
