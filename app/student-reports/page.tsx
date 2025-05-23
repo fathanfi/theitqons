@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSchoolStore } from '@/store/schoolStore';
 import { useStore } from '@/store/useStore';
 import { useStudentReportsStore } from '@/store/studentReportsStore';
@@ -380,18 +380,16 @@ export default function StudentReportsPage() {
   };
 
   // Attendance handlers
-  const handleAttendanceChange = (field: 'present' | 'permit' | 'absence', value: number) => {
-    if (field === 'permit' || field === 'absence') {
-      const newPermit = field === 'permit' ? value : attendance.permit;
-      const newAbsence = field === 'absence' ? value : attendance.absence;
-      setAttendance({
-        present: Math.max(0, 90 - newPermit - newAbsence),
-        permit: newPermit,
-        absence: newAbsence
-      });
-    } else {
-      setAttendance(a => ({ ...a, present: value }));
-    }
+  const handleAttendanceChange = (field: 'permit' | 'absence', value: number) => {
+    const totalDays = 90;
+    const newPermit = field === 'permit' ? value : attendance.permit;
+    const newAbsence = field === 'absence' ? value : attendance.absence;
+    const newPresent = Math.max(0, totalDays - newPermit - newAbsence);
+    setAttendance({
+      present: newPresent,
+      permit: newPermit,
+      absence: newAbsence
+    });
   };
 
   // Ziyadah handler
@@ -498,8 +496,11 @@ export default function StudentReportsPage() {
   const completion = calculateCompletionProgress();
 
   // Attendance percentage calculation
-  const totalDays = 90 + attendance.permit + attendance.absence;
-  const attendancePercent = totalDays > 0 ? Math.round((90 / totalDays) * 100) : 100;
+  const totalDays = 90; // Total days is fixed at 90
+  const presentDays = Math.max(0, totalDays - attendance.permit - attendance.absence);
+  const attendancePercent = totalDays > 0
+    ? Math.round((presentDays / totalDays) * 100)
+    : 0;
   let attendanceColor = 'bg-red-500';
   if (attendancePercent >= 75) attendanceColor = 'bg-green-500';
   else if (attendancePercent >= 50) attendanceColor = 'bg-yellow-400';
@@ -639,9 +640,9 @@ export default function StudentReportsPage() {
 
     // Add Overal Score
     const overalScoreText = 'Overal Score: ' + overallPredicate + ' ( ' + overallDescription + ' )';
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('times', 'bolditalic');
-    doc.setFontSize(12);
+    doc.setTextColor(60, 70, 90);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
     doc.text(overalScoreText.toUpperCase(), 105, y, { align: 'center' });
     y += 4;
     
@@ -674,6 +675,7 @@ export default function StudentReportsPage() {
       theme: 'grid',
     });
     // Add Attendance Percentage
+    doc.setTextColor(60, 70, 90);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
     doc.text('Kehadiran: ' + attendancePercent + '%', 25, (doc as any).lastAutoTable.finalY + 5);
@@ -740,7 +742,7 @@ export default function StudentReportsPage() {
     if (allScores.length === 0) return '-';
     const avg = allScores.reduce((a, b) => a + b, 0) / allScores.length;
     const roundedAvg = Math.round(avg);
-    if (avg > 90) return `Mumtaz (${roundedAvg})`;
+    if (avg > 90) return `Mumtaz`;
     if (avg >= 85 && avg <= 90) return `Jayyid Jiddan+`;
     if (avg >= 81 && avg <= 84) return `Jayyid Jiddan`;
     if (avg >= 75 && avg <= 80) return `Jayyid+`;
@@ -1050,7 +1052,7 @@ export default function StudentReportsPage() {
                 <td className="border px-2 py-1">
                   <input 
                     type="number" 
-                    value={90} 
+                    value={attendance.present} 
                     readOnly
                     className="border rounded px-3 py-2 w-16 bg-gray-100 cursor-not-allowed" 
                   />
