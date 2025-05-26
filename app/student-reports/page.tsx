@@ -69,7 +69,7 @@ const SCORE_NAMES = [
   'IQ-7.2 AL BAQARAH 77 - AL BAQARAH 141',
 ];
 
-const PREDICATES_MAIN = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "Nafis"];
+const PREDICATES_MAIN = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "Naqis"];
 
 // Add this helper function after the existing helper functions
 const countWords = (text: string) => {
@@ -772,7 +772,7 @@ export default function StudentReportsPage() {
       'Jayyid Jiddan': 85,
       'Jayyid': 75,
       'Dhoif': 60,
-      'Nafis': 50
+      'Naqis': 50
     };
     // Collect all tahfidz_score and tahsin_score
     const allScores = scores
@@ -789,8 +789,8 @@ export default function StudentReportsPage() {
     if (avg >= 66 && avg <= 74) return `Jayyid`;
     if (avg >= 60 && avg <= 65) return `Dhoif+`;
     if (avg >= 55 && avg <= 59) return `Dhoif`;
-    if (avg >= 52 && avg <= 54) return `Nafis+`;
-    if (avg < 52) return `Nafis (${roundedAvg})`;
+    if (avg >= 52 && avg <= 54) return `Naqis+`;
+    if (avg < 52) return `Naqis (${roundedAvg})`;
     return '-';
   };
 
@@ -804,8 +804,8 @@ export default function StudentReportsPage() {
       case 'Jayyid': return 'Good, Baik';
       case 'Dhoif+': return 'Need Improvement, Cukup Baik';
       case 'Dhoif': return 'Bad, Tidak Terlalu Baik';
-      case 'Nafis+': return 'Really Bad, Buruk';
-      case 'Nafis': return 'Worst, Sangat Buruk';
+      case 'Naqis+': return 'Really Bad, Buruk';
+      case 'Naqis': return 'Worst, Sangat Buruk';
       default: return '';
     }
   };

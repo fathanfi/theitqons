@@ -142,7 +142,8 @@ export function DashboardStats() {
     { href: '/story-actions', label: 'Story Actions', icon: '🎯', role: 'admin' },
     { href: '/school-settings', label: 'School Settings', icon: '⚙️', role: 'admin' },
     { href: '/school-information', label: 'School Information', icon: '🏫', role: 'admin' },
-    { href: '/student-reports', label: 'Student Reports', icon: '📝', role: ['admin', 'teacher'] }
+    { href: '/student-reports', label: 'Student Reports', icon: '📉', role: ['admin', 'teacher'] },
+    { href: '/certificates', label: 'Certificates', icon: '🔖', role: ['admin'] }
   ];
 
   // Filter menu items based on user role
