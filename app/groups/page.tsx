@@ -13,6 +13,8 @@ import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import { CheckCircleIcon, ExclamationCircleIcon, MinusCircleIcon } from '@heroicons/react/24/solid';
+import { useExamStore } from '@/store/examStore';
+import { formatDate } from '@/lib/utils';
 
 export default function GroupsPage() {
   const { currentAcademicYear } = useSession();
@@ -42,6 +44,10 @@ export default function GroupsPage() {
   const [showReportProgress, setShowReportProgress] = useState(false);
   const [reportSessionFilter, setReportSessionFilter] = useState<'ALL' | 1 | 2>('ALL');
   const [studentReports, setStudentReports] = useState<{ [studentId: string]: { [sessionId: number]: string } }>({});
+  const [showBadges, setShowBadges] = useState(false);
+  const [showLastExam, setShowLastExam] = useState(false);
+  const itqonExams = useExamStore((state) => state.itqonExams);
+  const loadItqonExams = useExamStore((state) => state.loadItqonExams);
 
   useEffect(() => {
     if (currentAcademicYear) {
@@ -51,8 +57,9 @@ export default function GroupsPage() {
       loadAcademicYears();
       loadLevels();
       loadStudentPoints();
+      loadItqonExams();
     }
-  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears, loadLevels]);
+  }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears, loadLevels, loadItqonExams]);
 
   const loadStudentPoints = async () => {
     const { data } = await supabase
@@ -162,6 +169,14 @@ export default function GroupsPage() {
     fetchReports();
   }, [showReportProgress, filteredGroups, currentAcademicYear]);
 
+  const getLatestExam = (studentId: string) => {
+    const studentExams = itqonExams
+      .filter(exam => exam.studentId === studentId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    console.log(studentExams);
+    return studentExams[0];
+  };
+
   if (!currentAcademicYear) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -229,6 +244,24 @@ export default function GroupsPage() {
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <span>Show Report Progress</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showBadges}
+                  onChange={(e) => setShowBadges(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Badges</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showLastExam}
+                  onChange={(e) => setShowLastExam(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Last Exam</span>
               </label>
               {showReportProgress && (
                 <select
@@ -364,6 +397,31 @@ export default function GroupsPage() {
                           {showPoints && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md">
                               {points} pts
+                            </span>
+                          )}
+                          {showBadges && student.badges.length > 0 && (
+                            <div className="flex gap-1">
+                              {student.badges.map(badge => (
+                                <span key={badge.id} className="px-2 py-0.5 rounded-full text-xl font-bold text-white shadow-md" title={badge.description}>
+                                  {badge.icon}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {showLastExam && (
+                            <span className="flex items-center gap-1">
+                              {(() => {
+                                const latestExam = getLatestExam(student.id);
+                                if (!latestExam) return null;
+                                return (
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md" title={`${latestExam.exam?.name} - ${formatDate(latestExam.examDate)}`}>
+                                    {latestExam.exam?.name
+                                      .split(' ')
+                                      .slice(0, 2)
+                                      .join(' ')}
+                                  </span>
+                                );
+                              })()}
                             </span>
                           )}
                           {/* Report Progress Icons */}

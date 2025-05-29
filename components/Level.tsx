@@ -78,7 +78,10 @@ export function Level({ level, levelId, students, searchQuery, getLatestExam }: 
               />
               {latestExam && (
                 <span className={`text-xs px-2 py-1 rounded-full mt-1 ${getStatusStyle(latestExam.status)}`}>
-                  {latestExam.exam?.name}
+                  {latestExam.exam?.name
+                    .split(' ')
+                    .slice(0, 2)
+                    .join(' ')}
                 </span>
               )}
             </div>

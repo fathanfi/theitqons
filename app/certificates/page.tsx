@@ -986,16 +986,24 @@ export default function StudentReportsPage() {
                     </div>
                   </div>
                 ) : previewBlob ? (
-                  <div className="w-full h-full">
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-4">
                     <object
                       data={URL.createObjectURL(previewBlob)}
                       type="application/pdf"
-                      className="w-full h-full"
+                      className="w-full h-full hidden md:block"
                     >
                       <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
                         <p className="text-gray-500">Unable to display PDF preview. Please download to view.</p>
                       </div>
                     </object>
+                    <a 
+                      href={URL.createObjectURL(previewBlob)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="md:hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Open PDF Preview
+                    </a>
                   </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
