@@ -45,11 +45,18 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
     loadTeachers();
   }, [loadExams, loadStudents, loadTeachers]);
 
+  const getJakartaDate = () => {
+    const now = new Date();
+    const offset = 7 * 60; // GMT+7 in minutes
+    const local = new Date(now.getTime() + offset * 60000 - now.getTimezoneOffset() * 60000);
+    return local.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState<Partial<ItqonExam>>(
     editExam || {
       studentId: '',
       examId: '08c8f7c4-0f23-4aec-9a70-d951fa6da9f6', // Default to Itqon 1
-      examDate: '2024-11-01', // Remove time, just date
+      examDate: getJakartaDate(), // Remove time, just date
       status: 'Passed',
       tahfidzScore: 'Good',
       tajwidScore: 'Good',
@@ -96,7 +103,7 @@ export function ItqonExamForm({ editExam, onUpdate }: { editExam?: ItqonExam; on
       setFormData({
         studentId: '',
         examId: 'itqon-1', // Reset to default exam
-        examDate: '2024-11-01', // Reset to default date
+        examDate: getJakartaDate(), // Reset to default date
         status: 'Passed',
         tahfidzScore: 'Good',
         tajwidScore: 'Good',

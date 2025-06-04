@@ -117,8 +117,8 @@ export const useExamStore = create<ExamStore>((set) => ({
           student_id: exam.studentId,
           teacher_id: exam.teacherId,
           exam_date: exam.examDate,
-          tahfidz_score: exam.tahfidzScore,
-          tajwid_score: exam.tajwidScore,
+          tahfidz_score: exam.tahfidzScore === '' ? null : exam.tahfidzScore,
+          tajwid_score: exam.tajwidScore === '' ? null : exam.tajwidScore,
           exam_notes: exam.examNotes,
           status: exam.status
         }])
@@ -193,8 +193,8 @@ export const useExamStore = create<ExamStore>((set) => ({
           student_id: exam.studentId,
           teacher_id: exam.teacherId,
           exam_date: exam.examDate,
-          tahfidz_score: exam.tahfidzScore,
-          tajwid_score: exam.tajwidScore,
+          tahfidz_score: exam.tahfidzScore === '' ? null : exam.tahfidzScore,
+          tajwid_score: exam.tajwidScore === '' ? null : exam.tajwidScore,
           exam_notes: exam.examNotes,
           status: exam.status,
           updated_at: new Date().toISOString()

@@ -4,6 +4,7 @@ import { StoryAction } from '@/types/story';
 import { useSchoolStore } from '@/store/schoolStore';
 import { useStore } from '@/store/useStore';
 import Image from 'next/image';
+import DOMPurify from 'dompurify';
 
 export function StoryTimeline() {
   const storyActions = useStoryStore((state) => state.storyActions);
@@ -44,7 +45,7 @@ export function StoryTimeline() {
   };
 
   const sortedActions = [...storyActions].sort((a, b) => 
-    new Date(a.publishDate).getTime() - new Date(b.publishDate).getTime()
+    new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
   );
 
   return (
@@ -121,13 +122,19 @@ export function StoryTimeline() {
               {selectedAction.actionSummary && (
                 <div>
                   <span className="font-medium text-gray-700">Summary: </span>
-                  <span className="text-gray-600">{selectedAction.actionSummary}</span>
+                  <div
+                    className="prose prose-sm max-w-none bg-indigo-50 rounded p-2 my-1 text-gray-800 border border-indigo-100 shadow-sm"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedAction.actionSummary) }}
+                  />
                 </div>
               )}
               {selectedAction.actionDetails && (
                 <div>
                   <span className="font-medium text-gray-700">Details: </span>
-                  <span className="text-gray-600">{selectedAction.actionDetails}</span>
+                  <div
+                    className="prose prose-sm max-w-none bg-gray-50 rounded p-2 my-1 text-gray-800 border border-gray-100 shadow-sm"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedAction.actionDetails) }}
+                  />
                 </div>
               )}
               {selectedAction.participants && selectedAction.participants.length > 0 && (

@@ -25,6 +25,7 @@ export function LevelBoard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [examFilter, setExamFilter] = useState<'all' | 'with_exam' | 'without_exam'>('all');
   const { user } = useAuthStore();
   const { showUnauthorized } = useUnauthorized();
   const isAdmin = user?.role === 'admin';
@@ -88,10 +89,29 @@ export function LevelBoard() {
         
         // Apply search filter
         if (searchQuery && !student.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
+        // Apply exam filter
+        const hasExam = getLatestExam(student.id);
+        if (examFilter === 'with_exam' && !hasExam) return false;
+        if (examFilter === 'without_exam' && hasExam) return false;
         
         return student.level_id === levelId;
       });
   };
+
+  // Calculate totals
+  const totalStudents = students.length;
+  const studentsWithExams = students.filter(student => getLatestExam(student.id)).length;
+  const filteredStudents = students.filter(student => {
+    if (statusFilter === 'active' && !student.status) return false;
+    if (statusFilter === 'inactive' && student.status) return false;
+    if (selectedClass && student.class_id !== selectedClass) return false;
+    if (searchQuery && !student.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    const hasExam = getLatestExam(student.id);
+    if (examFilter === 'with_exam' && !hasExam) return false;
+    if (examFilter === 'without_exam' && hasExam) return false;
+    return true;
+  }).length;
 
   // Only show active levels
   const activeLevels = levels
@@ -100,6 +120,24 @@ export function LevelBoard() {
 
   return (
     <div className="space-y-6">
+      {/* Report Section */}
+      <div className="mb-6 flex flex-col gap-4 md:flex-row">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Total Santri</p>
+            <p className="text-2xl font-bold">{totalStudents}</p>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Santri Itqon</p>
+            <p className="text-2xl font-bold">{studentsWithExams}</p>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Filtered</p>
+            <p className="text-2xl font-bold">{filteredStudents}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="mb-6 flex flex-col gap-4 md:flex-row">
         <input
           type="text"
@@ -128,6 +166,15 @@ export function LevelBoard() {
           <option value="all">All Students</option>
           <option value="active">Active Students</option>
           <option value="inactive">Non-Active Students</option>
+        </select>
+        <select
+          value={examFilter}
+          onChange={(e) => setExamFilter(e.target.value as 'all' | 'with_exam' | 'without_exam')}
+          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value="all">Semua Status</option>
+          <option value="with_exam">Sudah Itqon</option>
+          <option value="without_exam">Belum Itqon</option>
         </select>
       </div>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

@@ -6,6 +6,10 @@ import { StoryAction } from '@/types/story';
 import { useStore } from '@/store/useStore';
 import { useSchoolStore } from '@/store/schoolStore';
 import Select from 'react-select';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export function StoryActionForm({ editAction, onUpdate }: { editAction?: StoryAction; onUpdate?: () => void }) {
   const addStoryAction = useStoryStore((state) => state.addStoryAction);
@@ -137,13 +141,14 @@ export function StoryActionForm({ editAction, onUpdate }: { editAction?: StoryAc
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Action Details</label>
-          <textarea
-            name="actionDetails"
-            value={formData.actionDetails}
-            onChange={handleChange}
-            rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
+          <div className="mt-1">
+            <ReactQuill
+              value={formData.actionDetails || ''}
+              onChange={value => setFormData({ ...formData, actionDetails: value })}
+              theme="snow"
+              className="bg-white rounded-md border border-gray-200 min-h-[120px]"
+            />
+          </div>
         </div>
 
         <div>
