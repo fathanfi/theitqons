@@ -16,6 +16,7 @@ export function Navigation() {
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [isItqonOpen, setIsItqonOpen] = useState(false);
   const [isStoriesOpen, setIsStoriesOpen] = useState(false);
+  const [isQurbankuOpen, setIsQurbankuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -33,6 +34,7 @@ export function Navigation() {
     setIsBillingOpen(false);
     setIsItqonOpen(false);
     setIsStoriesOpen(false);
+    setIsQurbankuOpen(false);
   };
 
   const toggleMobileMenu = () => {
@@ -242,18 +244,32 @@ export function Navigation() {
               '💥'
             )}
 
+            {/* Qurbanku - All users */}
+            {renderDropdown(
+              isQurbankuOpen,
+              setIsQurbankuOpen,
+              'Qurbanku',
+              [
+                { href: '/qurban/my-qurban', label: 'My Qurban' },
+                { href: '/qurban/editions', label: 'Edisi Qurban' },
+                { href: '/qurban/animals', label: 'Hewan Qurban' },
+                { href: '/qurban/sedekah', label: 'Sedekah' },
+                { href: '/qurban/operasional', label: 'Operasional' }
+              ],
+              '🐐'
+            )}
+
             {/* Billing - Admin and Teacher */}
             {(user?.role === 'admin' || user?.role === 'teacher') && renderDropdown(
               isBillingOpen,
               setIsBillingOpen,
               'Billing',
               user?.role === 'admin' ? [
-                { href: '/billing', label: 'Billing List' },
-                { href: '/billing/settings', label: 'Billing Settings' }
+                { href: '/billing', label: 'Billing' },
+                { href: '/billing/settings', label: 'Settings' }
               ] : [
-                { href: '/billing', label: 'Billing List' }
-              ],
-              '💰'
+                { href: '/billing', label: 'Billing' }
+              ]
             )}
 
             {/* Stories - All users */}
@@ -413,18 +429,33 @@ export function Navigation() {
                 true
               )}
 
+              {/* Qurbanku - All users */}
+              {renderMobileDropdown(
+                isQurbankuOpen,
+                setIsQurbankuOpen,
+                'Qurbanku',
+                [
+                  { href: '/qurban/my-qurban', label: 'My Qurban' },
+                  { href: '/qurban/editions', label: 'Qurban Editions' },
+                  { href: '/qurban/animals', label: 'Qurban Animals' },
+                  { href: '/qurban/sedekah', label: 'Sedekah' },
+                  { href: '/qurban/operasional', label: 'Operasional' }
+                ],
+                '🐐',
+                true
+              )}
+
               {/* Billing - Admin and Teacher */}
               {(user?.role === 'admin' || user?.role === 'teacher') && renderMobileDropdown(
                 isBillingOpen,
                 setIsBillingOpen,
                 'Billing',
                 user?.role === 'admin' ? [
-                  { href: '/billing', label: 'Billing List' },
-                  { href: '/billing/settings', label: 'Billing Settings' }
+                  { href: '/billing', label: 'Billing' },
+                  { href: '/billing/settings', label: 'Settings' }
                 ] : [
-                  { href: '/billing', label: 'Billing List' }
-                ],
-                '💰'
+                  { href: '/billing', label: 'Billing' }
+                ]
               )}
 
               {/* Stories - All users */}
