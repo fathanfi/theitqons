@@ -10,6 +10,8 @@ import { OperasionalForm } from '@/components/qurban/operasional-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 // Extend QurbanOperasional to include optional expense for local use
 interface QurbanOperasional extends QurbanOperasionalBase {
@@ -24,6 +26,9 @@ interface QurbanOperasional extends QurbanOperasionalBase {
 
 export default function QurbanOperasionalPage() {
   const router = useRouter();
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [operasional, setOperasional] = useState<QurbanOperasional[]>([]);
   const [editions, setEditions] = useState<QurbanEdition[]>([]);
   const [selectedEdition, setSelectedEdition] = useState<string>('all');
@@ -110,6 +115,24 @@ export default function QurbanOperasionalPage() {
     fetchOperasional();
   };
 
+  const handleEditClick = (item: QurbanOperasional) => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditOperasional(item);
+    setOpen(true);
+  };
+
+  const handleAddClick = () => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditOperasional(null);
+    setOpen(true);
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -134,9 +157,19 @@ export default function QurbanOperasionalPage() {
               </SelectContent>
             </Select>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(newOpen) => {
+            if (!newOpen) {
+              setOpen(false);
+              return;
+            }
+            if (!isAdmin) {
+              showUnauthorized();
+              return;
+            }
+            setOpen(true);
+          }}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditOperasional(null); setOpen(true); }}>Add New Operasional</Button>
+              <Button>Add New Operasional</Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
@@ -163,7 +196,7 @@ export default function QurbanOperasionalPage() {
                   {item.status}
                 </Badge>
               </div>
-              <Button size="sm" variant="outline" onClick={() => { setEditOperasional(item); setOpen(true); }}>Edit</Button>
+              <Button size="sm" variant="outline" onClick={() => handleEditClick(item)}>Edit</Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

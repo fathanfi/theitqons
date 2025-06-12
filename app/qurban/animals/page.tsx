@@ -11,9 +11,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export default function QurbanAnimalsPage() {
   const router = useRouter();
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [animals, setAnimals] = useState<QurbanAnimal[]>([]);
   const [editions, setEditions] = useState<QurbanEdition[]>([]);
   const [selectedEdition, setSelectedEdition] = useState<string>('all');
@@ -111,6 +116,24 @@ export default function QurbanAnimalsPage() {
     setEditionLoading(false);
   };
 
+  const handleEditClick = (animal: QurbanAnimal) => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditAnimal(animal);
+    setOpen(true);
+  };
+
+  const handleAddClick = () => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditAnimal(null);
+    setOpen(true);
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -118,7 +141,7 @@ export default function QurbanAnimalsPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Qurban Animals</h1>
+        <h1 className="text-2xl font-bold">Hewan Qurban</h1>
         <div className="flex items-center gap-4">
           <div className="w-[200px]">
             <Select defaultValue="all" onValueChange={handleEditionChange}>
@@ -140,9 +163,19 @@ export default function QurbanAnimalsPage() {
               </div>
             )}
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(newOpen) => {
+            if (!newOpen) {
+              setOpen(false);
+              return;
+            }
+            if (!isAdmin) {
+              showUnauthorized();
+              return;
+            }
+            setOpen(true);
+          }}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditAnimal(null); setOpen(true); }}>Add New Animal</Button>
+              <Button>Add New Animal</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -179,7 +212,7 @@ export default function QurbanAnimalsPage() {
                 <CardTitle>{animal.name}</CardTitle>
                 <Badge className={getStatusColor(animal.status)}>{animal.status}</Badge>
               </div>
-              <Button size="sm" variant="outline" onClick={() => { setEditAnimal(animal); setOpen(true); }}>Edit</Button>
+              <Button size="sm" variant="outline" onClick={() => handleEditClick(animal)}>Edit</Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">

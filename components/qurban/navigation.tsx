@@ -6,11 +6,11 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
   {
-    name: 'Editions',
+    name: 'Edisi Qurban',
     href: '/qurban/editions',
   },
   {
-    name: 'Animals',
+    name: 'Hewan Qurban',
     href: '/qurban/animals',
   },
   {

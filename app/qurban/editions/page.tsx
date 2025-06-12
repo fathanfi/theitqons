@@ -9,8 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { EditionForm } from '@/components/qurban/edition-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export default function QurbanEditionsPage() {
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [editions, setEditions] = useState<QurbanEdition[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
@@ -56,6 +61,24 @@ export default function QurbanEditionsPage() {
     fetchEditions();
   };
 
+  const handleEditClick = (edition: QurbanEdition) => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditEdition(edition);
+    setOpen(true);
+  };
+
+  const handleAddClick = () => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditEdition(null);
+    setOpen(true);
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -64,9 +87,19 @@ export default function QurbanEditionsPage() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Qurban Editions</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(newOpen) => {
+          if (!newOpen) {
+            setOpen(false);
+            return;
+          }
+          if (!isAdmin) {
+            showUnauthorized();
+            return;
+          }
+          setOpen(true);
+        }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditEdition(null); setOpen(true); }}>Create New Edition</Button>
+            <Button>Create New Edition</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -87,7 +120,7 @@ export default function QurbanEditionsPage() {
                   {edition.status}
                 </Badge>
               </div>
-              <Button size="sm" variant="outline" onClick={() => { setEditEdition(edition); setOpen(true); }}>Edit</Button>
+              <Button size="sm" variant="outline" onClick={() => handleEditClick(edition)}>Edit</Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">

@@ -10,8 +10,13 @@ import { SedekahForm } from '@/components/qurban/sedekah-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { useUnauthorized } from '@/contexts/UnauthorizedContext';
+import { useAuthStore } from '@/store/authStore';
 
 export default function QurbanSedekahPage() {
+  const { showUnauthorized } = useUnauthorized();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [sedekah, setSedekah] = useState<QurbanSedekah[]>([]);
   const [editions, setEditions] = useState<QurbanEdition[]>([]);
   const [selectedEdition, setSelectedEdition] = useState<string>('all');
@@ -97,6 +102,24 @@ export default function QurbanSedekahPage() {
     fetchSedekah();
   };
 
+  const handleEditClick = (item: QurbanSedekah) => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditSedekah(item);
+    setOpen(true);
+  };
+
+  const handleAddClick = () => {
+    if (!isAdmin) {
+      showUnauthorized();
+      return;
+    }
+    setEditSedekah(null);
+    setOpen(true);
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -126,9 +149,19 @@ export default function QurbanSedekahPage() {
               </div>
             )}
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(newOpen) => {
+            if (!newOpen) {
+              setOpen(false);
+              return;
+            }
+            if (!isAdmin) {
+              showUnauthorized();
+              return;
+            }
+            setOpen(true);
+          }}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditSedekah(null); setOpen(true); }}>Add New Sedekah</Button>
+              <Button>Add New Sedekah</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -155,7 +188,7 @@ export default function QurbanSedekahPage() {
                   {item.status}
                 </Badge>
               </div>
-              <Button size="sm" variant="outline" onClick={() => { setEditSedekah(item); setOpen(true); }}>Edit</Button>
+              <Button size="sm" variant="outline" onClick={() => handleEditClick(item)}>Edit</Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">

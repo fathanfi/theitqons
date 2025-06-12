@@ -436,8 +436,8 @@ export function Navigation() {
                 'Qurbanku',
                 [
                   { href: '/qurban/my-qurban', label: 'My Qurban' },
-                  { href: '/qurban/editions', label: 'Qurban Editions' },
-                  { href: '/qurban/animals', label: 'Qurban Animals' },
+                  { href: '/qurban/editions', label: 'Edisi Qurban' },
+                  { href: '/qurban/animals', label: 'Hewan Qurban' },
                   { href: '/qurban/sedekah', label: 'Sedekah' },
                   { href: '/qurban/operasional', label: 'Operasional' }
                 ],
