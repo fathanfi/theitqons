@@ -162,7 +162,7 @@ export default function QurbankuPage() {
       setDriveLoading(true);
       try {
         // Use Google Drive API v3 (public folder, no auth needed for public folders)
-        const apiKey = 'AIzaSyBJFS8IIdnRWNn5J3s11WlV-NLCyIzNP2Q';
+        const apiKey = '';
         const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(id,name,mimeType)&key=${apiKey}`;
         const res = await axios.get(url);
         const files = res.data.files || [];
