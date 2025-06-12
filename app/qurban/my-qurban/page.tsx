@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { QurbanEdition, QurbanOperasional } from '@/types/qurban';
+import { useState, useEffect, useMemo } from 'react';
+import { QurbanEdition as QurbanEditionBase, QurbanOperasional as QurbanOperasionalBase } from '@/types/qurban';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation';
 import { Loader2, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
+import Video from 'yet-another-react-lightbox/plugins/video';
 
 interface AnimalStats {
   type: string;
@@ -32,6 +35,20 @@ interface OperasionalStats {
   items: QurbanOperasional[];
 }
 
+interface QurbanOperasional extends QurbanOperasionalBase {
+  expense?: {
+    name: string;
+    unit_price: number;
+    qty: number;
+    total_price: number;
+    store: string;
+  }[];
+}
+
+interface QurbanEdition extends QurbanEditionBase {
+  gallery_url?: string;
+}
+
 export default function QurbankuPage() {
   const router = useRouter();
   const [editions, setEditions] = useState<QurbanEdition[]>([]);
@@ -50,12 +67,81 @@ export default function QurbankuPage() {
     totalSedekah: 0,
     operasional: 0,
   });
+  const [galleryFiles, setGalleryFiles] = useState<any[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [galleryModal, setGalleryModal] = useState<{ open: boolean; url: string; type: string }>({ open: false, url: '', type: '' });
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Gallery logic for comma-separated URLs
+  const galleryUrls = useMemo(() => {
+    if (!selectedEditionData?.gallery_url) return [];
+    return selectedEditionData.gallery_url
+      .split(',')
+      .map(url => url.trim())
+      .filter(Boolean)
+      .map(url => {
+        const ext = url.split('.').pop()?.toLowerCase();
+        const type = ext === 'mp4' || ext === 'webm' || ext === 'mov' ? 'video' : 'image';
+        return { url, type, name: url.split('/').pop() };
+      });
+  }, [selectedEditionData?.gallery_url]);
 
   useEffect(() => {
     checkAuth();
     fetchEditions();
     fetchReport();
   }, [selectedEdition]);
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      if (!selectedEditionData?.gallery_url) {
+        setGalleryFiles([]);
+        setGalleryError(null);
+        return;
+      }
+      setGalleryLoading(true);
+      setGalleryError(null);
+      try {
+        // Use Supabase JS client .list() method
+        const folder = selectedEditionData.gallery_url.replace(/^\/+|\/+$/g, '');
+        console.log('DEBUG: gallery_url from edition:', selectedEditionData.gallery_url);
+        console.log('DEBUG: folder used for .list:', folder);
+        const { data: files, error } = await supabase.storage.from('itqonbucket').list(folder, { limit: 100 });
+        console.log('DEBUG: .list(folder):', files, 'error:', error);
+        if (error) {
+          setGalleryFiles([]);
+          setGalleryError(error.message);
+          return;
+        }
+        if (!files || files.length === 0) {
+          setGalleryFiles([]);
+          setGalleryError('No files found in folder.');
+          return;
+        }
+        const galleryFiles = files.filter(f => f.name && !f.name.endsWith('/')).map(f => {
+          const ext = f.name.split('.').pop()?.toLowerCase();
+          const type = ext === 'mp4' || ext === 'webm' || ext === 'mov' ? 'video' : 'image';
+          const url = `https://qmffqsgaqfzprhcusiot.supabase.co/storage/v1/object/public/itqonbucket/${folder}/${f.name}`;
+          console.log('DEBUG: file:', f.name, 'url:', url);
+          return {
+            name: f.name,
+            url,
+            type,
+          };
+        });
+        setGalleryFiles(galleryFiles);
+        setGalleryError(null);
+      } catch (e: any) {
+        setGalleryFiles([]);
+        setGalleryError(e?.message || 'Unknown error');
+      } finally {
+        setGalleryLoading(false);
+      }
+    };
+    fetchGallery();
+  }, [selectedEditionData?.gallery_url]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -281,25 +367,25 @@ export default function QurbankuPage() {
             </div>
           )}
         </div>
-        <div className="w-[200px]">
-          <Select defaultValue="all" onValueChange={setSelectedEdition}>
-            <SelectTrigger className="bg-white cursor-pointer">
-              <SelectValue placeholder="Select Edition" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Editions</SelectItem>
-              {editions.map((edition) => (
-                <SelectItem key={edition.id} value={edition.id}>
-                  {edition.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {editionLoading && (
-            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </div>
-          )}
+        {/* Edition filter as buttons */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={selectedEdition === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedEdition('all')}
+          >
+            All Editions
+          </Button>
+          {editions.map((edition) => (
+            <Button
+              key={edition.id}
+              variant={selectedEdition === edition.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedEdition(edition.id)}
+            >
+              {edition.name}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -504,11 +590,89 @@ export default function QurbankuPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Detail Pengeluaran Section */}
+                {Array.isArray(item.expense) && item.expense.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-bold mb-2">Detail Pengeluaran</p>
+                    <div className="overflow-x-auto max-h-[150px] overflow-y-auto">
+                      <table className="min-w-full border text-xs">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border px-2 py-1">No</th>
+                            <th className="border px-2 py-1">Name</th>
+                            <th className="border px-2 py-1">Unit Price</th>
+                            <th className="border px-2 py-1">Qty</th>
+                            <th className="border px-2 py-1">Total Price</th>
+                            <th className="border px-2 py-1">Store</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {item.expense.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border px-2 py-1 text-center">{idx + 1}</td>
+                              <td className="border px-2 py-1">{row.name}</td>
+                              <td className="border px-2 py-1">{formatAmount(row.unit_price)}</td>
+                              <td className="border px-2 py-1 text-center">{row.qty}</td>
+                              <td className="border px-2 py-1">{formatAmount(row.total_price)}</td>
+                              <td className="border px-2 py-1">{row.store}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Total Expense */}
+                    <div className="text-right font-bold mt-2">
+                      Total Expense: {item.expense && item.expense.length > 0 ? formatAmount(item.expense.reduce((sum, row) => sum + (row.total_price || 0), 0)) : '-'}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Gallery Section */}
+      {selectedEditionData?.gallery_url && (
+        <div className="mt-12">
+          <h2 className="text-xl font-bold mb-4">Gallery</h2>
+          {galleryUrls.length === 0 ? (
+            <div className="text-gray-500">No gallery files found.</div>
+          ) : (
+            <div className="columns-2 sm:columns-3 md:columns-4 gap-4 space-y-4">
+              {galleryUrls.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="mb-4 break-inside-avoid cursor-pointer group relative"
+                  onClick={() => { setLightboxIndex(idx); setLightboxOpen(true); }}
+                >
+                  {file.type === 'image' ? (
+                    <img src={file.url} alt={file.name} className="w-full mb-2 rounded shadow hover:opacity-80 transition" />
+                  ) : (
+                    <video src={file.url} className="w-full mb-2 rounded shadow" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Lightbox for viewing image/video with next/prev */}
+          {lightboxOpen && (
+            <Lightbox
+              open={lightboxOpen}
+              close={() => setLightboxOpen(false)}
+              index={lightboxIndex}
+              slides={galleryUrls.map(file =>
+                file.type === 'image'
+                  ? { src: file.url, type: 'image' }
+                  : { src: file.url, type: 'video', poster: file.url, sources: [{ src: file.url, type: 'video/mp4' }] }
+              )}
+              plugins={[Video]}
+              on={{ view: ({ index }) => setLightboxIndex(index) }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 } 

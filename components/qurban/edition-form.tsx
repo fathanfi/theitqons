@@ -3,8 +3,12 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { QurbanEdition } from '@/types/qurban';
+import { QurbanEdition as QurbanEditionBase } from '@/types/qurban';
 import { useAuthStore } from '@/store/authStore';
+
+interface QurbanEdition extends QurbanEditionBase {
+  gallery_url?: string;
+}
 
 interface EditionFormProps {
   onSuccess?: () => void;
@@ -21,6 +25,7 @@ export function EditionForm({ onSuccess, onCancel, initialData }: EditionFormPro
     status: (initialData?.status || 'draft') as EditionStatus,
     start: initialData?.start ? new Date(initialData.start).toISOString().split('T')[0] : '',
     end: initialData?.end ? new Date(initialData.end).toISOString().split('T')[0] : '',
+    gallery_url: initialData?.gallery_url || '',
   });
 
   const { user } = useAuthStore();
@@ -42,6 +47,7 @@ export function EditionForm({ onSuccess, onCancel, initialData }: EditionFormPro
           ...formData,
           start: new Date(formData.start).toISOString(),
           end: new Date(formData.end).toISOString(),
+          gallery_url: formData.gallery_url,
         });
 
       if (error) throw error;
@@ -112,6 +118,20 @@ export function EditionForm({ onSuccess, onCancel, initialData }: EditionFormPro
           onChange={(e) => setFormData({ ...formData, end: e.target.value })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="gallery_url" className="block text-sm font-medium text-gray-700">
+          Gallery URLs (comma separated)
+        </label>
+        <input
+          type="text"
+          id="gallery_url"
+          value={formData.gallery_url}
+          onChange={(e) => setFormData({ ...formData, gallery_url: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+          placeholder="https://.../image1.jpeg,https://.../image2.jpeg"
         />
       </div>
 

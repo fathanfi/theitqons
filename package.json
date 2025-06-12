@@ -47,6 +47,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
     "utf-8-validate": "^6.0.3",
+    "yet-another-react-lightbox": "^3.23.2",
     "zustand": "^4.4.1"
   }
 }

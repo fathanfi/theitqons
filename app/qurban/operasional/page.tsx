@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { QurbanOperasional, QurbanEdition } from '@/types/qurban';
+import { QurbanOperasional as QurbanOperasionalBase, QurbanEdition } from '@/types/qurban';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,17 @@ import { OperasionalForm } from '@/components/qurban/operasional-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+
+// Extend QurbanOperasional to include optional expense for local use
+interface QurbanOperasional extends QurbanOperasionalBase {
+  expense?: {
+    name: string;
+    unit_price: number;
+    qty: number;
+    total_price: number;
+    store: string;
+  }[];
+}
 
 export default function QurbanOperasionalPage() {
   const router = useRouter();
@@ -128,7 +139,7 @@ export default function QurbanOperasionalPage() {
             <DialogTrigger asChild>
               <Button onClick={() => { setEditOperasional(null); setOpen(true); }}>Add New Operasional</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editOperasional ? 'Edit Operasional' : 'Add Operasional'}</DialogTitle>
               </DialogHeader>
@@ -227,6 +238,43 @@ export default function QurbanOperasionalPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Detail Pengeluaran Section */}
+                {Array.isArray(item.expense) && item.expense.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-bold mb-2">Detail Pengeluaran</p>
+                    <div className="overflow-x-auto max-h-[150px] overflow-y-auto">
+                      <table className="min-w-full border text-xs">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border px-2 py-1">No</th>
+                            <th className="border px-2 py-1">Name</th>
+                            <th className="border px-2 py-1">Unit Price</th>
+                            <th className="border px-2 py-1">Qty</th>
+                            <th className="border px-2 py-1">Total Price</th>
+                            <th className="border px-2 py-1">Store</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {item.expense.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border px-2 py-1 text-center">{idx + 1}</td>
+                              <td className="border px-2 py-1">{row.name}</td>
+                              <td className="border px-2 py-1">{formatAmount(row.unit_price)}</td>
+                              <td className="border px-2 py-1 text-center">{row.qty}</td>
+                              <td className="border px-2 py-1">{formatAmount(row.total_price)}</td>
+                              <td className="border px-2 py-1">{row.store}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Total Expense */}
+                    <div className="text-right font-bold mt-2">
+                      Total Expense: {item.expense && item.expense.length > 0 ? formatAmount(item.expense.reduce((sum, row) => sum + (row.total_price || 0), 0)) : '-'}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
