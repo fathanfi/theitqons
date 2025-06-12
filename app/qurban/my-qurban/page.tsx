@@ -5,7 +5,6 @@ import { QurbanEdition as QurbanEditionBase, QurbanOperasional as QurbanOperasio
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 import { Loader2, ChevronRight, PlayCircle, Wallet, TrendingUp, Eye, ArrowDown, ArrowUp, Check } from 'lucide-react';

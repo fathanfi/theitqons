@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { OperasionalForm } from '@/components/qurban/operasional-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -170,9 +169,13 @@ export default function QurbanOperasionalPage() {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium mb-2">Budget Progress</p>
-                  <Progress
-                    value={calculateBudgetProgress(item.budget, item.reality)}
-                  />
+                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                    <div
+                      className={`h-2 rounded-full ${item.reality / item.budget <= 1 ? 'bg-green-500' : 'bg-red-500'}`}
+                      style={{ width: `${Math.min(100, (item.reality / item.budget) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">{((item.reality / item.budget) * 100).toFixed(1)}%</div>
                 </div>
 
                 <div className="space-y-2">

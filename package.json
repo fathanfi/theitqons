@@ -15,7 +15,6 @@
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
-    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/auth-helpers-nextjs": "^0.8.7",
@@ -51,5 +50,8 @@
     "utf-8-validate": "^6.0.3",
     "yet-another-react-lightbox": "^3.23.2",
     "zustand": "^4.4.1"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
