@@ -18,6 +18,7 @@ const SESSIONS = [
 const CERTIFICATE_THEMES = [
   { id: 1, name: 'Terbaik', image: '/images/certificates/theme1.png', orientation: 'landscape' as const },
   { id: 2, name: 'Itqon', image: '/images/certificates/itqon1.png', orientation: 'portrait' as const },
+  { id: 3, name: 'Syahadah', image: '/images/certificates/syahadah1.png', orientation: 'portrait' as const },
 ];
 
 const CERTIFICATE_TYPES = [
@@ -46,6 +47,19 @@ function toSnakeCase(str: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
+}
+
+function formattedBirthDate(str: string): string {
+  if (!str) return ''; // allow empty input
+
+  const birthDate = new Date(str);
+  if (isNaN(birthDate.getTime())) return ''; // handle invalid date
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(birthDate);
 }
 
 export default function StudentReportsPage() {
@@ -354,6 +368,12 @@ export default function StudentReportsPage() {
     try {
       const themeBase64 = await getBase64FromUrl(theme.image);
       const studentName = student.name;
+      const address = student.address;
+      const dateOfBirth = student.dateOfBirth;
+      const placeOfBirth = student.placeOfBirth;
+      const lastAchievement = student.lastAchievement;
+
+      const birth = placeOfBirth + ', ' + formattedBirthDate(student.dateOfBirth);
 
       // A4 portrait size
       const doc = new jsPDF({ 
@@ -370,27 +390,69 @@ export default function StudentReportsPage() {
 
       // Calculate center points
       const centerX = doc.internal.pageSize.width / 2;
-      let y = 83; // Starting y position for portrait
+      let y = 0; // Starting y position for portrait
+      
+      if (selectedTheme === 3) {
+        y = 90; // Starting y position for portrait
 
-      // Certificate ID
-      doc.setFont('AlegreyaMedium');
-      doc.setFontSize(17);
-      doc.text(certificateId || 'IT00001/ITQ-PPTQ/VI/2025', centerX, y, { align: 'center' });
-      y += 50;
+        // Certificate ID
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(17);
+        doc.text(certificateId || 'NO.0001/SYH-PPTQ/VI/2025', centerX, y, { align: 'center' });
+        y += 40;
 
-      // Student name
-      doc.setFont('AlegreyaMedium');
-      doc.setFontSize(30);
-      doc.text(studentName.toUpperCase(), centerX, y, { align: 'center' });
-      y += 15;
+        // Student name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(16);
+        doc.text(studentName.toUpperCase(), centerX + -27, y, { align: 'left' });
+        y += 9;
 
-      // Class name
-      doc.setFont('AlegreyaMedium');
-      doc.setFontSize(17);
-      doc.text(className.toUpperCase(), centerX + 20, y, { align: 'center' });
-      y += 23;
+        // Address
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(16);
+        doc.text(address.toUpperCase(), centerX + -27, y, { align: 'left' });
+        y += 9;
 
-      if (selectedTheme === 2 && selectedItqonExam) {
+        // Birth
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(16);
+        doc.text(birth.toUpperCase(), centerX + -27, y, { align: 'left' });
+        y += 8;
+        
+        // Class name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(15);
+        doc.text(className.toUpperCase() || '', centerX + -58, y, { align: 'left' });
+        y += 20;
+
+        // Last Achivement name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(20);
+        doc.text(lastAchievement?.toUpperCase() || '', centerX, y, { align: 'center' });
+        y +=48;
+      } else if (selectedTheme === 2) {
+        y = 83; // Starting y position for portrait
+        // Certificate ID
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(17);
+        doc.text(certificateId || 'IT00001/ITQ-PPTQ/VI/2025', centerX, y, { align: 'center' });
+        y += 50;
+
+        // Student name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(30);
+        doc.text(studentName.toUpperCase(), centerX, y, { align: 'center' });
+        y += 15;
+
+        // Class name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(17);
+        doc.text(className.toUpperCase(), centerX + 20, y, { align: 'center' });
+        y += 23;
+      }
+      
+      if (selectedTheme === 3) {
+      } else if (selectedTheme === 2 && selectedItqonExam) {
         const selectedExam = itqonExams.find(exam => exam.id === selectedItqonExam);
         if (selectedExam) {
           // Itqon Exam name
@@ -414,12 +476,21 @@ export default function StudentReportsPage() {
         y += 45;
       }
 
-      // Place and Date
-      doc.setFont('AlegreyaMedium', 'normal');
-      doc.setFontSize(14);
-      const place = 'Kota Tasikmalaya';
-      const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
-      doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      if (selectedTheme === 3) {
+        // Place and Date
+        doc.setFont('AlegreyaMedium', 'normal');
+        doc.setFontSize(14);
+        const place = 'Kota Tasikmalaya';
+        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      } else if (selectedTheme === 2) {
+        // Place and Date
+        doc.setFont('AlegreyaMedium', 'normal');
+        doc.setFontSize(14);
+        const place = 'Kota Tasikmalaya';
+        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      }
       
       // Generate PDF blob
       const pdfBlob = doc.output('blob');
@@ -626,7 +697,8 @@ export default function StudentReportsPage() {
       doc.text(className.toUpperCase(), centerX + 20, y, { align: 'center' });
       y += 23;
 
-      if (selectedTheme === 2 && selectedItqonExam) {
+      if (selectedTheme === 3) {
+      } else if (selectedTheme === 2 && selectedItqonExam) {
         const selectedExam = itqonExams.find(exam => exam.id === selectedItqonExam);
         if (selectedExam) {
           // Itqon Exam name
@@ -872,7 +944,7 @@ export default function StudentReportsPage() {
         </div>
         {student && (
           <div className="w-full md:w-auto text-sm">
-            Student Information: {student.name}, {className}{levelName ? ` / ${levelName}` : ''}, {groupName}, {teacherName} | SM: {sessionObj?.name} | TA: {academicYearObj?.name}
+            Student Information: {student.name}, {student.address}, {student.placeOfBirth}, {formattedBirthDate(student.dateOfBirth || '')}, {className}{levelName ? ` / ${levelName}` : ''}, {groupName}, {teacherName} | SM: {sessionObj?.name} | TA: {academicYearObj?.name} | Achivement: {student.lastAchievement}
           </div>
         )}
       </div>
