@@ -661,6 +661,12 @@ export default function StudentReportsPage() {
     try {
       const themeBase64 = await getBase64FromUrl(theme.image);
       const studentName = student.name;
+      const address = student.address;
+      const dateOfBirth = student.dateOfBirth;
+      const placeOfBirth = student.placeOfBirth;
+      const lastAchievement = student.lastAchievement;
+
+      const birth = placeOfBirth + ', ' + formattedBirthDate(student.dateOfBirth || '');
 
       // A4 portrait size
       const doc = new jsPDF({ 
@@ -677,26 +683,67 @@ export default function StudentReportsPage() {
 
       // Calculate center points
       const centerX = doc.internal.pageSize.width / 2;
-      let y = 83; // Starting y position for portrait
+      let y = 0; // Starting y position for portrait
+      
+      if (selectedTheme === 3) {
+        y = 90; // Starting y position for portrait
 
-      // Certificate ID
-      doc.setFont('AlegreyaMedium');
-      doc.setFontSize(17);
-      doc.text(certificateId || 'IT00001/ITQ-PPTQ/VI/2025', centerX, y, { align: 'center' });
-      y += 50;
+        // Certificate ID
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(17);
+        doc.text(certificateId || 'NO.0001/SYH-PPTQ/VI/2025', centerX, y, { align: 'center' });
+        y += 40;
 
-      // Student name
-      doc.setFont('AlegreyaMedium');
-      doc.setFontSize(30);
-      doc.text(studentName.toUpperCase(), centerX, y, { align: 'center' });
-      y += 15;
+        // Student name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(16);
+        doc.text(studentName.toUpperCase(), centerX + -27, y, { align: 'left' });
+        y += 9;
 
-      // Class name
-      doc.setFont('AlegreyaMedium');
-      doc.setFontSize(17);
-      doc.text(className.toUpperCase(), centerX + 20, y, { align: 'center' });
-      y += 23;
+        // Address
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(16);
+        doc.text(address.toUpperCase(), centerX + -27, y, { align: 'left' });
+        y += 9;
 
+        // Birth
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(16);
+        doc.text(birth.toUpperCase(), centerX + -27, y, { align: 'left' });
+        y += 8;
+        
+        // Class name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(15);
+        doc.text(className.toUpperCase() || '', centerX + -58, y, { align: 'left' });
+        y += 20;
+
+        // Last Achivement name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(20);
+        doc.text(lastAchievement?.toUpperCase() || '', centerX, y, { align: 'center' });
+        y +=48;
+      } else if (selectedTheme === 2) {
+        y = 83; // Starting y position for portrait
+        // Certificate ID
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(17);
+        doc.text(certificateId || 'IT00001/ITQ-PPTQ/VI/2025', centerX, y, { align: 'center' });
+        y += 50;
+
+        // Student name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(30);
+        doc.text(studentName.toUpperCase(), centerX, y, { align: 'center' });
+        y += 15;
+
+        // Class name
+        doc.setFont('AlegreyaMedium');
+        doc.setFontSize(17);
+        doc.text(className.toUpperCase(), centerX + 20, y, { align: 'center' });
+        y += 23;
+      }
+      
       if (selectedTheme === 3) {
       } else if (selectedTheme === 2 && selectedItqonExam) {
         const selectedExam = itqonExams.find(exam => exam.id === selectedItqonExam);
@@ -722,13 +769,21 @@ export default function StudentReportsPage() {
         y += 45;
       }
 
-      // Place and Date
-      doc.setFont('AlegreyaMedium', 'normal');
-      doc.setFontSize(14);
-      const place = 'Kota Tasikmalaya';
-      const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
-      doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
-      y += 10;
+      if (selectedTheme === 3) {
+        // Place and Date
+        doc.setFont('AlegreyaMedium', 'normal');
+        doc.setFontSize(14);
+        const place = 'Kota Tasikmalaya';
+        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      } else if (selectedTheme === 2) {
+        // Place and Date
+        doc.setFont('AlegreyaMedium', 'normal');
+        doc.setFontSize(14);
+        const place = 'Kota Tasikmalaya';
+        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      }
 
       // Build file name (UPPERCASE)
       const studentNameSnake = toSnakeCase(studentName).toUpperCase();
