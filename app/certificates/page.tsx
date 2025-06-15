@@ -944,214 +944,225 @@ export default function StudentReportsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4 md:space-y-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4 no-print">Certificates</h1>
-      
-      {/* Section 1: Selectors and Student Info */}
-      <div className="bg-white rounded shadow p-4 flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap no-print">
-        <div className="w-full md:w-auto">
-          <label className="block text-sm font-medium">Academic Year</label>
-          <select 
-            value={academicYear} 
-            onChange={e => setAcademicYear(e.target.value)} 
-            className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-            disabled
-          >
-            {academicYears.map(y => (
-              <option key={y.id} value={y.id}>
-                {y.name} {y.status ? '(Active)' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="w-full md:w-auto">
-          <label className="block text-sm font-medium">Session</label>
-          <select 
-            value={sessionId} 
-            onChange={e => setSessionId(Number(e.target.value))} 
-            className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-            disabled
-          >
-            {SESSIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        </div>
-        <div className="w-full md:w-auto">
-          <label className="block text-sm font-medium">Class</label>
-          <select 
-            value={classId} 
-            onChange={handleClassChange}
-            className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-          >
-            <option value="">Select</option>
-            {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-        <div className="w-full md:w-auto">
-          <label className="block text-sm font-medium">Student</label>
-          <Select
-            options={studentOptions}
-            value={studentOptions.find(option => option.value === studentId)}
-            onChange={handleStudentChange}
-            className="mt-1"
-            placeholder="Search and select student..."
-            isClearable
-          />
-        </div>
-        {student && (
-          <div className="w-full md:w-auto text-sm">
-            Student Information: {student.name}, {student.address}, {student.placeOfBirth}, {formattedBirthDate(student.dateOfBirth || '')}, {className}{levelName ? ` / ${levelName}` : ''}, {groupName}, {teacherName} | SM: {sessionObj?.name} | TA: {academicYearObj?.name} | Achivement: {student.lastAchievement}
+    <>
+      <style>{`
+        label,
+        select,
+        input,
+        textarea,
+        option {
+          color: #222 !important;
+        }
+      `}</style>
+      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4 md:space-y-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 no-print">Certificates</h1>
+        
+        {/* Section 1: Selectors and Student Info */}
+        <div className="bg-white rounded shadow p-4 flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap no-print">
+          <div className="w-full md:w-auto">
+            <label className="block text-sm font-medium">Academic Year</label>
+            <select 
+              value={academicYear} 
+              onChange={e => setAcademicYear(e.target.value)} 
+              className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
+              disabled
+            >
+              {academicYears.map(y => (
+                <option key={y.id} value={y.id}>
+                  {y.name} {y.status ? '(Active)' : ''}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
-      </div>
-
-      {/* Section 3: Certificate Template Editor */}
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full">
-          <div className="bg-white rounded shadow p-4">
-            
-            {/* Theme, Type, and Certificate ID in one line */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {/* Theme Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Theme</label>
-                <select
-                  value={selectedTheme}
-                  onChange={handleThemeChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                >
-                  <option value="">Select Theme</option>
-                  {CERTIFICATE_THEMES.map((theme) => (
-                    <option key={theme.id} value={theme.id}>
-                      {theme.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Certificate Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Type</label>
-                {selectedTheme === 1 ? (
-                  <select
-                    value={selectedCertificateType}
-                    onChange={handleCertificateTypeChange}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  >
-                    <option value="">Select Type</option>
-                    {CERTIFICATE_TYPES.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <select
-                    value={selectedItqonExam}
-                    onChange={handleItqonExamChange}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  >
-                    <option value="">Select Exam</option>
-                    {itqonExams.map((exam) => (
-                      <option key={exam.id} value={exam.id}>
-                        {exam.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {/* Certificate ID Field */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Certificate ID</label>
-                <input
-                  type="text"
-                  value={certificateId}
-                  onChange={handleCertificateIdChange}
-                  placeholder="Enter certificate ID"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                />
-              </div>
+          <div className="w-full md:w-auto">
+            <label className="block text-sm font-medium">Session</label>
+            <select 
+              value={sessionId} 
+              onChange={e => setSessionId(Number(e.target.value))} 
+              className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
+              disabled
+            >
+              {SESSIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="w-full md:w-auto">
+            <label className="block text-sm font-medium">Class</label>
+            <select 
+              value={classId} 
+              onChange={handleClassChange}
+              className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
+            >
+              <option value="">Select</option>
+              {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="w-full md:w-auto">
+            <label className="block text-sm font-medium">Student</label>
+            <Select
+              options={studentOptions}
+              value={studentOptions.find(option => option.value === studentId)}
+              onChange={handleStudentChange}
+              className="mt-1"
+              placeholder="Search and select student..."
+              isClearable
+            />
+          </div>
+          {student && (
+            <div className="w-full md:w-auto text-sm">
+              Student Information: {student.name}, {student.address}, {student.placeOfBirth}, {formattedBirthDate(student.dateOfBirth || '')}, {className}{levelName ? ` / ${levelName}` : ''}, {groupName}, {teacherName} | SM: {sessionObj?.name} | TA: {academicYearObj?.name} | Achivement: {student.lastAchievement}
             </div>
+          )}
+        </div>
 
-            {/* Preview Section */}
-            <div className="mt-8">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Preview</h3>
-                <button
-                  onClick={generatePreview}
-                  disabled={isPreviewLoading}
-                  className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                    isPreviewLoading 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {isPreviewLoading ? 'Generating...' : 'Generate Preview'}
-                </button>
-              </div>
-              <div className="relative w-full" style={{ height: '500px' }}>
-                {isPreviewLoading ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
-                    <div className="flex flex-col items-center gap-2">
-                      <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <p className="text-gray-600">Generating preview...</p>
-                    </div>
-                  </div>
-                ) : previewError ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
-                    <div className="text-red-500 text-center">
-                      <p>{previewError}</p>
-                      <button 
-                        onClick={generatePreview}
-                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  </div>
-                ) : previewBlob ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                    <object
-                      data={URL.createObjectURL(previewBlob)}
-                      type="application/pdf"
-                      className="w-full h-full hidden md:block"
+        {/* Section 3: Certificate Template Editor */}
+        <div className="flex flex-col md:flex-row gap-8">
+          <div className="w-full">
+            <div className="bg-white rounded shadow p-4">
+              
+              {/* Theme, Type, and Certificate ID in one line */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                {/* Theme Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Theme</label>
+                  <select
+                    value={selectedTheme}
+                    onChange={handleThemeChange}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  >
+                    <option value="">Select Theme</option>
+                    {CERTIFICATE_THEMES.map((theme) => (
+                      <option key={theme.id} value={theme.id}>
+                        {theme.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Certificate Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Type</label>
+                  {selectedTheme === 1 ? (
+                    <select
+                      value={selectedCertificateType}
+                      onChange={handleCertificateTypeChange}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                     >
-                      <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
-                        <p className="text-gray-500">Unable to display PDF preview. Please download to view.</p>
+                      <option value="">Select Type</option>
+                      {CERTIFICATE_TYPES.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      value={selectedItqonExam}
+                      onChange={handleItqonExamChange}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                    >
+                      <option value="">Select Exam</option>
+                      {itqonExams.map((exam) => (
+                        <option key={exam.id} value={exam.id}>
+                          {exam.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Certificate ID Field */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Certificate ID</label>
+                  <input
+                    type="text"
+                    value={certificateId}
+                    onChange={handleCertificateIdChange}
+                    placeholder="Enter certificate ID"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  />
+                </div>
+              </div>
+
+              {/* Preview Section */}
+              <div className="mt-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Preview</h3>
+                  <button
+                    onClick={generatePreview}
+                    disabled={isPreviewLoading}
+                    className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                      isPreviewLoading 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {isPreviewLoading ? 'Generating...' : 'Generate Preview'}
+                  </button>
+                </div>
+                <div className="relative w-full" style={{ height: '500px' }}>
+                  {isPreviewLoading ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-gray-600">Generating preview...</p>
                       </div>
-                    </object>
-                    <a 
-                      href={URL.createObjectURL(previewBlob)} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="md:hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Open PDF Preview
-                    </a>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
-                    <p className="text-gray-500">Select a student and click Generate Preview to see the certificate</p>
-                  </div>
-                )}
+                    </div>
+                  ) : previewError ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
+                      <div className="text-red-500 text-center">
+                        <p>{previewError}</p>
+                        <button 
+                          onClick={generatePreview}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  ) : previewBlob ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                      <object
+                        data={URL.createObjectURL(previewBlob)}
+                        type="application/pdf"
+                        className="w-full h-full hidden md:block"
+                      >
+                        <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
+                          <p className="text-gray-500">Unable to display PDF preview. Please download to view.</p>
+                        </div>
+                      </object>
+                      <a 
+                        href={URL.createObjectURL(previewBlob)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="md:hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Open PDF Preview
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded">
+                      <p className="text-gray-500">Select a student and click Generate Preview to see the certificate</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* View | Download | Print */}
-      <div className="flex justify-center gap-4 mt-4 no-print">
-        <button
-          onClick={handleDownload}
-          className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          Download
-        </button>        
+        {/* View | Download | Print */}
+        <div className="flex justify-center gap-4 mt-4 no-print">
+          <button
+            onClick={handleDownload}
+            className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            Download
+          </button>        
+        </div>
       </div>
-    </div>
+    </>
   );
 } 
