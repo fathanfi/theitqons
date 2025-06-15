@@ -373,7 +373,7 @@ export default function StudentReportsPage() {
       const placeOfBirth = student.placeOfBirth;
       const lastAchievement = student.lastAchievement;
 
-      const birth = placeOfBirth + ', ' + formattedBirthDate(student.dateOfBirth);
+      const birth = placeOfBirth + ', ' + formattedBirthDate(student.dateOfBirth || '');
 
       // A4 portrait size
       const doc = new jsPDF({ 
