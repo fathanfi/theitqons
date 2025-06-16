@@ -25,7 +25,7 @@ export function StudentForm({
   const loadLevels = useSchoolStore((state) => state.loadLevels);
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.id === '8d32e5ad-df88-4132-b675-c0c4b9b36b52'; // Ayu Hana as Admin
 
   useEffect(() => {
     loadClasses();
