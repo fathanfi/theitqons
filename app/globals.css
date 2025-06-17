@@ -21,6 +21,33 @@ body {
   background: #fff;
 }
 
+/* Force dark text on form elements to avoid white/invisible text issues */
+input, select, textarea, .react-select__input {
+  color: #111 !important;
+}
+
+/* Ensure text is visible in select options */
+select option {
+  color: #111 !important;
+  background-color: white !important;
+}
+
+/* Ensure text is visible in react-select components */
+.react-select__single-value,
+.react-select__input-container,
+.react-select__placeholder {
+  color: #111 !important;
+}
+
+/* Ensure text is visible in react-select dropdown */
+.react-select__menu {
+  background-color: white !important;
+}
+
+.react-select__option {
+  color: #111 !important;
+}
+
 /* Force dark text on mobile to avoid white/invisible text issues */
 @media (max-width: 640px) {
   body {
