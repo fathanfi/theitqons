@@ -203,367 +203,367 @@ export function StudentList() {
           color: #222 !important;
         }
       `}</style>
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-6">Students List</h2>
-          
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div className="bg-indigo-50 p-4 rounded-lg">
-              <div className="text-sm font-medium text-indigo-600">Total Students</div>
-              <div className="mt-1 text-2xl font-semibold text-indigo-900">{totalStudents}</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm font-medium text-green-600">Active Students</div>
-              <div className="mt-1 text-2xl font-semibold text-green-900">{totalActiveStudents}</div>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-sm font-medium text-yellow-600">Inactive Students</div>
-              <div className="mt-1 text-2xl font-semibold text-yellow-900">{totalInactiveStudents}</div>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="text-sm font-medium text-purple-600">Total Points</div>
-              <div className="mt-1 text-2xl font-semibold text-purple-900">{totalPoints}</div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm font-medium text-blue-600">Total Pages</div>
-              <div className="mt-1 text-2xl font-semibold text-blue-900">{totalPages}</div>
-            </div>
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-semibold mb-6">Students List</h2>
+        
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="bg-indigo-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-indigo-600">Total Students</div>
+            <div className="mt-1 text-2xl font-semibold text-indigo-900">{totalStudents}</div>
           </div>
-
-          <div className="mb-6 space-y-4">
-            <div className="flex items-center gap-4">
-              <input
-                type="text"
-                placeholder="Search by name, address, or parent name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-3 py-2 border rounded-md"
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="">All Classes</option>
-                {classes.map(class_ => (
-                  <option key={class_.id} value={class_.id}>
-                    {class_.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="">All Levels</option>
-                {levels.map(level => (
-                  <option key={level.id} value={level.id}>
-                    {level.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="all">All Students</option>
-                <option value="active">Active Students</option>
-                <option value="inactive">Non-Active Students</option>
-              </select>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={() => toggleSort('name')}
-                className={`px-4 py-2 rounded ${
-                  sortField === 'name' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
-                }`}
-              >
-                Sort by Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </button>
-              <button
-                onClick={() => toggleSort('points')}
-                className={`px-4 py-2 rounded ${
-                  sortField === 'points' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
-                }`}
-              >
-                Sort by Points {sortField === 'points' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </button>
-              <button
-                onClick={() => toggleSort('totalPages')}
-                className={`px-4 py-2 rounded ${
-                  sortField === 'totalPages' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
-                }`}
-              >
-                Sort by Total Pages {sortField === 'totalPages' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </button>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show rows:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="px-2 py-1 border rounded-md text-sm"
-                >
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                </select>
-              </div>
-            </div>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-green-600">Active Students</div>
+            <div className="mt-1 text-2xl font-semibold text-green-900">{totalActiveStudents}</div>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class & Level</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pages</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Achievement</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Info</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentStudents.map((student) => (
-                  <tr key={student.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                          title="Edit student"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                          {student.dateOfBirth && (
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <CakeIcon className="h-4 w-4 mr-1" />
-                              {formatDate(student.dateOfBirth)} ({calculateAge(student.dateOfBirth)} years)
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center space-x-2">
-                        {student.class_id && (
-                          <div className="flex items-center">
-                            <AcademicCapIcon className="h-4 w-4 mr-1" />
-                            {getClassName(student.class_id)}
-                          </div>
-                        )}
-                        {student.level_id && (
-                          <div className="flex items-center">
-                            <ChartBarIcon className="h-4 w-4 mr-1" />
-                            {getLevelName(student.level_id)}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.totalPages || 0}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{studentPoints[student.id] || 0}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {student.lastAchievement ? (
-                        <div className="max-w-xs truncate" title={student.lastAchievement}>
-                          {student.lastAchievement}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="space-y-1">
-                        {student.phoneNumber && (
-                          <div className="flex items-center">
-                            <PhoneIcon className="h-4 w-4 mr-1 text-gray-500" />
-                            <a
-                              href={`https://wa.me/${student.phoneNumber.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-indigo-600 hover:text-indigo-900"
-                            >
-                              {student.phoneNumber}
-                            </a>
-                          </div>
-                        )}
-                        {student.address && (
-                          <div className="flex items-start">
-                            <MapPinIcon className="h-4 w-4 mr-1 text-gray-500 mt-0.5" />
-                            <span className="text-gray-600">{student.address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="space-y-1">
-                        {student.registration_number && (
-                          <div className="flex items-center">
-                            <span className="font-medium">NISP:</span>
-                            <span className="ml-1">{student.registration_number}</span>
-                          </div>
-                        )}
-                        {student.national_id && (
-                          <div className="flex items-center">
-                            <span className="font-medium">NIK:</span>
-                            <span className="ml-1">{student.national_id}</span>
-                          </div>
-                        )}
-                        {student.family_id && (
-                          <div className="flex items-center">
-                            <span className="font-medium">No. KK:</span>
-                            <span className="ml-1">{student.family_id}</span>
-                          </div>
-                        )}
-                        {student.joined_date && (
-                          <div className="flex items-center">
-                            <span className="font-medium">Joined:</span>
-                            <span className="ml-1">{formatDate(student.joined_date)}</span>
-                          </div>
-                        )}
-                        {student.notes && (
-                          <div className="flex items-start">
-                            <span className="font-medium">Notes:</span>
-                            <span className="ml-1">{student.notes}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <label className="inline-flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={student.status}
-                          onChange={async () => {
-                            if (!isAdmin) {
-                              showUnauthorized();
-                              return;
-                            }
-                            try {
-                              await updateStudent({
-                                ...student,
-                                status: !student.status,
-                                // Ensure date fields are properly formatted
-                                dateOfBirth: student.dateOfBirth || undefined,
-                                joined_date: student.joined_date || undefined,
-                                createdAt: student.createdAt,
-                                updatedAt: student.updatedAt
-                              });
-                            } catch (error) {
-                              console.error('Error updating student status:', error);
-                              // Optionally show an error message to the user
-                            }
-                          }}
-                          className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                          disabled={!isAdmin}
-                        />
-                        <span className="ml-2 text-sm text-gray-600">
-                          {student.status ? 'Active' : 'Inactive'}
-                        </span>
-                      </label>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-yellow-600">Inactive Students</div>
+            <div className="mt-1 text-2xl font-semibold text-yellow-900">{totalInactiveStudents}</div>
           </div>
-
-          {/* Pagination with Summary */}
-          {totalPagesCount > 1 && (
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
-              <div className="space-y-2 mb-4 sm:mb-0">
-                <div className="text-sm text-gray-700">
-                  Showing {startIndex + 1} to {Math.min(endIndex, sortedStudents.length)} of {sortedStudents.length} students
-                </div>
-                <div className="text-sm text-gray-500">
-                  <span className="font-medium">Summary:</span> {totalActiveStudents} active, {totalInactiveStudents} inactive, {totalPoints} total points, {totalPages} total pages
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <div className="flex items-center gap-1 overflow-x-auto max-w-[300px]">
-                  {Array.from({ length: totalPagesCount }, (_, i) => i + 1)
-                    .filter(page => {
-                      const showAroundCurrent = Math.abs(page - currentPage) <= 1;
-                      const isFirstOrLast = page === 1 || page === totalPagesCount;
-                      return showAroundCurrent || isFirstOrLast;
-                    })
-                    .map((page, index, array) => (
-                      <React.Fragment key={page}>
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-2 text-gray-500">...</span>
-                        )}
-                        <button
-                          onClick={() => setCurrentPage(page)}
-                          className={`min-w-[32px] px-3 py-1 rounded ${
-                            currentPage === page
-                              ? 'bg-indigo-600 text-white'
-                              : 'border hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      </React.Fragment>
-                    ))}
-                </div>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPagesCount))}
-                  disabled={currentPage === totalPagesCount}
-                  className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-purple-600">Total Points</div>
+            <div className="mt-1 text-2xl font-semibold text-purple-900">{totalPoints}</div>
+          </div>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="text-sm font-medium text-blue-600">Total Pages</div>
+            <div className="mt-1 text-2xl font-semibold text-blue-900">{totalPages}</div>
+          </div>
         </div>
 
-        {/* Edit Form Modal */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">
-                  {editingStudent ? 'Edit Student' : 'Add New Student'}
-                </h3>
-                <button
-                  onClick={handleCancel}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
+        <div className="mb-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <input
+              type="text"
+              placeholder="Search by name, address, or parent name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-3 py-2 border rounded-md"
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="">All Classes</option>
+              {classes.map(class_ => (
+                <option key={class_.id} value={class_.id}>
+                  {class_.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedLevel}
+              onChange={(e) => setSelectedLevel(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="">All Levels</option>
+              {levels.map(level => (
+                <option key={level.id} value={level.id}>
+                  {level.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="all">All Students</option>
+              <option value="active">Active Students</option>
+              <option value="inactive">Non-Active Students</option>
+            </select>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={() => toggleSort('name')}
+              className={`px-4 py-2 rounded ${
+                sortField === 'name' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+              }`}
+            >
+              Sort by Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => toggleSort('points')}
+              className={`px-4 py-2 rounded ${
+                sortField === 'points' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+              }`}
+            >
+              Sort by Points {sortField === 'points' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => toggleSort('totalPages')}
+              className={`px-4 py-2 rounded ${
+                sortField === 'totalPages' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'
+              }`}
+            >
+              Sort by Total Pages {sortField === 'totalPages' && (sortDirection === 'asc' ? '↑' : '↓')}
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show rows:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 border rounded-md text-sm"
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class & Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pages</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Achievement</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Address</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Info</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {currentStudents.map((student) => (
+                <tr key={student.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEdit(student)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="Edit student"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                        {student.dateOfBirth && (
+                          <div className="text-sm text-gray-500 flex items-center">
+                            <CakeIcon className="h-4 w-4 mr-1" />
+                            {formatDate(student.dateOfBirth)} ({calculateAge(student.dateOfBirth)} years)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div className="flex items-center space-x-2">
+                      {student.class_id && (
+                        <div className="flex items-center">
+                          <AcademicCapIcon className="h-4 w-4 mr-1" />
+                          {getClassName(student.class_id)}
+                        </div>
+                      )}
+                      {student.level_id && (
+                        <div className="flex items-center">
+                          <ChartBarIcon className="h-4 w-4 mr-1" />
+                          {getLevelName(student.level_id)}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.totalPages || 0}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{studentPoints[student.id] || 0}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {student.lastAchievement ? (
+                      <div className="max-w-xs truncate" title={student.lastAchievement}>
+                        {student.lastAchievement}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div className="space-y-1">
+                      {student.phoneNumber && (
+                        <div className="flex items-center">
+                          <PhoneIcon className="h-4 w-4 mr-1 text-gray-500" />
+                          <a
+                            href={`https://wa.me/${student.phoneNumber.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            {student.phoneNumber}
+                          </a>
+                        </div>
+                      )}
+                      {student.address && (
+                        <div className="flex items-start">
+                          <MapPinIcon className="h-4 w-4 mr-1 text-gray-500 mt-0.5" />
+                          <span className="text-gray-600">{student.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    <div className="space-y-1">
+                      {student.registration_number && (
+                        <div className="flex items-center">
+                          <span className="font-medium">NISP:</span>
+                          <span className="ml-1">{student.registration_number}</span>
+                        </div>
+                      )}
+                      {student.national_id && (
+                        <div className="flex items-center">
+                          <span className="font-medium">NIK:</span>
+                          <span className="ml-1">{student.national_id}</span>
+                        </div>
+                      )}
+                      {student.family_id && (
+                        <div className="flex items-center">
+                          <span className="font-medium">No. KK:</span>
+                          <span className="ml-1">{student.family_id}</span>
+                        </div>
+                      )}
+                      {student.joined_date && (
+                        <div className="flex items-center">
+                          <span className="font-medium">Joined:</span>
+                          <span className="ml-1">{formatDate(student.joined_date)}</span>
+                        </div>
+                      )}
+                      {student.notes && (
+                        <div className="flex items-start">
+                          <span className="font-medium">Notes:</span>
+                          <span className="ml-1">{student.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={student.status}
+                        onChange={async () => {
+                          if (!isAdmin) {
+                            showUnauthorized();
+                            return;
+                          }
+                          try {
+                            await updateStudent({
+                              ...student,
+                              status: !student.status,
+                              // Ensure date fields are properly formatted
+                              dateOfBirth: student.dateOfBirth || undefined,
+                              joined_date: student.joined_date || undefined,
+                              createdAt: student.createdAt,
+                              updatedAt: student.updatedAt
+                            });
+                          } catch (error) {
+                            console.error('Error updating student status:', error);
+                            // Optionally show an error message to the user
+                          }
+                        }}
+                        className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        disabled={!isAdmin}
+                      />
+                      <span className="ml-2 text-sm text-gray-600">
+                        {student.status ? 'Active' : 'Inactive'}
+                      </span>
+                    </label>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination with Summary */}
+        {totalPagesCount > 1 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between border-t pt-4">
+            <div className="space-y-2 mb-4 sm:mb-0">
+              <div className="text-sm text-gray-700">
+                Showing {startIndex + 1} to {Math.min(endIndex, sortedStudents.length)} of {sortedStudents.length} students
               </div>
-              <StudentForm
-                onSubmit={handleSubmit}
-                initialData={editingStudent}
-                onCancel={handleCancel}
-              />
+              <div className="text-sm text-gray-500">
+                <span className="font-medium">Summary:</span> {totalActiveStudents} active, {totalInactiveStudents} inactive, {totalPoints} total points, {totalPages} total pages
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1 overflow-x-auto max-w-[300px]">
+                {Array.from({ length: totalPagesCount }, (_, i) => i + 1)
+                  .filter(page => {
+                    const showAroundCurrent = Math.abs(page - currentPage) <= 1;
+                    const isFirstOrLast = page === 1 || page === totalPagesCount;
+                    return showAroundCurrent || isFirstOrLast;
+                  })
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        className={`min-w-[32px] px-3 py-1 rounded ${
+                          currentPage === page
+                            ? 'bg-indigo-600 text-white'
+                            : 'border hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </React.Fragment>
+                  ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPagesCount))}
+                disabled={currentPage === totalPagesCount}
+                className="px-3 py-1 rounded border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Edit Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">
+                {editingStudent ? 'Edit Student' : 'Add New Student'}
+              </h3>
+              <button
+                onClick={handleCancel}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <StudentForm
+              onSubmit={handleSubmit}
+              initialData={editingStudent}
+              onCancel={handleCancel}
+            />
+          </div>
+        </div>
+      )}
+    </div>
     </>
   );
 }

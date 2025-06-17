@@ -63,7 +63,7 @@ export default function ViewAllReports() {
   const groups = useSchoolStore((state) => state.groups);
   const loadGroups = useSchoolStore((state) => state.loadGroups);
 
-  const [academicYear, setAcademicYear] = useState<string>('');
+  const [academicYear, setAcademicYear] = useState<string>('90943225-94d0-450c-a163-dfb68ebf4f34');
   const [sessionId, setSessionId] = useState<number>(2); // Fixed to SM2
   const [classId, setClassId] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
@@ -349,6 +349,7 @@ export default function ViewAllReports() {
             value={academicYear} 
             onChange={e => setAcademicYear(e.target.value)} 
             className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
+            disabled
           >
             {academicYears.map(y => (
               <option key={y.id} value={y.id}>
@@ -363,6 +364,7 @@ export default function ViewAllReports() {
             value={sessionId} 
             onChange={e => setSessionId(Number(e.target.value))} 
             className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
+            disabled
           >
             {SESSIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
