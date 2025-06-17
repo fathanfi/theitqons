@@ -854,6 +854,17 @@ export default function StudentReportsPage() {
           }
         }
       `}</style>
+
+      {/* Add View All Reports button at the top */}
+      <div className="flex justify-end mb-4 no-print">
+        <button
+          onClick={() => window.location.href = '/student-reports/view-all'}
+          className="bg-purple-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        >
+          View All Reports
+        </button>
+      </div>
+
       <div className="print-header" style={{ display: 'block', marginBottom: 24 }}>
         <div className="flex items-center justify-between">
           {/* Logo placeholder, replace src with your logo if available */}
@@ -1261,6 +1272,12 @@ export default function StudentReportsPage() {
 
       {/* View | Download | Print */}
       <div className="flex justify-center gap-4 mt-4 no-print">
+        <button
+          onClick={() => window.location.href = '/student-reports/view-all'}
+          className="bg-purple-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        >
+          View All Reports
+        </button>
         <button
           onClick={handleDownload}
           className="bg-blue-600 text-white font-semibold px-6 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
