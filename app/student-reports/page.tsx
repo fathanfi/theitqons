@@ -520,9 +520,9 @@ export default function StudentReportsPage() {
   const attendancePercent = totalDays > 0
     ? Math.round((presentDays / totalDays) * 100)
     : 0;
-  let attendanceColor = 'bg-red-500';
-  if (attendancePercent >= 75) attendanceColor = 'bg-green-500';
-  else if (attendancePercent >= 50) attendanceColor = 'bg-yellow-400';
+  let attendanceColor = 'bg-red-500 text-white';
+  if (attendancePercent >= 75) attendanceColor = 'bg-green-500 text-white';
+  else if (attendancePercent >= 50) attendanceColor = 'bg-yellow-400 text-black';
 
   const handlePrint = () => {
     window.print();
@@ -640,7 +640,7 @@ export default function StudentReportsPage() {
       startY: y,
       head: [['Aspek', 'Predikat', 'Deskripsi']],
       body: ziyadahData,
-      styles: { font: 'helvetica', fontSize: 11, halign: 'center', fillColor: false },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center', fillColor: false, textColor: [0, 0, 0] },
       headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 25 },
       tableLineColor: [180, 180, 180],
@@ -658,7 +658,7 @@ export default function StudentReportsPage() {
       startY: y,
       head: [['Materi Ujian', 'Tahfidz', 'Tahsin']],
       body: scoresData,
-      styles: { font: 'helvetica', fontSize: 11, halign: 'center', fillColor: false },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center', fillColor: false, textColor: [0, 0, 0] },
       headStyles: { fillColor: [33, 150, 243], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 25 },
       tableLineColor: [180, 180, 180],
@@ -701,7 +701,7 @@ export default function StudentReportsPage() {
       startY: y,
       head: [['Kehadiran', 'Jumlah']],
       body: attendanceTable,
-      styles: { font: 'helvetica', fontSize: 11, halign: 'center' },
+      styles: { font: 'helvetica', fontSize: 11, halign: 'center', textColor: [0, 0, 0] },
       headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', fontSize: 12 },
       margin: { left: 25, right: 140 },
       tableLineColor: [180, 180, 180],
@@ -732,6 +732,7 @@ export default function StudentReportsPage() {
     // --- Place and Date above signatures ---
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
     // Fixed date: 23 June 2025
     const place = signatures.place || 'Kota Tasikmalaya';
     const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
@@ -747,6 +748,7 @@ export default function StudentReportsPage() {
     doc.text('Direktur PPTQ', 105, sigY, { align: 'center' });
     doc.text('Muhafidz', 170, sigY, { align: 'right' });
     doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
     doc.text(`( ${signatures.parent || '.......................................'} )`, 25, sigY + 25);
     
     // Add principal signature and stamp
@@ -877,10 +879,10 @@ export default function StudentReportsPage() {
           <div style={{ width: 70 }} />
         </div>
         <div className="header-lines" style={{ borderTop: '3px solid #222', borderBottom: '1.5px solid #222', margin: '12px 0 16px 0' }} />
-        <div className="header-title-arabic" style={{ fontFamily: '"Segoe UI", Tahoma, Arial, sans-serif', fontSize: '1.1rem', textAlign: 'center', marginTop: 8, direction: 'rtl' }}>
+        <div className="header-title-arabic" style={{ fontFamily: '"Segoe UI", Tahoma, Arial, sans-serif', fontSize: '1.1rem', textAlign: 'center', marginTop: 8, direction: 'rtl', color: '#000' }}>
           تقرير نتائج الامتحان النهائي في تحسين القرآن وتحفيظه
         </div>
-        <div className="header-title-id" style={{ fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', marginTop: 4 }}>
+        <div className="header-title-id" style={{ fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', marginTop: 4, color: '#000' }}>
           LAPORAN PENILAIAN UJIAN AKHIR SEMESTER TAHFIDZ DAN TAHSIN AL-QUR'AN
         </div>
       </div>
@@ -903,12 +905,32 @@ export default function StudentReportsPage() {
             background: none !important;
             -webkit-appearance: none;
             appearance: none;
+            color: black !important;
           }
           .bg-white {
             background: white !important;
           }
           .shadow {
             box-shadow: none !important;
+          }
+          /* Ensure text is visible in print */
+          * {
+            color: black !important;
+          }
+          /* Keep specific colors for headers and important elements */
+          .print-header .font-bold {
+            color: #50606e !important;
+          }
+          .print-header .header-title-id {
+            color: black !important;
+          }
+          /* Ensure table text is visible */
+          table, th, td {
+            color: black !important;
+          }
+          /* Ensure form labels and text are visible */
+          label, span, div {
+            color: black !important;
           }
         }
       `}</style>
@@ -1117,7 +1139,7 @@ export default function StudentReportsPage() {
                 </tr>
               </tbody>
             </table>
-            <div className={`mt-2 text-sm font-semibold text-white px-2 py-1 rounded ${attendanceColor}`}>
+            <div className={`mt-2 text-sm font-semibold px-2 py-1 rounded ${attendanceColor}`}>
               Attendance: {attendancePercent}%
             </div>
           </div>
