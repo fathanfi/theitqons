@@ -24,27 +24,25 @@ export function BadgeForm({ editBadge, onUpdate }: { editBadge?: any; onUpdate?:
       return;
     }
     if (editBadge) {
-      if (formData.id && formData.name && formData.icon && formData.description) {
+      if (formData.id && formData.icon && formData.description) {
         await updateBadge({
           id: formData.id,
-          name: formData.name,
           icon: formData.icon,
           description: formData.description
         });
       } else {
-        alert('Badge ID, name, icon, and description are required for update.');
+        alert('Badge ID, icon, and description are required for update.');
         return;
       }
     } else {
-      if (formData.name && formData.icon && formData.description) {
+      if (formData.icon && formData.description) {
         await addBadge({
-          name: formData.name,
           icon: formData.icon,
           description: formData.description
         });
         await useStore.getState().loadInitialData();
       } else {
-        alert('Name, icon, and description are required.');
+        alert('Icon, and description are required.');
         return;
       }
     }
