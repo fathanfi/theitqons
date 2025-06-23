@@ -29,7 +29,7 @@ function getBase64FromUrl(url: string): Promise<string> {
     }));
 }
 
-function truncateText(doc, text, maxHeight, maxWidth, fontSize = 11) {
+function truncateText(doc: any, text: string, maxHeight: number, maxWidth: number, fontSize: number = 11) {
   const cleanedText = text
     .replace(/\n/g, ' ')
     .replace(/\s+/g, ' ')
@@ -39,7 +39,7 @@ function truncateText(doc, text, maxHeight, maxWidth, fontSize = 11) {
   doc.setFontSize(fontSize);
 
   const lines = doc.splitTextToSize(cleanedText, maxWidth);
-  const lineHeight = fontSize * 1.15;
+  const lineHeight = fontSize * 1.5;
   const totalHeight = lines.length * lineHeight;
 
   if (totalHeight <= maxHeight) {
