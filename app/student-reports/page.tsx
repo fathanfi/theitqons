@@ -29,6 +29,44 @@ function getBase64FromUrl(url: string): Promise<string> {
     }));
 }
 
+function truncateText(doc, text, maxHeight, maxWidth, fontSize = 11) {
+  const cleanedText = text
+    .replace(/\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\*+\s*/g, ' • ')
+    .trim();
+
+  doc.setFontSize(fontSize);
+
+  const lines = doc.splitTextToSize(cleanedText, maxWidth);
+  const lineHeight = fontSize * 1.15;
+  const totalHeight = lines.length * lineHeight;
+
+  if (totalHeight <= maxHeight) {
+    return cleanedText;
+  }
+
+  let start = 0;
+  let end = cleanedText.length;
+  let result = '';
+
+  while (start < end) {
+    const mid = Math.floor((start + end) / 2);
+    const snippet = cleanedText.slice(0, mid).trim() + '...';
+    const snippetLines = doc.splitTextToSize(snippet, maxWidth);
+    const snippetHeight = snippetLines.length * lineHeight;
+
+    if (snippetHeight <= maxHeight) {
+      result = snippet;
+      start = mid + 1;
+    } else {
+      end = mid;
+    }
+  }
+
+  return result;
+}
+
 // Ziyadah predicate to description mapping
 const ZIYADAH_DESCRIPTIONS: Record<string, string> = {
   'Mumtaz': 'Sempurna! Pertahankan dan semoga Istiqomah',
@@ -714,9 +752,16 @@ export default function StudentReportsPage() {
     doc.setFontSize(11);
     doc.text('Kehadiran: ' + attendancePercent + '%', 25, (doc as any).lastAutoTable.finalY + 5);
     // Notes Table (single, not double)
+    const maxTextHeight = 100; // in points (about 0.35 * pixels)
+    const maxTextWidth = 200; // in points (based on your table's column width)
+    const fontSize = 11;
+
+    const truncatedNote = truncateText(doc, tahfidzNotes || '-', maxTextHeight, maxTextWidth, fontSize);
+
     const notesTable = [
-      [tahfidzNotes || '-']
+      [truncatedNote]
     ];
+
     autoTable(doc, {
       startY: y,
       head: [['Catatan', '']],
