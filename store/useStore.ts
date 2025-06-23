@@ -30,6 +30,7 @@ export const useStore = create<StudentStore>((set, get) => ({
         .select(`
           *,
           badges:student_badges(
+            assigned_at,
             badge:badges(*)
           ),
           redemptions(*)
@@ -60,7 +61,10 @@ export const useStore = create<StudentStore>((set, get) => ({
         family_id: student.family_id || '',
         joined_date: student.joined_date || '',
         notes: student.notes || '',
-        badges: student.badges?.map((sb: any) => sb.badge) || [],
+        badges: student.badges?.map((sb: any) => ({
+          ...sb.badge,
+          assigned_at: sb.assigned_at
+        })) || [],
         redemptions: student.redemptions || [],
         createdAt: student.created_at,
         updatedAt: student.updated_at

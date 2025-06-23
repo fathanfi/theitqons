@@ -4,6 +4,7 @@ export interface Badge {
   description: string;
   created_at?: string;
   updated_at?: string;
+  assigned_at?: string;
 }
 
 export interface Redemption {
