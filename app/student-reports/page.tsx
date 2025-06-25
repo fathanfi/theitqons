@@ -684,6 +684,9 @@ export default function StudentReportsPage() {
       tableLineColor: [180, 180, 180],
       tableLineWidth: 0.2,
       theme: 'grid',
+      columnStyles: {
+        1: { cellWidth: 30 }
+      }
     });
     y = (doc as any).lastAutoTable.finalY + 5;
 
@@ -725,8 +728,7 @@ export default function StudentReportsPage() {
     const startX = (pageWidth - lineWidth) / 2;
     const endX = startX + lineWidth;
     doc.line(startX, y, endX, y);
-    y += 10;
-
+    y += 6;
 
     // --- Attendance and Notes as side-by-side tables ---
     // Attendance Table
