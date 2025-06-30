@@ -12,7 +12,7 @@ export const formatDate = (dateString: string) => {
   if (isNaN(date.getTime())) return '-';
   
   const day = date.getDate().toString().padStart(2, '0');
-  const month = date.toLocaleString('en-US', { month: 'long' });
+  const month = date.toLocaleString('id-ID', { month: 'long' });
   const year = date.getFullYear();
   
   return `${day} ${month} ${year}`;
