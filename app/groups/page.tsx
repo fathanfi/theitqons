@@ -172,8 +172,14 @@ export default function GroupsPage() {
   const getLatestExam = (studentId: string) => {
     const studentExams = itqonExams
       .filter(exam => exam.studentId === studentId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    console.log(studentExams);
+      .sort((a, b) => {
+        const dateDiff = new Date(b.examDate).getTime() - new Date(a.examDate).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        // If examDate is the same, sort by id (descending)
+        if (b.id > a.id) return 1;
+        if (b.id < a.id) return -1;
+        return 0;
+      });
     return studentExams[0];
   };
 

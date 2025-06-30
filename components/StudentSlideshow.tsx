@@ -205,8 +205,12 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
               <option value="with_exam">Sudah Itqon</option>
               <option value="without_exam">Belum Itqon</option>
             </select>
+            <div className="flex items-center">
+              <span className="bg-white rounded-lg px-4 py-2 shadow text-sm font-semibold ml-2">
+                {filteredStudents.length} / {students.length}
+              </span>
+            </div>
           </div>
-          
           {/* Filter Summary */}
           <div className="mt-3 flex items-center justify-between">
             <div className="text-sm text-gray-600">
@@ -227,7 +231,6 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
           </div>
         </div>
       )}
-
       {/* Controls */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <button
@@ -258,14 +261,12 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
           </svg>
         </button>
       </div>
-
       {/* Slide Counter */}
       <div className="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg shadow-lg">
         <span className="text-sm font-medium">
           {currentIndex + 1} / {filteredStudents.length}
         </span>
       </div>
-
       {/* Student Information */}
       <div className="flex flex-col lg:flex-row h-full">
         {/* Left Side - Photo and Basic Info */}
@@ -273,29 +274,22 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
           <div className="text-center space-y-6">
             {/* Profile Image */}
             <div className="relative">
-              <img
-                src={currentStudent.profileImageUrl || `data:image/svg+xml;base64,${btoa(`
-                  <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="200" height="200" fill="#E5E7EB"/>
-                    <circle cx="100" cy="80" r="30" fill="#9CA3AF"/>
-                    <path d="M40 160 C40 120 60 100 100 100 C140 100 160 120 160 160" fill="#9CA3AF"/>
-                  </svg>
-                `)}`}
-                alt={currentStudent.name}
-                className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl"
-              />
-              {currentStudent.status ? (
-                <div className="absolute -bottom-2 -right-2 bg-green-500 text-white rounded-full p-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
+              {currentStudent.gender === 'Ikhwan' ? (
+                <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
+                  <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
+                  <ellipse cx="96" cy="130" rx="56" ry="38" fill="#A3A3A3"/>
+                  <circle cx="96" cy="88" r="40" fill="#F3F4F6"/>
+                  <rect x="60" y="50" width="72" height="24" rx="12" fill="#1E293B"/>
+                </svg>
               ) : (
-                <div className="absolute -bottom-2 -right-2 bg-red-500 text-white rounded-full p-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
+                  <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
+                  <ellipse cx="96" cy="140" rx="56" ry="38" fill="#A3A3A3"/>
+                  <path d="M56 120 Q96 60 136 120 Q116 100 76 120 Z" fill="#F3F4F6"/>
+                  <path d="M56 120 Q96 60 136 120 Q116 100 76 120 Z" fill="#F3F4F6"/>
+                  <path d="M56 120 Q96 80 136 120 Q116 110 76 120 Z" fill="#64748B"/>
+                  <circle cx="96" cy="100" r="32" fill="#F3F4F6"/>
+                </svg>
               )}
             </div>
 
@@ -320,6 +314,17 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
                 </span>
               </div>
             </div>
+
+
+            {/* Itqon Status */}
+            {latestExam && (
+              <div className="mt-4">
+                <span className={`text-lg px-4 py-2 rounded-full font-medium ${getStatusStyle(latestExam.status)}`}>
+                  {latestExam.exam?.name}
+                </span>
+              </div>
+            )}
+
           </div>
         </div>
 
