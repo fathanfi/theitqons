@@ -16,7 +16,8 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+  const [genderFilter, setGenderFilter] = useState('');
   const [examFilter, setExamFilter] = useState<'all' | 'with_exam' | 'without_exam'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -25,6 +26,9 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
 
   // Filter students based on all criteria
   const filteredStudents = students.filter(student => {
+    // Apply gender filter
+    if (genderFilter && student.gender !== genderFilter) return false;
+    
     // Apply level filter
     if (selectedLevel && student.level_id !== selectedLevel) return false;
     
@@ -164,6 +168,15 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
               className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <select
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Semua Gender</option>
+              <option value="Ikhwan">Ikhwan</option>
+              <option value="Akhwat">Akhwat</option>
+            </select>
+            <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(e.target.value)}
               className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -273,31 +286,41 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-blue-50 to-indigo-50">
           <div className="text-center space-y-6">
             {/* Profile Image */}
-            <div className="relative">
-              {currentStudent.gender === 'Ikhwan' ? (
-                <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
-                  <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
-                  <ellipse cx="96" cy="130" rx="56" ry="38" fill="#A3A3A3"/>
-                  <circle cx="96" cy="88" r="40" fill="#F3F4F6"/>
-                  <rect x="60" y="50" width="72" height="24" rx="12" fill="#1E293B"/>
-                </svg>
-              ) : (
-                <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
-                  <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
-                  <ellipse cx="96" cy="140" rx="56" ry="38" fill="#A3A3A3"/>
-                  <path d="M56 120 Q96 60 136 120 Q116 100 76 120 Z" fill="#F3F4F6"/>
-                  <path d="M56 120 Q96 60 136 120 Q116 100 76 120 Z" fill="#F3F4F6"/>
-                  <path d="M56 120 Q96 80 136 120 Q116 110 76 120 Z" fill="#64748B"/>
-                  <circle cx="96" cy="100" r="32" fill="#F3F4F6"/>
-                </svg>
+            <div className="relative flex justify-center items-center w-full">
+              {/* Show SVG avatar above name if no profilePicture, otherwise show SVG as background only */}
+              {(!currentStudent.profilePicture) && (
+                currentStudent.gender === 'Ikhwan' ? (
+                  <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
+                    <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
+                    <ellipse cx="96" cy="130" rx="56" ry="38" fill="#A3A3A3"/>
+                    <circle cx="96" cy="88" r="40" fill="#F3F4F6"/>
+                    <rect x="60" y="50" width="72" height="24" rx="12" fill="#1E293B"/>
+                  </svg>
+                ) : (
+                  <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
+                    <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
+                    <ellipse cx="96" cy="140" rx="56" ry="38" fill="#A3A3A3"/>
+                    <path d="M56 120 Q96 60 136 120 Q116 100 76 120 Z" fill="#F3F4F6"/>
+                    <path d="M56 120 Q96 60 136 120 Q116 100 76 120 Z" fill="#F3F4F6"/>
+                    <path d="M56 120 Q96 80 136 120 Q116 110 76 120 Z" fill="#64748B"/>
+                    <circle cx="96" cy="100" r="32" fill="#F3F4F6"/>
+                  </svg>
+                )
               )}
             </div>
-
             {/* Student Name */}
             <div>
-              <h1 className="text-5xl font-bold text-gray-900 mb-2">
+              <h1 className="text-6xl font-bold text-gray-900 mb-2">
                 {currentStudent.name}
               </h1>
+              {/* Show profile picture under name if present */}
+              {currentStudent.profilePicture && (
+                <img
+                  src={currentStudent.profilePicture}
+                  alt="Profile"
+                  className="mx-auto mb-4 w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+                />
+              )}
               <div className="flex items-center justify-center gap-4 text-lg text-gray-600">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                   currentStudent.gender === 'Ikhwan' 
@@ -314,7 +337,6 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
                 </span>
               </div>
             </div>
-
 
             {/* Itqon Status */}
             {latestExam && (

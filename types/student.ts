@@ -55,6 +55,7 @@ export interface Student {
   wali_name?: string;
   school_info?: string;
   profileImageUrl: string;
+  profilePicture?: string;
   badges: Badge[];
   redemptions: Redemption[];
   status: boolean;

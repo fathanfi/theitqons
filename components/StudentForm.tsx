@@ -55,7 +55,8 @@ export function StudentForm({
       family_id: '',
       joined_date: '',
       notes: '',
-      badges: []
+      badges: [],
+      profilePicture: '',
     }
   );
 
@@ -83,7 +84,8 @@ export function StudentForm({
         family_id: initialData.family_id || '',
         joined_date: initialData.joined_date || '',
         notes: initialData.notes || '',
-        badges: initialData.badges || []
+        badges: initialData.badges || [],
+        profilePicture: initialData.profilePicture || '',
       });
     }
   }, [initialData]);
@@ -100,7 +102,8 @@ export function StudentForm({
 
     await onSubmit({
       ...formData,
-      profileImageUrl
+      profileImageUrl,
+      profilePicture: formData.profilePicture || '',
     } as Student);
 
     if (!initialData) {
@@ -126,7 +129,8 @@ export function StudentForm({
         family_id: '',
         joined_date: '',
         notes: '',
-        badges: []
+        badges: [],
+        profilePicture: '',
       });
     }
   };
@@ -433,6 +437,26 @@ export function StudentForm({
               Active
             </label>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Profile Picture URL</label>
+            <input
+              type="url"
+              name="profilePicture"
+              value={formData.profilePicture || ''}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              placeholder="https://..."
+            />
+            {formData.profilePicture && (
+              <img
+                src={formData.profilePicture}
+                alt="Profile Preview"
+                className="mt-2 w-24 h-24 rounded-full object-cover border"
+              />
+            )}
+          </div>
+
           <button
             type="submit"
             className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
