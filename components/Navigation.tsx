@@ -193,6 +193,7 @@ export function Navigation() {
                 { href: '/classes', label: 'Classes' },
                 { href: '/levels-management', label: 'Levels' },
                 { href: '/students', label: 'Students' },
+                { href: '/registration-management', label: 'Registration Management' },
                 { href: '/school-settings', label: 'School Settings' },
                 { href: '/school-information', label: 'School Information' }
               ]
@@ -355,6 +356,7 @@ export function Navigation() {
                   { href: '/classes', label: 'Classes' },
                   { href: '/levels-management', label: 'Levels' },
                   { href: '/students', label: 'Students' },
+                  { href: '/registration-management', label: 'Registration Management' },
                   { href: '/school-settings', label: 'School Settings' },
                   { href: '/school-information', label: 'School Information' }
                 ]
