@@ -180,6 +180,16 @@ export function Navigation() {
 
           {/* Desktop Menu */}
           <div className="hidden lg:flex items-center space-x-4">
+            {/* PSB 2025/2026 - Public Registration */}
+            <Link 
+              href="/register" 
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <span className="text-lg">🎓</span>
+              <span>PSB 2025/2026</span>
+              <span className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">NEW</span>
+            </Link>
+            
             <Link href="/" className="hover:text-gray-300">Home</Link>
             
             {/* Master Data - Admin only */}
@@ -335,6 +345,19 @@ export function Navigation() {
                   </Link>
                 ))}
               </div>
+
+              {/* PSB 2025/2026 - Public Registration */}
+              <Link
+                href="/register"
+                className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg mx-2 mb-3 hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg"
+                onClick={handleMobileLinkClick}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎓</span>
+                  <span>PSB 2025/2026</span>
+                </div>
+                <span className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">NEW</span>
+              </Link>
 
               {/* Regular Menu Items */}
               <Link

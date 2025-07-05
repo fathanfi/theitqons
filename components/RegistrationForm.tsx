@@ -91,14 +91,6 @@ export function RegistrationForm() {
 
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Pendaftaran Siswa Baru
-        </h1>
-        <p className="text-gray-600">
-          PPTQ Miftahul Khoir - Tahun Ajaran 2025/2026
-        </p>
-      </div>
 
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -289,10 +281,10 @@ export function RegistrationForm() {
       <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h4 className="font-semibold text-blue-900 mb-2">Informasi Penting:</h4>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Pendaftaran ini adalah tahap awal. Anda akan dihubungi untuk tahap selanjutnya.</li>
+          <li>• Pendaftaran ini adalah tahap awal. Anda akan dihubungi untuk tahap selanjutnya via Whatsapp.</li>
           <li>• Pastikan data yang diisi sudah benar dan lengkap.</li>
           <li>• Simpan nomor pendaftaran yang akan diberikan setelah submit.</li>
-          <li>• Untuk informasi lebih lanjut, hubungi kami di [nomor telepon].</li>
+                     <li>• Untuk informasi lebih lanjut, hubungi kami di +62812-1628-8250.</li>
         </ul>
       </div>
     </div>

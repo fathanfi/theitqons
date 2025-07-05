@@ -54,8 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Define public routes that don't require authentication
+  const publicRoutes = ['/login', '/register'];
+
   useEffect(() => {
-    if (!loading && !user && pathname !== '/login') {
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
       router.push('/login');
     }
   }, [pathname, user, loading, router]);
@@ -64,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <RouteLoader />;
   }
 
-  if (!user && pathname !== '/login') {
+  if (!user && !publicRoutes.includes(pathname)) {
     return null;
   }
 
