@@ -4,6 +4,15 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="container mx-auto">
+        {/* PSB 2025 Banner Image */}
+        <div className="p-6 mb-8 max-w-4xl mx-auto">
+          <img
+            src="https://qmffqsgaqfzprhcusiot.supabase.co/storage/v1/object/public/itqonbucket/general/psb2025.png"
+            alt="PSB 2025/2026 - Pendaftaran Santri Baru"
+            className="w-full h-auto rounded-lg shadow-lg"
+          />
+        </div>
+
         {/* Header with Contact Information */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -54,27 +63,36 @@ export default function RegisterPage() {
                 </div>
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Google Maps */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Lokasi Pondok Pesantren</h2>
-            <div className="aspect-video rounded-lg overflow-hidden shadow-lg bg-gray-100 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🗺️</div>
-                <p className="text-gray-600 mb-4">Lokasi PPTQ Miftahul Khoir</p>
-                <a
-                  href="https://maps.app.goo.gl/X21Wktm8MFJjKKq37"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  <span>🗺️</span>
-                  <span>Buka di Google Maps</span>
-                </a>
-              </div>
+        {/* Google Maps */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8 max-w-4xl mx-auto">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Lokasi Pondok Pesantren</h2>
+          <div className="aspect-video rounded-lg overflow-hidden shadow-lg bg-gray-100 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🗺️</div>
+              <p className="text-gray-600 mb-4">Lokasi PPTQ Miftahul Khoir</p>
+              <a
+                href="https://maps.app.goo.gl/X21Wktm8MFJjKKq37"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <span>🗺️</span>
+                <span>Buka di Google Maps</span>
+              </a>
             </div>
           </div>
+        </div>
+
+        {/* PSB 2025 Banner Image */}
+        <div className="p-6 mb-8 max-w-4xl mx-auto">
+          <img
+            src="https://qmffqsgaqfzprhcusiot.supabase.co/storage/v1/object/public/itqonbucket/general/psb20253.png"
+            alt="PSB 2025/2026 - Pendaftaran Santri Baru Gallery"
+            className="w-full h-auto rounded-lg shadow-lg"
+          />
+        </div>
       </div>
     </div>
   );
