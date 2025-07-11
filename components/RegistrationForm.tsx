@@ -177,7 +177,7 @@ export function RegistrationForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nomor Telepon *
+                Nomor WA (Wajib) *
               </label>
               <input
                 type="tel"
@@ -304,7 +304,7 @@ export function RegistrationForm() {
           <li>• Pendaftaran ini adalah tahap awal. Anda akan dihubungi untuk tahap selanjutnya via Whatsapp.</li>
           <li>• Pastikan data yang diisi sudah benar dan lengkap.</li>
           <li>• Simpan nomor pendaftaran yang akan diberikan setelah submit.</li>
-                     <li>• Untuk informasi lebih lanjut, hubungi kami di +62812-1628-8250.</li>
+          <li>• Untuk informasi lebih lanjut, hubungi kami di +62 812-1628-8250.</li>
         </ul>
       </div>
     </div>

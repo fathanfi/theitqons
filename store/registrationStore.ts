@@ -97,6 +97,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
         class_type: data.class_type,
         registration_date: data.registration_date,
         status: data.status,
+        payment_status: data.payment_status,
         test_date: data.test_date,
         test_score: data.test_score,
         test_notes: data.test_notes,
@@ -126,6 +127,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
     try {
       const updateFields: any = {};
       if (updateData.status !== undefined) updateFields.status = updateData.status;
+      if (updateData.payment_status !== undefined) updateFields.payment_status = updateData.payment_status;
       if (updateData.test_date !== undefined) updateFields.test_date = updateData.test_date;
       if (updateData.test_score !== undefined) updateFields.test_score = updateData.test_score;
       if (updateData.test_notes !== undefined) updateFields.test_notes = updateData.test_notes;
@@ -157,6 +159,7 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
         class_type: data.class_type,
         registration_date: data.registration_date,
         status: data.status,
+        payment_status: data.payment_status,
         test_date: data.test_date,
         test_score: data.test_score,
         test_notes: data.test_notes,

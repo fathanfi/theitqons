@@ -1,4 +1,5 @@
 export type RegistrationStatus = 'Register' | 'Test' | 'Passed' | 'Rejected';
+export type PaymentStatus = 'NOT PAID' | 'PAID';
 
 export interface StudentRegistration {
   id: string;
@@ -17,6 +18,7 @@ export interface StudentRegistration {
   class_type: number;
   registration_date: string;
   status: RegistrationStatus;
+  payment_status: PaymentStatus;
   test_date?: string;
   test_score?: number;
   test_notes?: string;
@@ -45,6 +47,7 @@ export interface CreateRegistrationData {
 export interface UpdateRegistrationData {
   id: string;
   status?: RegistrationStatus;
+  payment_status?: PaymentStatus;
   test_date?: string;
   test_score?: number;
   test_notes?: string;
