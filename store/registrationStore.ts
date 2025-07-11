@@ -1,11 +1,22 @@
 import { create } from 'zustand';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { 
   StudentRegistration, 
   CreateRegistrationData, 
   UpdateRegistrationData, 
   RegistrationStats 
 } from '@/types/registration';
+
+// Create a separate Supabase client for anonymous operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+// Use the main supabase client for authenticated operations
+import { supabase } from '@/lib/supabase';
 
 interface RegistrationStore {
   registrations: StudentRegistration[];
@@ -46,9 +57,10 @@ export const useRegistrationStore = create<RegistrationStore>((set, get) => ({
   createRegistration: async (registrationData: CreateRegistrationData) => {
     set({ loading: true, error: null });
     try {
-      // For public registration, we need to ensure the user is not authenticated
-      // or use a different approach. Let's try with explicit anon role
-      const { data, error } = await supabase
+      // Create a fresh anonymous client for public registration
+      const anonClient = createClient(supabaseUrl!, supabaseAnonKey!);
+      
+      const { data, error } = await anonClient
         .from('student_registrations')
         .insert([{
           ...registrationData,
