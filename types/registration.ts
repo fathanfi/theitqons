@@ -14,6 +14,7 @@ export interface StudentRegistration {
   wali_name?: string;
   school_info?: string;
   previous_education?: string;
+  class_type: number;
   registration_date: string;
   status: RegistrationStatus;
   test_date?: string;
@@ -32,12 +33,13 @@ export interface CreateRegistrationData {
   place_of_birth?: string;
   date_of_birth?: string;
   address: string;
-  phone_number?: string;
+  phone_number: string;
   father_name?: string;
   mother_name?: string;
   wali_name?: string;
   school_info?: string;
   previous_education?: string;
+  class_type: number;
 }
 
 export interface UpdateRegistrationData {

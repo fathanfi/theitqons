@@ -20,7 +20,8 @@ export function RegistrationForm() {
     mother_name: '',
     wali_name: '',
     school_info: '',
-    previous_education: ''
+    previous_education: '',
+    class_type: 1
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +44,8 @@ export function RegistrationForm() {
           mother_name: '',
           wali_name: '',
           school_info: '',
-          previous_education: ''
+          previous_education: '',
+          class_type: 1
         });
       }
     } catch (error) {
@@ -175,7 +177,7 @@ export function RegistrationForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nomor Telepon
+                Nomor Telepon *
               </label>
               <input
                 type="tel"
@@ -183,7 +185,25 @@ export function RegistrationForm() {
                 value={formData.phone_number}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Jenis Kelas *
+              </label>
+              <select
+                name="class_type"
+                value={formData.class_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value={1}>Sore (16.00 - 17.15 WIB)</option>
+                <option value={2}>Malam (18.15 - 19.30 WIB)</option>
+                <option value={3}>Online (Fleksibel)</option>
+              </select>
             </div>
           </div>
         </div>
