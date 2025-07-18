@@ -10,6 +10,8 @@ import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import Select from 'react-select';
+import { ViewPaymentModal } from '@/components/ViewPaymentModal';
+import { AddPaymentModal } from '@/components/AddPaymentModal';
 
 const MONTHS = [
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
@@ -47,6 +49,18 @@ export default function BillingPage() {
 
   // Billing state
   const [billingChecks, setBillingChecks] = useState<{[key: string]: boolean[]}>({});
+  
+  // Payment modals state
+  const [viewPaymentModal, setViewPaymentModal] = useState<{isOpen: boolean; studentId: string; studentName: string}>({
+    isOpen: false,
+    studentId: '',
+    studentName: ''
+  });
+  const [addPaymentModal, setAddPaymentModal] = useState<{isOpen: boolean; studentId: string; studentName: string}>({
+    isOpen: false,
+    studentId: '',
+    studentName: ''
+  });
 
   useEffect(() => {
     loadStudents();
@@ -295,6 +309,7 @@ export default function BillingPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 {Array.from({ length: 13 }, (_, i) => (
                   <th key={i} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {getMonthYear(i)}
@@ -311,6 +326,37 @@ export default function BillingPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center space-x-2">
+                      <button
+                        onClick={() => setViewPaymentModal({
+                          isOpen: true,
+                          studentId: student.id,
+                          studentName: student.name
+                        })}
+                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Lihat Pembayaran"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setAddPaymentModal({
+                          isOpen: true,
+                          studentId: student.id,
+                          studentName: student.name
+                        })}
+                        className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Tambah Pembayaran"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                   {Array.from({ length: 13 }, (_, i) => {
                     const recordId = `${student.id}-${getMonthYear(i)}`;
@@ -352,6 +398,21 @@ export default function BillingPage() {
           </table>
         </div>
       </div>
+
+      {/* Payment Modals */}
+      <ViewPaymentModal
+        isOpen={viewPaymentModal.isOpen}
+        onClose={() => setViewPaymentModal({ isOpen: false, studentId: '', studentName: '' })}
+        studentId={viewPaymentModal.studentId}
+        studentName={viewPaymentModal.studentName}
+      />
+      
+      <AddPaymentModal
+        isOpen={addPaymentModal.isOpen}
+        onClose={() => setAddPaymentModal({ isOpen: false, studentId: '', studentName: '' })}
+        studentId={addPaymentModal.studentId}
+        studentName={addPaymentModal.studentName}
+      />
     </div>
   );
 }
