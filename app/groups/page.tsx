@@ -46,6 +46,8 @@ export default function GroupsPage() {
   const [studentReports, setStudentReports] = useState<{ [studentId: string]: { [sessionId: number]: string } }>({});
   const [showBadges, setShowBadges] = useState(false);
   const [showLastExam, setShowLastExam] = useState(false);
+  const [showAge, setShowAge] = useState(false);
+  const [showProfilePicture, setShowProfilePicture] = useState(false);
   const itqonExams = useExamStore((state) => state.itqonExams);
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
 
@@ -183,6 +185,21 @@ export default function GroupsPage() {
     return studentExams[0];
   };
 
+  const calculateAge = (dateOfBirth: string | null | undefined): number | null => {
+    if (!dateOfBirth) return null;
+    
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   if (!currentAcademicYear) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -268,6 +285,24 @@ export default function GroupsPage() {
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <span>Show Last Exam</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showAge}
+                  onChange={(e) => setShowAge(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Age</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showProfilePicture}
+                  onChange={(e) => setShowProfilePicture(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Profile Picture</span>
               </label>
               {showReportProgress && (
                 <select
@@ -382,6 +417,7 @@ export default function GroupsPage() {
                   {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
                     const points = studentPoints[student.id] || 0;
+                    const age = calculateAge(student.dateOfBirth);
                     return (
                       <li 
                         key={student.id} 
@@ -390,7 +426,29 @@ export default function GroupsPage() {
                         }`}
                       >
                         <span className="text-gray-400 w-6">{index + 1}.</span>
+                        {showProfilePicture && (
+                          <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
+                            {student.profilePicture ? (
+                              <img
+                                src={student.profilePicture}
+                                alt={`${student.name} profile`}
+                                className="w-5 h-5 object-cover"
+                                onError={(e) => {
+                                  // Fallback to default avatar if image fails to load
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <div className={`w-5 h-5 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold ${student.profilePicture ? 'hidden' : ''}`}>
+                              {student.name.charAt(0).toUpperCase()}
+                            </div>
+                          </div>
+                        )}
                         <span>{student.name}</span>
+                        {showAge && age !== null && (
+                          <span className="text-xs text-gray-400">({age} tahun)</span>
+                        )}
                         {!student.status && (
                           <span className="text-xs text-gray-400">(Inactive)</span>
                         )}
