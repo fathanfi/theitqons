@@ -20,6 +20,15 @@ export interface Payment {
   note?: string;
   created_at: string;
   updated_at: string;
+  students?: {
+    id: string;
+    name: string;
+    gender: string;
+    address: string;
+    class_id: string;
+    level_id: string;
+    status: boolean;
+  };
 }
 
 export interface CreatePaymentData {

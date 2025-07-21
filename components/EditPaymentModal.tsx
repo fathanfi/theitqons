@@ -2,14 +2,17 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePaymentStore } from '@/store/paymentStore';
+import { useStore } from '@/store/useStore';
 import { Payment, UpdatePaymentData, AkadItem, AkadType, PaymentType } from '@/types/payment';
 import { supabase } from '@/lib/supabase';
+import Select from 'react-select';
 
 interface EditPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   payment: Payment | null;
   studentName: string;
+  onSuccess?: () => void;
 }
 
 const PAYMENT_TYPES: { value: PaymentType; label: string }[] = [
@@ -30,8 +33,10 @@ const AKAD_TYPES: { value: AkadType; label: string }[] = [
   { value: 'other', label: 'Lainnya' }
 ];
 
-export function EditPaymentModal({ isOpen, onClose, payment, studentName }: EditPaymentModalProps) {
+export function EditPaymentModal({ isOpen, onClose, payment, studentName, onSuccess }: EditPaymentModalProps) {
   const { updatePayment, loading } = usePaymentStore();
+  const students = useStore((state) => state.students);
+  const loadStudents = useStore((state) => state.loadStudents);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState<UpdatePaymentData>({
@@ -48,10 +53,17 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
 
   const [akadItems, setAkadItems] = useState<AkadItem[]>([]);
   const [newAkadItem, setNewAkadItem] = useState<AkadItem>({
-    type: 'spp',
+    type: '' as AkadType,
     amount: 0,
     description: ''
   });
+
+  // Initialize form data when payment changes
+  useEffect(() => {
+    if (isOpen) {
+      loadStudents();
+    }
+  }, [isOpen, loadStudents]);
 
   // Initialize form data when payment changes
   useEffect(() => {
@@ -103,6 +115,7 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
 
       await updatePayment(updateData);
       alert('Pembayaran berhasil diperbarui!');
+      onSuccess?.(); // Call success callback to refresh data
       handleClose();
     } catch (error) {
       console.error('Error updating payment:', error);
@@ -124,7 +137,7 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
     });
     setAkadItems([]);
     setNewAkadItem({
-      type: 'spp',
+      type: '' as AkadType,
       amount: 0,
       description: ''
     });
@@ -185,7 +198,36 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
     }
   };
 
+  const getDefaultAmount = (akadType: AkadType): number => {
+    switch (akadType) {
+      case 'spp':
+        return 40000;
+      case 'reg ulang':
+        return 40000;
+      case 'reg baru':
+        return 100000;
+      default:
+        return formData.total || 0;
+    }
+  };
+
+  const handleAkadTypeChange = (type: AkadType) => {
+    if (!type) return; // Don't process empty selection
+    
+    const defaultAmount = getDefaultAmount(type);
+    setNewAkadItem(prev => ({ 
+      ...prev, 
+      type,
+      amount: defaultAmount
+    }));
+  };
+
   const addAkadItem = () => {
+    if (!newAkadItem.type) {
+      alert('Pilih jenis akad terlebih dahulu');
+      return;
+    }
+    
     if (newAkadItem.amount <= 0) {
       alert('Jumlah akad harus lebih dari 0');
       return;
@@ -193,7 +235,7 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
 
     setAkadItems(prev => [...prev, { ...newAkadItem }]);
     setNewAkadItem({
-      type: 'spp',
+      type: '' as AkadType,
       amount: 0,
       description: ''
     });
@@ -296,6 +338,45 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
               </div>
             </div>
 
+            {/* Student Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Siswa {formData.student_id ? '(Terpilih)' : '(Opsional)'}
+              </label>
+              {formData.student_id ? (
+                // Read-only display when student is already selected
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                  {payment?.students?.name || studentName || students.find(s => s.id === formData.student_id)?.name || 'Student not found'}
+                </div>
+              ) : (
+                // Editable select when no student is selected
+                <Select
+                  value={students.find(s => s.id === formData.student_id) ? {
+                    value: formData.student_id!,
+                    label: students.find(s => s.id === formData.student_id)?.name || ''
+                  } : null}
+                  onChange={(option) => setFormData(prev => ({ 
+                    ...prev, 
+                    student_id: option?.value || undefined 
+                  }))}
+                  options={[
+                    { value: '', label: 'Pilih siswa (opsional)' },
+                    ...students.map(student => ({
+                      value: student.id,
+                      label: student.name
+                    }))
+                  ]}
+                  isClearable
+                  isSearchable
+                  placeholder="Cari dan pilih siswa..."
+                  className="w-full"
+                  classNamePrefix="select"
+                  noOptionsMessage={() => "Tidak ada siswa ditemukan"}
+                  loadingMessage={() => "Memuat..."}
+                />
+              )}
+            </div>
+
             {/* Note */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -353,9 +434,10 @@ export function EditPaymentModal({ isOpen, onClose, payment, studentName }: Edit
                     </label>
                     <select
                       value={newAkadItem.type}
-                      onChange={(e) => setNewAkadItem(prev => ({ ...prev, type: e.target.value as AkadType }))}
+                      onChange={(e) => handleAkadTypeChange(e.target.value as AkadType)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">Pilih Akad</option>
                       {AKAD_TYPES.map(type => (
                         <option key={type.value} value={type.value}>
                           {type.label}

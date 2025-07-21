@@ -25,7 +25,18 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
     try {
       let query = supabase
         .from('payments')
-        .select('*')
+        .select(`
+          *,
+          students:student_id (
+            id,
+            name,
+            gender,
+            address,
+            class_id,
+            level_id,
+            status
+          )
+        `)
         .order('date', { ascending: false });
 
       if (studentId) {
@@ -47,7 +58,8 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
         student_id: payment.student_id,
         note: payment.note,
         created_at: payment.created_at,
-        updated_at: payment.updated_at
+        updated_at: payment.updated_at,
+        students: payment.students
       }));
 
       set({ payments, loading: false });

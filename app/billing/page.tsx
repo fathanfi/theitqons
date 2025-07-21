@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { useSchoolStore } from '@/store/schoolStore';
 import { useBillingStore } from '@/store/billingStore';
+import { usePaymentStore } from '@/store/paymentStore';
 import { useSession } from '@/components/SessionProvider';
 import type { BillingRecord } from '@/store/billingStore';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
@@ -37,6 +38,10 @@ export default function BillingPage() {
   const loadTeachers = useSchoolStore((state) => state.loadTeachers);
 
   const { settings, records, loadSettings, loadRecords, updateSingleRecord } = useBillingStore();
+  const { payments, loadPayments } = usePaymentStore();
+  
+  // Track payment status for each student independently
+  const [studentPaymentStatus, setStudentPaymentStatus] = useState<{[key: string]: boolean}>({});
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +78,19 @@ export default function BillingPage() {
       loadGroups(currentAcademicYear.id);
     }
   }, [loadStudents, loadClasses, loadLevels, loadTeachers, currentAcademicYear, loadSettings, loadRecords, loadGroups]);
+
+  // Check payment status for all students when students list changes
+  useEffect(() => {
+    const checkAllStudentPayments = async () => {
+      for (const student of students) {
+        await checkStudentPayments(student.id);
+      }
+    };
+    
+    if (students.length > 0) {
+      checkAllStudentPayments();
+    }
+  }, [students]);
   
   // Fetch teacher ID when user changes
   useEffect(() => {
@@ -174,6 +192,33 @@ export default function BillingPage() {
     if (!settings) return MONTHS[index];
     const year = index <= 5 ? settings.startYear : settings.endYear;
     return `${MONTHS[index]}-${year}`;
+  };
+
+  const checkStudentPayments = async (studentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('student_id', studentId)
+        .limit(1);
+      
+      if (error) throw error;
+      
+      const hasPayments = data && data.length > 0;
+      setStudentPaymentStatus(prev => ({
+        ...prev,
+        [studentId]: hasPayments
+      }));
+      
+      return hasPayments;
+    } catch (error) {
+      console.error('Error checking student payments:', error);
+      return false;
+    }
+  };
+
+  const hasPayments = (studentId: string) => {
+    return studentPaymentStatus[studentId] || false;
   };
 
   const filteredStudents = students.filter(student => {
@@ -309,6 +354,7 @@ export default function BillingPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 {Array.from({ length: 13 }, (_, i) => (
                   <th key={i} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -326,6 +372,19 @@ export default function BillingPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center">
+                      <div className={`w-3 h-3 rounded-full ${
+                        hasPayments(student.id) 
+                          ? 'bg-green-500' 
+                          : 'bg-red-500'
+                      }`} title={
+                        hasPayments(student.id) 
+                          ? 'Has payment records' 
+                          : 'No payment records'
+                      }></div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="flex items-center justify-center space-x-2">
@@ -405,6 +464,11 @@ export default function BillingPage() {
         onClose={() => setViewPaymentModal({ isOpen: false, studentId: '', studentName: '' })}
         studentId={viewPaymentModal.studentId}
         studentName={viewPaymentModal.studentName}
+        onPaymentUpdate={() => {
+          loadPayments();
+          // Refresh payment status for all students
+          students.forEach(student => checkStudentPayments(student.id));
+        }}
       />
       
       <AddPaymentModal
@@ -412,6 +476,11 @@ export default function BillingPage() {
         onClose={() => setAddPaymentModal({ isOpen: false, studentId: '', studentName: '' })}
         studentId={addPaymentModal.studentId}
         studentName={addPaymentModal.studentName}
+        onSuccess={() => {
+          loadPayments();
+          // Refresh payment status for all students
+          students.forEach(student => checkStudentPayments(student.id));
+        }}
       />
     </div>
   );
