@@ -14,6 +14,8 @@ export function RegistrationManagement() {
   const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'all'>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     if (isAdmin()) {
@@ -70,7 +72,36 @@ export function RegistrationManagement() {
     return age;
   };
 
-  const filteredRegistrations = registrations.filter(reg => {
+  // Sorting logic
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sorting function
+  const sortedRegistrations = [...registrations].sort((a, b) => {
+    if (!sortBy) return 0;
+    if (sortBy === 'age') {
+      const ageA = calculateAge(a.date_of_birth) ?? 0;
+      const ageB = calculateAge(b.date_of_birth) ?? 0;
+      return sortDirection === 'asc' ? ageA - ageB : ageB - ageA;
+    }
+    if (sortBy === 'gender') {
+      const genderA = a.gender || '';
+      const genderB = b.gender || '';
+      if (genderA < genderB) return sortDirection === 'asc' ? -1 : 1;
+      if (genderA > genderB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    }
+    return 0;
+  });
+
+  // Filtering after sorting
+  const filteredRegistrations = sortedRegistrations.filter(reg => {
     const matchesStatus = statusFilter === 'all' || reg.status === statusFilter;
     const matchesPayment = paymentFilter === 'all' || reg.payment_status === paymentFilter;
     const matchesSearch = reg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -195,11 +226,17 @@ export function RegistrationManagement() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('age')}>
                 Age
+                {sortBy === 'age' && (
+                  <span className="ml-1">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                )}
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('gender')}>
                 Gender
+                {sortBy === 'gender' && (
+                  <span className="ml-1">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                )}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Phone
