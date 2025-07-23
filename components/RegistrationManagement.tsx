@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRegistrationStore } from '@/store/registrationStore';
 import { useAuthStore } from '@/store/authStore';
 import { StudentRegistration, RegistrationStatus, PaymentStatus } from '@/types/registration';
+import * as XLSX from 'xlsx';
 
 export function RegistrationManagement() {
   const { registrations, loadRegistrations, updateRegistration, deleteRegistration, loading, error, getRegistrationStats } = useRegistrationStore();
@@ -155,6 +156,38 @@ export function RegistrationManagement() {
     });
   };
 
+  // Export to Excel handler
+  const handleExportExcel = () => {
+    // Prepare data for export (all registrations, all fields)
+    const data = registrations.map(reg => ({
+      'Registration Number': reg.registration_number,
+      'Registration Date': reg.registration_date,
+      'Status': reg.status,
+      'Payment Status': reg.payment_status,
+      'Class Type': getClassTypeLabel(reg.class_type),
+      'Full Name': reg.name,
+      'Gender': reg.gender,
+      'Age': calculateAge(reg.date_of_birth) ? `${calculateAge(reg.date_of_birth)} tahun` : '-',
+      'Place of Birth': reg.place_of_birth || '-',
+      'Date of Birth': reg.date_of_birth || '-',
+      'Phone Number': reg.phone_number || '-',
+      'Address': reg.address || '-',
+      "Father's Name": reg.father_name || '-',
+      "Mother's Name": reg.mother_name || '-',
+      "Guardian's Name": reg.wali_name || '-',
+      'Previous School': reg.school_info || '-',
+      'Last Education Level': reg.previous_education || '-',
+      'Test Date': reg.test_date || '-',
+      'Test Score': reg.test_score || '-',
+      'Test Notes': reg.test_notes || '-',
+      'Additional Notes': reg.notes || '-',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
+    XLSX.writeFile(workbook, 'student_registrations.xlsx');
+  };
+
   if (!isAdmin()) {
     return (
       <div className="text-center py-8">
@@ -167,6 +200,12 @@ export function RegistrationManagement() {
     <div className="bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Student Registration Management</h1>
+        <button
+          onClick={handleExportExcel}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm shadow"
+        >
+          Export to Excel
+        </button>
         <div className="text-sm text-gray-600">
           Total: {stats.total} | Register: {stats.register} | Test: {stats.test} | Passed: {stats.passed} | Rejected: {stats.rejected}
         </div>
