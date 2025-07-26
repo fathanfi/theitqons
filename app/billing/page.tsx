@@ -43,12 +43,46 @@ export default function BillingPage() {
   // Track payment status for each student independently
   const [studentPaymentStatus, setStudentPaymentStatus] = useState<{[key: string]: boolean}>({});
 
+  // Calculate total payments for each student
+  const getStudentTotalPayments = (studentId: string) => {
+    const studentPayments = payments.filter(payment => payment.student_id === studentId);
+    return studentPayments.reduce((total, payment) => total + payment.total, 0);
+  };
+
+  // Calculate summary statistics for filtered students
+  const getSummaryStats = () => {
+    const totalPayments = filteredStudents.reduce((total, student) => {
+      return total + getStudentTotalPayments(student.id);
+    }, 0);
+
+    const studentsWithPayments = filteredStudents.filter(student => 
+      getStudentTotalPayments(student.id) > 0
+    ).length;
+
+    const studentsWithoutPayments = filteredStudents.filter(student => 
+      getStudentTotalPayments(student.id) === 0
+    ).length;
+
+    const totalStudents = filteredStudents.length;
+    const paidPercentage = totalStudents > 0 ? ((studentsWithPayments / totalStudents) * 100).toFixed(1) : '0';
+    const unpaidPercentage = totalStudents > 0 ? ((studentsWithoutPayments / totalStudents) * 100).toFixed(1) : '0';
+
+    return {
+      totalPayments,
+      studentsWithPayments,
+      studentsWithoutPayments,
+      totalStudents,
+      paidPercentage,
+      unpaidPercentage
+    };
+  };
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
-  const [showInactive, setShowInactive] = useState(true);
+  const [showInactive, setShowInactive] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [teacherId, setTeacherId] = useState<string | null>(null);
 
@@ -72,12 +106,13 @@ export default function BillingPage() {
     loadClasses();
     loadLevels();
     loadTeachers();
+    loadPayments();
     if (currentAcademicYear) {
       loadSettings(currentAcademicYear.id);
       loadRecords(currentAcademicYear.id);
       loadGroups(currentAcademicYear.id);
     }
-  }, [loadStudents, loadClasses, loadLevels, loadTeachers, currentAcademicYear, loadSettings, loadRecords, loadGroups]);
+  }, [loadStudents, loadClasses, loadLevels, loadTeachers, currentAcademicYear, loadSettings, loadRecords, loadGroups, loadPayments]);
 
   // Check payment status for all students when students list changes
   useEffect(() => {
@@ -354,6 +389,7 @@ export default function BillingPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Payments</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 {Array.from({ length: 13 }, (_, i) => (
@@ -372,6 +408,11 @@ export default function BillingPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-lg font-semibold text-black">
+                      Rp {getStudentTotalPayments(student.id).toLocaleString()}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="flex items-center justify-center">
@@ -457,6 +498,42 @@ export default function BillingPage() {
           </table>
         </div>
       </div>
+
+      {/* Summary Statistics */}
+      {(() => {
+        const stats = getSummaryStats();
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Summary Statistics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-blue-900">
+                  Rp {stats.totalPayments.toLocaleString()}
+                </div>
+                <div className="text-sm text-blue-700">Total Pembayaran</div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-green-900">
+                  {stats.studentsWithPayments} ({stats.paidPercentage}%)
+                </div>
+                <div className="text-sm text-green-700">Santri Sudah Bayar</div>
+              </div>
+              <div className="bg-red-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-red-900">
+                  {stats.studentsWithoutPayments} ({stats.unpaidPercentage}%)
+                </div>
+                <div className="text-sm text-red-700">Santri Belum Bayar</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">
+                  {stats.totalStudents}
+                </div>
+                <div className="text-sm text-gray-700">Total Santri</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Payment Modals */}
       <ViewPaymentModal
