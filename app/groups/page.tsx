@@ -421,7 +421,7 @@ export default function GroupsPage() {
                     return (
                       <li 
                         key={student.id} 
-                        className={`text-sm flex items-center gap-2 ${
+                        className={`text-lg flex items-center gap-2 ${
                           !student.status ? 'text-gray-400' : 'text-gray-100'
                         }`}
                       >
@@ -447,7 +447,9 @@ export default function GroupsPage() {
                         )}
                         <span>{student.name}</span>
                         {showAge && age !== null && (
-                          <span className="text-xs text-gray-400">({age} tahun)</span>
+                          <span className="inline-flex items-center px-2 py-0.5 ml-2 rounded-full text-lg font-semibold bg-yellow-200 text-yellow-900 shadow">
+                            {age} th
+                          </span>
                         )}
                         {!student.status && (
                           <span className="text-xs text-gray-400">(Inactive)</span>
