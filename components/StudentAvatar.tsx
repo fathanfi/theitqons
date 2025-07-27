@@ -70,7 +70,7 @@ export function StudentAvatar({ student, searchQuery }: StudentAvatarProps) {
           {student.badges.map((badge, index) => (
             <span
               key={badge.id}
-              className="text-lg"
+              className="text-3xl"
               title={badge.description}
             >
               {badge.icon}
