@@ -233,7 +233,7 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
               onClick={() => {
                 setSelectedLevel('');
                 setSelectedClass('');
-                setStatusFilter('all');
+                setStatusFilter('active');
                 setExamFilter('all');
                 setSearchQuery('');
               }}
@@ -287,8 +287,8 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
           <div className="text-center space-y-6">
             {/* Profile Image */}
             <div className="relative flex justify-center items-center w-full">
-              {/* Show SVG avatar above name if no profilePicture, otherwise show SVG as background only */}
-              {(!currentStudent.profilePicture) && (
+              {/* Show SVG avatar above name if no profile picture, otherwise show SVG as background only */}
+              {(!currentStudent.profile_picture && !currentStudent.profilePicture) && (
                 currentStudent.gender === 'Ikhwan' ? (
                   <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl bg-white">
                     <circle cx="96" cy="96" r="96" fill="#E5E7EB"/>
@@ -314,11 +314,11 @@ export function StudentSlideshow({ students, getLatestExam }: StudentSlideshowPr
                 {currentStudent.name}
               </h1>
               {/* Show profile picture under name if present */}
-              {currentStudent.profilePicture && (
+              {(currentStudent.profile_picture || currentStudent.profilePicture) && (
                 <img
-                  src={currentStudent.profilePicture}
+                  src={currentStudent.profile_picture || currentStudent.profilePicture}
                   alt="Profile"
-                  className="mx-auto mb-4 w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+                  className="mx-auto mb-4 w-48 h-48 rounded-full object-cover border-4 border-white shadow-xl"
                 />
               )}
               <div className="flex items-center justify-center gap-4 text-lg text-gray-600">

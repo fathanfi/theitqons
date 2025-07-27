@@ -56,6 +56,7 @@ export interface Student {
   school_info?: string;
   profileImageUrl: string;
   profilePicture?: string;
+  profile_picture?: string;
   badges: Badge[];
   redemptions: Redemption[];
   status: boolean;
@@ -73,4 +74,15 @@ export interface Student {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StudentUpgradeHistory {
+  id: string;
+  student_id: string;
+  type: 'level' | 'class';
+  from_id?: string;
+  to_id: string;
+  date: string;
+  created_at: string;
+  updated_at: string;
 }

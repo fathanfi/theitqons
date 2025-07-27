@@ -6,6 +6,8 @@ import { useSchoolStore } from '@/store/schoolStore';
 import { Student } from '@/types/student';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/lib/supabase';
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export function StudentForm({ 
   onSubmit, 
@@ -27,10 +29,18 @@ export function StudentForm({
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin' || user?.id === '8d32e5ad-df88-4132-b675-c0c4b9b36b52' || user?.id === '96ab64fd-0473-42c4-947c-dcb1393f39c3'; // Ayu Hana & Risman as Admin
 
+  const [uploading, setUploading] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+
   useEffect(() => {
     loadClasses();
     loadLevels();
-  }, [loadClasses, loadLevels]);
+    if (initialData?.profile_picture) {
+      setProfileImageUrl(initialData.profile_picture);
+    } else if (initialData?.profilePicture) {
+      setProfileImageUrl(initialData.profilePicture);
+    }
+  }, [loadClasses, loadLevels, initialData]);
 
   const [formData, setFormData] = useState<Partial<Student>>(
     initialData || {
@@ -98,12 +108,13 @@ export function StudentForm({
     }
     const initials = getInitials(formData.name || '');
     const avatarType = formData.gender === 'Akhwat' ? 'lorelei' : 'avataaars';
-    const profileImageUrl = `https://api.dicebear.com/7.x/${avatarType}/svg?seed=${encodeURIComponent(initials)}`;
+    const defaultProfileImageUrl = `https://api.dicebear.com/7.x/${avatarType}/svg?seed=${encodeURIComponent(initials)}`;
 
     await onSubmit({
       ...formData,
-      profileImageUrl,
-      profilePicture: formData.profilePicture || '',
+      profileImageUrl: profileImageUrl || defaultProfileImageUrl,
+      profilePicture: profileImageUrl || '',
+      profile_picture: profileImageUrl || '',
     } as Student);
 
     if (!initialData) {
@@ -131,7 +142,9 @@ export function StudentForm({
         notes: '',
         badges: [],
         profilePicture: '',
+        profile_picture: '',
       });
+      setProfileImageUrl('');
     }
   };
 
@@ -157,6 +170,57 @@ export function StudentForm({
     }
     
     return initials.toUpperCase();
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `profile/${fileName}`;
+
+      // Upload the file to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('itqonbucket')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('itqonbucket')
+        .getPublicUrl(filePath);
+
+      setProfileImageUrl(publicUrl);
+      setFormData(prev => ({
+        ...prev,
+        profilePicture: publicUrl,
+        profile_picture: publicUrl
+      }));
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeProfileImage = () => {
+    setProfileImageUrl('');
+    setFormData(prev => ({
+      ...prev,
+      profilePicture: '',
+      profile_picture: ''
+    }));
   };
 
   return (
@@ -438,22 +502,83 @@ export function StudentForm({
             </label>
           </div>
 
+          {/* Profile Picture Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Profile Picture URL</label>
-            <input
-              type="url"
-              name="profilePicture"
-              value={formData.profilePicture || ''}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-              placeholder="https://..."
-            />
-            {formData.profilePicture && (
-              <img
-                src={formData.profilePicture}
-                alt="Profile Preview"
-                className="mt-2 w-24 h-24 rounded-full object-cover border"
-              />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Picture
+            </label>
+            
+            {profileImageUrl ? (
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <img
+                    src={profileImageUrl}
+                    alt="Profile Preview"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeProfileImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 mb-2">Current profile picture</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fileInput = document.getElementById('profile-upload') as HTMLInputElement;
+                      if (fileInput) {
+                        fileInput.click();
+                      }
+                    }}
+                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Uploading...' : 'Change Picture'}
+                  </button>
+                  {/* Hidden file input for change picture */}
+                  <input
+                    id="profile-upload"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center w-full">
+                <label
+                  htmlFor="profile-upload-new"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <PhotoIcon className="w-8 h-8 mb-4 text-gray-500" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                  </div>
+                  <input
+                    id="profile-upload-new"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+            )}
+            
+            {uploading && (
+              <div className="mt-2 text-sm text-blue-600">
+                Uploading image...
+              </div>
             )}
           </div>
 

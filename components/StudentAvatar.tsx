@@ -48,13 +48,21 @@ export function StudentAvatar({ student, searchQuery }: StudentAvatarProps) {
       className={`relative cursor-move ${isDragging ? 'opacity-50' : ''}`}
     >
       <div className="group relative flex flex-col items-center">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-semibold ${
-          student.gender === 'Akhwat' ? 'bg-pink-200 text-pink-800' : 'bg-blue-200 text-blue-800'
-        }`}>
-          {getInitials(student.name)}
-        </div>
+        {(student.profile_picture || student.profilePicture) ? (
+          <img
+            src={student.profile_picture || student.profilePicture}
+            alt={student.name}
+            className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
+          />
+        ) : (
+          <div className={`w-32 h-32 rounded-full flex items-center justify-center text-lg font-semibold ${
+            student.gender === 'Akhwat' ? 'bg-pink-200 text-pink-800' : 'bg-blue-200 text-blue-800'
+          }`}>
+            {getInitials(student.name)}
+          </div>
+        )}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="bg-black bg-opacity-50 text-white text-xs p-1 rounded">
+          <div className="bg-black bg-opacity-50 text-white text-lg p-1 rounded">
             {student.name}
           </div>
         </div>
@@ -70,7 +78,7 @@ export function StudentAvatar({ student, searchQuery }: StudentAvatarProps) {
           ))}
         </div>
         <span 
-          className="mt-2 text-xs text-gray-700 text-center"
+          className="mt-2 text-lg text-gray-700 text-center"
           dangerouslySetInnerHTML={{ __html: highlightName(student.name) }}
         />
       </div>

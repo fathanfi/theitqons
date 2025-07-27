@@ -24,7 +24,7 @@ export function LevelBoard() {
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [examFilter, setExamFilter] = useState<'all' | 'with_exam' | 'without_exam'>('all');
   const { user } = useAuthStore();
   const { showUnauthorized } = useUnauthorized();

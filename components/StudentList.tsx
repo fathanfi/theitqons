@@ -17,8 +17,12 @@ import {
   PhoneIcon, 
   MapPinIcon, 
   AcademicCapIcon, 
-  ChartBarIcon 
+  ChartBarIcon,
+  ArrowUpIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
+import { StudentUpgradeModal } from './StudentUpgradeModal';
+import { StudentDetailsModal } from './StudentDetailsModal';
 
 type SortField = 'points' | 'name' | 'totalPages';
 type SortDirection = 'asc' | 'desc';
@@ -46,6 +50,14 @@ export function StudentList() {
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [showForm, setShowForm] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState<{isOpen: boolean; student: Student | null}>({
+    isOpen: false,
+    student: null
+  });
+  const [detailsModal, setDetailsModal] = useState<{isOpen: boolean; student: Student | null}>({
+    isOpen: false,
+    student: null
+  });
 
   useEffect(() => {
     loadStudents();
@@ -343,14 +355,7 @@ export function StudentList() {
                 <tr key={student.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleEdit(student)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                        title="Edit student"
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <div>
+                      <div className="flex-1">
                         <div className="text-sm font-medium text-gray-900">{student.name}</div>
                         {student.dateOfBirth && (
                           <div className="text-sm text-gray-500 flex items-center">
@@ -358,6 +363,29 @@ export function StudentList() {
                             {formatDate(student.dateOfBirth)} ({calculateAge(student.dateOfBirth)} years)
                           </div>
                         )}
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => setDetailsModal({ isOpen: true, student })}
+                          className="text-blue-600 hover:text-blue-900 p-1"
+                          title="View student details"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(student)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1"
+                          title="Edit student"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setUpgradeModal({ isOpen: true, student })}
+                          className="text-green-600 hover:text-green-900 p-1"
+                          title="Upgrade student"
+                        >
+                          <ArrowUpIcon className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   </td>
@@ -563,6 +591,25 @@ export function StudentList() {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <StudentUpgradeModal
+        isOpen={upgradeModal.isOpen}
+        onClose={() => setUpgradeModal({ isOpen: false, student: null })}
+        student={upgradeModal.student}
+        onUpgradeSuccess={() => {
+          loadStudents();
+          loadClasses();
+          loadLevels();
+        }}
+      />
+
+      {/* Details Modal */}
+      <StudentDetailsModal
+        isOpen={detailsModal.isOpen}
+        onClose={() => setDetailsModal({ isOpen: false, student: null })}
+        student={detailsModal.student}
+      />
     </div>
     </>
   );
