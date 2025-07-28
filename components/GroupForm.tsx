@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 
-export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate?: () => void }) {
+export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate?: (message?: string) => void }) {
   const { currentAcademicYear } = useSession();
   const teachers = useSchoolStore((state) => state.teachers);
   const classes = useSchoolStore((state) => state.classes);
@@ -54,19 +54,13 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
 
     if (editGroup) {
       await updateGroup(formData as Group);
-      onUpdate?.();
+      onUpdate?.('Group updated successfully!');
     } else {
       await addGroup({
         ...formData,
         academicYearId: currentAcademicYear.id
       } as Omit<Group, 'id' | 'createdAt'>);
-      setFormData({
-        name: '',
-        academicYearId: currentAcademicYear.id,
-        classId: '',
-        teacherId: '',
-        students: []
-      });
+      onUpdate?.('Group created successfully!');
     }
   };
 
@@ -182,12 +176,21 @@ export function GroupForm({ editGroup, onUpdate }: { editGroup?: Group; onUpdate
             <p className="mt-1 text-sm text-gray-500">Please select a class first to see available students</p>
           )}
         </div>
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          {editGroup ? 'Update Group' : 'Add Group'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            {editGroup ? 'Update Group' : 'Add Group'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdate?.()}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </form>
   );

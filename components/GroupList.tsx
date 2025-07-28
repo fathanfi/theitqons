@@ -66,7 +66,7 @@ export function GroupList() {
         <div className="mb-6">
           <GroupForm 
             editGroup={editingGroup} 
-            onUpdate={() => {
+            onUpdate={(message) => {
               setEditingGroup(null);
               loadGroups(currentAcademicYear.id);
             }} 

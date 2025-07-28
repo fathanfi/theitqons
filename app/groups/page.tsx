@@ -48,6 +48,9 @@ export default function GroupsPage() {
   const [showLastExam, setShowLastExam] = useState(false);
   const [showAge, setShowAge] = useState(false);
   const [showProfilePicture, setShowProfilePicture] = useState(false);
+  const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(false);
+  const [absenceData, setAbsenceData] = useState<{[studentId: string]: {[dayIndex: number]: boolean}}>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const itqonExams = useExamStore((state) => state.itqonExams);
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
 
@@ -115,10 +118,15 @@ export default function GroupsPage() {
     setIsFormOpen(true);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = (message?: string) => {
     setEditingGroup(undefined);
     setIsFormOpen(false);
     loadGroups(currentAcademicYear?.id || '');
+    if (message) {
+      setSuccessMessage(message);
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
   };
 
   // Filter groups based on search query and selected class
@@ -200,6 +208,16 @@ export default function GroupsPage() {
     return age;
   };
 
+  const handleAbsenceChange = (studentId: string, dayIndex: number, checked: boolean) => {
+    setAbsenceData(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [dayIndex]: checked
+      }
+    }));
+  };
+
   if (!currentAcademicYear) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -219,6 +237,13 @@ export default function GroupsPage() {
           Add New Group
         </button>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+          {successMessage}
+        </div>
+      )}
 
       {/* Search and Filter Controls */}
       <div className="mb-6">
@@ -304,6 +329,15 @@ export default function GroupsPage() {
                 />
                 <span>Show Profile Picture</span>
               </label>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={showAbsenceTemplate}
+                  onChange={(e) => setShowAbsenceTemplate(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Show Absence Template</span>
+              </label>
               {showReportProgress && (
                 <select
                   value={reportSessionFilter}
@@ -376,7 +410,7 @@ export default function GroupsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {filteredGroups.map((group) => {
           const class_ = classes.find(c => c.id === group.classId);
           const teacher = useSchoolStore.getState().teachers.find(t => t.id === group.teacherId);
@@ -412,7 +446,15 @@ export default function GroupsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <h4 className="font-medium text-gray-200">Students:</h4>
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium text-gray-200">Daftar Santri:</h4>
+                  {showAbsenceTemplate && (
+                    <div className="flex gap-1">
+                      <span className="text-lg text-gray-300">Pekan ke: ___________</span>
+                      <input type="text" className="w-12 h-6 px-1 text-xs rounded border-gray-400 bg-gray-700 text-gray-300 placeholder-gray-500 focus:ring-indigo-500" />
+                    </div>
+                  )}
+                </div>
                 <ul className="space-y-1">
                   {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
@@ -427,12 +469,12 @@ export default function GroupsPage() {
                       >
                         <span className="text-gray-400 w-6">{index + 1}.</span>
                         {showProfilePicture && (
-                          <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
                             {student.profilePicture ? (
                               <img
                                 src={student.profilePicture}
                                 alt={`${student.name} profile`}
-                                className="w-5 h-5 object-cover"
+                                className="w-12 h-12 object-cover"
                                 onError={(e) => {
                                   // Fallback to default avatar if image fails to load
                                   e.currentTarget.style.display = 'none';
@@ -440,14 +482,14 @@ export default function GroupsPage() {
                                 }}
                               />
                             ) : null}
-                            <div className={`w-5 h-5 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold ${student.profilePicture ? 'hidden' : ''}`}>
+                            <div className={`w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold ${student.profilePicture ? 'hidden' : ''}`}>
                               {student.name.charAt(0).toUpperCase()}
                             </div>
                           </div>
                         )}
                         <span>{student.name}</span>
                         {showAge && age !== null && (
-                          <span className="inline-flex items-center px-2 py-0.5 ml-2 rounded-full text-lg font-semibold bg-yellow-200 text-yellow-900 shadow">
+                          <span className="inline-flex items-center px-2 py-0.5 ml-2 rounded-full text-xs font-semibold bg-yellow-200 text-yellow-900 shadow">
                             {age} th
                           </span>
                         )}
@@ -508,7 +550,25 @@ export default function GroupsPage() {
                                 })}
                             </span>
                           )}
-                        </div>
+                          </div>
+                          {/* Absence Template */}
+                          {showAbsenceTemplate && (
+                            <div className="flex ml-auto">
+                              <div className="flex gap-1">
+                                {['S', 'S', 'R', 'K', 'J'].map((day, dayIndex) => (
+                                  <div key={dayIndex} className="flex items-center gap-1">
+                                    <span className="text-lg text-gray-300">{day}</span>
+                                    <input
+                                      type="checkbox"
+                                      checked={absenceData[student.id]?.[dayIndex] || false}
+                                      onChange={(e) => handleAbsenceChange(student.id, dayIndex, e.target.checked)}
+                                      className="w-8 h-8 rounded border-gray-400 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                       </li>
                     );
                   })}
