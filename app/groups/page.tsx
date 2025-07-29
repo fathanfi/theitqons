@@ -36,7 +36,7 @@ export default function GroupsPage() {
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('ALL');
   const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showInactive, setShowInactive] = useState(false);
-  const [showLevel, setShowLevel] = useState(false);
+  const [showLevel, setShowLevel] = useState(true);
   const [showPoints, setShowPoints] = useState(false);
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const { showUnauthorized } = useUnauthorized();
@@ -44,13 +44,15 @@ export default function GroupsPage() {
   const [showReportProgress, setShowReportProgress] = useState(false);
   const [reportSessionFilter, setReportSessionFilter] = useState<'ALL' | 1 | 2>('ALL');
   const [studentReports, setStudentReports] = useState<{ [studentId: string]: { [sessionId: number]: string } }>({});
-  const [showBadges, setShowBadges] = useState(false);
+  const [showBadges, setShowBadges] = useState(true);
   const [showLastExam, setShowLastExam] = useState(false);
-  const [showAge, setShowAge] = useState(false);
-  const [showProfilePicture, setShowProfilePicture] = useState(false);
-  const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(false);
+  const [showAge, setShowAge] = useState(true);
+  const [showProfilePicture, setShowProfilePicture] = useState(true);
+  const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(true);
   const [absenceData, setAbsenceData] = useState<{[studentId: string]: {[dayIndex: number]: boolean}}>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'black' | 'light' | 'colorful'>('light');
+  const [columnLayout, setColumnLayout] = useState<1 | 2 | 3>(1);
   const itqonExams = useExamStore((state) => state.itqonExams);
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
 
@@ -218,6 +220,78 @@ export default function GroupsPage() {
     }));
   };
 
+  // Theme utility functions
+  const getGroupCardClasses = () => {
+    switch (theme) {
+      case 'light':
+        return 'rounded-lg shadow-md p-6 bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900 border border-gray-200';
+      case 'colorful':
+        return 'rounded-lg shadow-md p-6 bg-gradient-to-br from-purple-400 via-pink-400 to-red-400 text-white';
+      default: // black
+        return 'rounded-lg shadow-md p-6 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white';
+    }
+  };
+
+  const getTextClasses = (type: 'primary' | 'secondary' | 'tertiary' = 'primary') => {
+    switch (theme) {
+      case 'light':
+        switch (type) {
+          case 'primary': return 'text-gray-900';
+          case 'secondary': return 'text-gray-600';
+          case 'tertiary': return 'text-gray-400';
+        }
+        break;
+      case 'colorful':
+        switch (type) {
+          case 'primary': return 'text-white';
+          case 'secondary': return 'text-purple-100';
+          case 'tertiary': return 'text-pink-100';
+        }
+        break;
+      default: // black
+        switch (type) {
+          case 'primary': return 'text-white';
+          case 'secondary': return 'text-gray-300';
+          case 'tertiary': return 'text-gray-400';
+        }
+    }
+  };
+
+  const getCheckboxClasses = () => {
+    switch (theme) {
+      case 'light':
+        return 'w-8 h-8 rounded border-gray-400 bg-white text-indigo-600 focus:ring-indigo-500';
+      case 'colorful':
+        return 'w-8 h-8 rounded border-purple-300 bg-purple-100 text-purple-600 focus:ring-purple-500';
+      default: // black
+        return 'w-8 h-8 rounded border-gray-400 bg-gray-700 text-indigo-600 focus:ring-indigo-500';
+    }
+  };
+
+  const getInputClasses = () => {
+    switch (theme) {
+      case 'light':
+        return 'w-12 h-6 px-1 text-xs rounded border-gray-400 bg-white text-gray-900 placeholder-gray-500 focus:ring-indigo-500';
+      case 'colorful':
+        return 'w-12 h-6 px-1 text-xs rounded border-purple-300 bg-purple-100 text-purple-900 placeholder-purple-500 focus:ring-purple-500';
+      default: // black
+        return 'w-12 h-6 px-1 text-xs rounded border-gray-400 bg-gray-700 text-gray-300 placeholder-gray-500 focus:ring-indigo-500';
+    }
+  };
+
+  const getGridClasses = () => {
+    switch (columnLayout) {
+      case 1:
+        return 'grid grid-cols-1 gap-6';
+      case 2:
+        return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6';
+      case 3:
+        return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+      default:
+        return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6';
+    }
+  };
+
   if (!currentAcademicYear) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -338,6 +412,30 @@ export default function GroupsPage() {
                 />
                 <span>Show Absence Template</span>
               </label>
+              <div className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <span>Theme:</span>
+                <select
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value as 'black' | 'light' | 'colorful')}
+                  className="px-2 py-1 border rounded-md text-sm"
+                >
+                  <option value="black">Black</option>
+                  <option value="light">Light</option>
+                  <option value="colorful">Colorful</option>
+                </select>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
+                <span>Columns:</span>
+                <select
+                  value={columnLayout}
+                  onChange={(e) => setColumnLayout(Number(e.target.value) as 1 | 2 | 3)}
+                  className="px-2 py-1 border rounded-md text-sm"
+                >
+                  <option value={1}>1 Column</option>
+                  <option value={2}>2 Columns</option>
+                  <option value={3}>3 Columns</option>
+                </select>
+              </div>
               {showReportProgress && (
                 <select
                   value={reportSessionFilter}
@@ -410,7 +508,7 @@ export default function GroupsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className={getGridClasses()}>
         {filteredGroups.map((group) => {
           const class_ = classes.find(c => c.id === group.classId);
           const teacher = useSchoolStore.getState().teachers.find(t => t.id === group.teacherId);
@@ -419,26 +517,26 @@ export default function GroupsPage() {
           const visibleStudents = sortedStudents.length;
 
           return (
-            <div key={group.id} className="rounded-lg shadow-md p-6 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 text-white">
+            <div key={group.id} className={getGroupCardClasses()}>
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold">{group.name}</h3>
-                  <p className="text-sm text-gray-300 flex items-center gap-2 flex-wrap">
+                  <p className={`text-sm ${getTextClasses('secondary')} flex items-center gap-2 flex-wrap`}>
                     {class_ ? class_.name : 'No Class'} • {teacher ? teacher.name : 'No Teacher'}
-                    <span className="text-xs text-blue-300 font-bold">• {visibleStudents}</span>
+                    <span className={`text-xs ${theme === 'light' ? 'text-blue-600' : theme === 'colorful' ? 'text-yellow-200' : 'text-blue-300'} font-bold`}>• {visibleStudents}</span>
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(group)}
-                    className="text-indigo-300 hover:text-indigo-100 p-1"
+                    className={`${theme === 'light' ? 'text-indigo-600 hover:text-indigo-800' : theme === 'colorful' ? 'text-yellow-200 hover:text-yellow-100' : 'text-indigo-300 hover:text-indigo-100'} p-1`}
                     title="Edit"
                   >
                     <PencilSquareIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(group.id)}
-                    className="text-red-400 hover:text-red-200 p-1"
+                    className={`${theme === 'light' ? 'text-red-600 hover:text-red-800' : theme === 'colorful' ? 'text-red-200 hover:text-red-100' : 'text-red-400 hover:text-red-200'} p-1`}
                     title="Delete"
                   >
                     <TrashIcon className="w-5 h-5" />
@@ -447,11 +545,11 @@ export default function GroupsPage() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-gray-200">Daftar Santri:</h4>
+                                     <h4 className={`font-medium ${getTextClasses('primary')}`}>Daftar Santri:</h4>
                   {showAbsenceTemplate && (
                     <div className="flex gap-1">
-                      <span className="text-lg text-gray-300">Pekan ke: ___________</span>
-                      <input type="text" className="w-12 h-6 px-1 text-xs rounded border-gray-400 bg-gray-700 text-gray-300 placeholder-gray-500 focus:ring-indigo-500" />
+                                             <span className={`text-lg ${getTextClasses('secondary')}`}>Pekan ke: ___________</span>
+                       <input type="text" className={getInputClasses()} />
                     </div>
                   )}
                 </div>
@@ -464,10 +562,10 @@ export default function GroupsPage() {
                       <li 
                         key={student.id} 
                         className={`text-lg flex items-center gap-2 ${
-                          !student.status ? 'text-gray-400' : 'text-gray-100'
+                          !student.status ? getTextClasses('tertiary') : getTextClasses('primary')
                         }`}
                       >
-                        <span className="text-gray-400 w-6">{index + 1}.</span>
+                        <span className={`${getTextClasses('tertiary')} w-6`}>{index + 1}.</span>
                         {showProfilePicture && (
                           <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center">
                             {student.profilePicture ? (
@@ -482,19 +580,23 @@ export default function GroupsPage() {
                                 }}
                               />
                             ) : null}
-                            <div className={`w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold ${student.profilePicture ? 'hidden' : ''}`}>
+                            <div className={`w-12 h-12 ${theme === 'light' ? 'bg-gradient-to-br from-blue-400 to-purple-500' : theme === 'colorful' ? 'bg-gradient-to-br from-yellow-400 to-orange-500' : 'bg-gradient-to-br from-blue-400 to-purple-500'} flex items-center justify-center text-white text-2xl font-bold ${student.profilePicture ? 'hidden' : ''}`}>
                               {student.name.charAt(0).toUpperCase()}
                             </div>
                           </div>
                         )}
                         <span>{student.name}</span>
                         {showAge && age !== null && (
-                          <span className="inline-flex items-center px-2 py-0.5 ml-2 rounded-full text-xs font-semibold bg-yellow-200 text-yellow-900 shadow">
+                          <span className={`inline-flex items-center px-2 py-0.5 ml-2 rounded-full text-xs font-semibold shadow ${
+                            theme === 'light' ? 'bg-yellow-200 text-yellow-900' : 
+                            theme === 'colorful' ? 'bg-yellow-300 text-yellow-900' : 
+                            'bg-yellow-200 text-yellow-900'
+                          }`}>
                             {age} th
                           </span>
                         )}
                         {!student.status && (
-                          <span className="text-xs text-gray-400">(Inactive)</span>
+                          <span className={`text-xs ${getTextClasses('tertiary')}`}>(Inactive)</span>
                         )}
                         <div className="flex items-center gap-2">
                           {showLevel && level && (
@@ -557,12 +659,12 @@ export default function GroupsPage() {
                               <div className="flex gap-1">
                                 {['S', 'S', 'R', 'K', 'J'].map((day, dayIndex) => (
                                   <div key={dayIndex} className="flex items-center gap-1">
-                                    <span className="text-lg text-gray-300">{day}</span>
+                                    <span className={`text-lg ${getTextClasses('secondary')}`}>{day}</span>
                                     <input
                                       type="checkbox"
                                       checked={absenceData[student.id]?.[dayIndex] || false}
                                       onChange={(e) => handleAbsenceChange(student.id, dayIndex, e.target.checked)}
-                                      className="w-8 h-8 rounded border-gray-400 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                                      className={getCheckboxClasses()}
                                     />
                                   </div>
                                 ))}
@@ -574,10 +676,10 @@ export default function GroupsPage() {
                   })}
                 </ul>
                 {sortedStudents.length > 0 && (
-                  <p className="text-sm text-gray-300 mt-2 font-semibold">
+                  <p className={`text-sm ${getTextClasses('secondary')} mt-2 font-semibold`}>
                     Total Students: {visibleStudents}
                     {!showInactive && totalStudents > visibleStudents && (
-                      <span className="ml-2 text-gray-400">
+                      <span className={`ml-2 ${getTextClasses('tertiary')}`}>
                         ({totalStudents - visibleStudents} inactive hidden)
                       </span>
                     )}
