@@ -13,8 +13,11 @@ import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import { CheckCircleIcon, ExclamationCircleIcon, MinusCircleIcon } from '@heroicons/react/24/solid';
+import { ExclamationTriangleIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { useExamStore } from '@/store/examStore';
 import { formatDate, generateWeeksFromAcademicYear, getWeekDates } from '@/lib/utils';
+import { useAttendanceStore } from '@/store/attendanceStore';
+import { AttendancePopup } from '@/components/AttendancePopup';
 
 export default function GroupsPage() {
   const { currentAcademicYear } = useSession();
@@ -49,13 +52,32 @@ export default function GroupsPage() {
   const [showAge, setShowAge] = useState(true);
   const [showProfilePicture, setShowProfilePicture] = useState(true);
   const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(true);
-  const [absenceData, setAbsenceData] = useState<{[studentId: string]: {[dayIndex: number]: boolean}}>({});
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [popupData, setPopupData] = useState<{
+    isOpen: boolean;
+    studentId: string;
+    studentName: string;
+    dayIndex: number;
+    dayName: string;
+    date: string;
+    currentStatus?: 'present' | 'sick' | 'permit' | 'absent';
+  } | null>(null);
   const [theme, setTheme] = useState<'black' | 'light' | 'colorful'>('light');
   const [columnLayout, setColumnLayout] = useState<1 | 2 | 3>(1);
   const itqonExams = useExamStore((state) => state.itqonExams);
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
+  
+  // Attendance store
+  const { 
+    attendanceByWeek, 
+    loadAttendanceByWeek, 
+    upsertAttendance, 
+    getAttendanceStatus,
+    clearAttendanceData,
+    isLoading: attendanceLoading,
+    error: attendanceError 
+  } = useAttendanceStore();
 
   useEffect(() => {
     if (currentAcademicYear) {
@@ -78,6 +100,8 @@ export default function GroupsPage() {
       }
     }
   }, [currentAcademicYear, selectedWeek]);
+
+
 
   const loadStudentPoints = async () => {
     const { data } = await supabase
@@ -157,6 +181,27 @@ export default function GroupsPage() {
     return matchesSearch && matchesClass && matchesAcademicYear;
   });
 
+  // Load attendance data when week changes
+  useEffect(() => {
+    if (selectedWeek && currentAcademicYear && filteredGroups.length > 0) {
+      const weekData = selectedWeek.split('-');
+      const weekNumber = parseInt(weekData[0]);
+      const year = parseInt(weekData[1]);
+      
+      // Clear existing data first
+      clearAttendanceData();
+      
+      // Load attendance for all groups with a small delay to prevent overwhelming the database
+      filteredGroups.forEach((group, index) => {
+        setTimeout(() => {
+          loadAttendanceByWeek(currentAcademicYear.id, group.id, weekNumber, year).catch(error => {
+            console.error(`Error loading attendance for group ${group.id}:`, error);
+          });
+        }, index * 100); // 100ms delay between each request
+      });
+    }
+  }, [selectedWeek, currentAcademicYear, filteredGroups.length]);
+
   // Sort students within each group
   const getSortedStudents = (studentIds: string[] = []) => {
     return studentIds
@@ -221,14 +266,62 @@ export default function GroupsPage() {
     return age;
   };
 
-  const handleAbsenceChange = (studentId: string, dayIndex: number, checked: boolean) => {
-    setAbsenceData(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        [dayIndex]: checked
-      }
-    }));
+  const handleAbsenceClick = (studentId: string, studentName: string, dayIndex: number) => {
+    if (!selectedWeek || !currentAcademicYear) return;
+    
+    const weekData = selectedWeek.split('-');
+    const weekNumber = parseInt(weekData[0]);
+    const year = parseInt(weekData[1]);
+    
+    const weekDates = getWeekDates(selectedWeek, currentAcademicYear.startDate, currentAcademicYear.endDate);
+    if (!weekDates) return;
+    
+    const dateInfo = weekDates[dayIndex];
+    
+    const currentStatus = getAttendanceStatus(studentId, dayIndex);
+    setPopupData({
+      isOpen: true,
+      studentId,
+      studentName,
+      dayIndex,
+      dayName: dateInfo.day,
+      date: dateInfo.date,
+      currentStatus
+    });
+  };
+
+  const handleAttendanceConfirm = async (status: 'present' | 'sick' | 'permit') => {
+    if (!popupData || !selectedWeek || !currentAcademicYear) return;
+    
+    const weekData = selectedWeek.split('-');
+    const weekNumber = parseInt(weekData[0]);
+    const year = parseInt(weekData[1]);
+    
+    // Find the group that contains this student
+    const studentGroup = filteredGroups.find(group => 
+      group.students?.includes(popupData.studentId)
+    );
+    
+    if (!studentGroup) {
+      console.error('Student not found in any group');
+      return;
+    }
+    
+    try {
+      await upsertAttendance({
+        student_id: popupData.studentId,
+        academic_year_id: currentAcademicYear.id,
+        group_id: studentGroup.id,
+        week_number: weekNumber,
+        year: year,
+        day_index: popupData.dayIndex,
+        status: status
+      });
+      
+      setSuccessMessage(`Kehadiran ${popupData.studentName} berhasil disimpan`);
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+    }
   };
 
   // Theme utility functions
@@ -322,6 +415,8 @@ export default function GroupsPage() {
     );
   }
 
+
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -338,6 +433,13 @@ export default function GroupsPage() {
       {successMessage && (
         <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
           {successMessage}
+        </div>
+      )}
+
+      {/* Error Message */}
+      {attendanceError && (
+        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          {attendanceError}
         </div>
       )}
 
@@ -592,6 +694,12 @@ export default function GroupsPage() {
                           Pekan {selectedWeek}
                         </span>
                       )}
+                      {attendanceLoading && (
+                        <div className="flex items-center gap-1">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b border-indigo-600"></div>
+                          <span className={`text-xs ${getTextClasses('tertiary')}`}>Loading...</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -707,12 +815,56 @@ export default function GroupsPage() {
                                       <span className={`text-xs ${getTextClasses('tertiary')} text-center`}>
                                         {dateInfo.day}, {dateInfo.date}
                                       </span>
-                                      <input
-                                        type="checkbox"
-                                        checked={absenceData[student.id]?.[dayIndex] || false}
-                                        onChange={(e) => handleAbsenceChange(student.id, dayIndex, e.target.checked)}
-                                        className={getCheckboxClasses()}
-                                      />
+                                      {(() => {
+                                        try {
+                                          const status = getAttendanceStatus(student.id, dayIndex);
+                                          const getStatusIcon = () => {
+                                            switch (status) {
+                                              case 'present':
+                                                return <CheckCircleIcon className="w-4 h-4 text-green-600" />;
+                                              case 'sick':
+                                                return <ExclamationTriangleIcon className="w-4 h-4 text-orange-600" />;
+                                              case 'permit':
+                                                return <DocumentTextIcon className="w-4 h-4 text-blue-600" />;
+                                              default:
+                                                return <div className="w-4 h-4 border border-gray-300 rounded" />;
+                                            }
+                                          };
+                                          
+                                          const getButtonClasses = () => {
+                                            switch (status) {
+                                              case 'present':
+                                                return "w-6 h-6 flex items-center justify-center rounded border-2 border-green-300 bg-green-50 hover:border-green-400 transition-colors";
+                                              case 'sick':
+                                                return "w-6 h-6 flex items-center justify-center rounded border-2 border-orange-300 bg-orange-50 hover:border-orange-400 transition-colors";
+                                              case 'permit':
+                                                return "w-6 h-6 flex items-center justify-center rounded border-2 border-blue-300 bg-blue-50 hover:border-blue-400 transition-colors";
+                                              default:
+                                                return "w-6 h-6 flex items-center justify-center rounded border border-gray-300 hover:border-gray-400 transition-colors";
+                                            }
+                                          };
+                                          
+                                          return (
+                                            <button
+                                              onClick={() => handleAbsenceClick(student.id, student.name, dayIndex)}
+                                              className={getButtonClasses()}
+                                              title={`${status === 'present' ? 'Hadir' : status === 'sick' ? 'Sakit' : status === 'permit' ? 'Izin' : 'Belum diisi'}`}
+                                            >
+                                              {getStatusIcon()}
+                                            </button>
+                                          );
+                                        } catch (error) {
+                                          console.error('Error rendering attendance status:', error);
+                                          return (
+                                            <button
+                                              onClick={() => handleAbsenceClick(student.id, student.name, dayIndex)}
+                                              className="w-6 h-6 flex items-center justify-center rounded border border-gray-300 hover:border-gray-400 transition-colors"
+                                            >
+                                              <div className="w-4 h-4 border border-gray-300 rounded" />
+                                            </button>
+                                          );
+                                        }
+                                      })()}
                                     </div>
                                   ))}
                                 </div>
@@ -739,6 +891,19 @@ export default function GroupsPage() {
           );
         })}
       </div>
+
+      {/* Attendance Popup */}
+      {popupData && (
+        <AttendancePopup
+          isOpen={popupData.isOpen}
+          onClose={() => setPopupData(null)}
+          onConfirm={handleAttendanceConfirm}
+          studentName={popupData.studentName}
+          dayName={popupData.dayName}
+          date={popupData.date}
+          currentStatus={popupData.currentStatus}
+        />
+      )}
     </div>
   );
 }
