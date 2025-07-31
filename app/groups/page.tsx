@@ -14,7 +14,7 @@ import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import { CheckCircleIcon, ExclamationCircleIcon, MinusCircleIcon } from '@heroicons/react/24/solid';
 import { useExamStore } from '@/store/examStore';
-import { formatDate } from '@/lib/utils';
+import { formatDate, generateWeeksFromAcademicYear, getWeekDates } from '@/lib/utils';
 
 export default function GroupsPage() {
   const { currentAcademicYear } = useSession();
@@ -50,6 +50,7 @@ export default function GroupsPage() {
   const [showProfilePicture, setShowProfilePicture] = useState(true);
   const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(true);
   const [absenceData, setAbsenceData] = useState<{[studentId: string]: {[dayIndex: number]: boolean}}>({});
+  const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [theme, setTheme] = useState<'black' | 'light' | 'colorful'>('light');
   const [columnLayout, setColumnLayout] = useState<1 | 2 | 3>(1);
@@ -67,6 +68,16 @@ export default function GroupsPage() {
       loadItqonExams();
     }
   }, [currentAcademicYear, loadGroups, loadClasses, loadTeachers, loadAcademicYears, loadLevels, loadItqonExams]);
+
+  // Set default selected week when academic year changes
+  useEffect(() => {
+    if (currentAcademicYear && !selectedWeek) {
+      const weeks = generateWeeksFromAcademicYear(currentAcademicYear.startDate, currentAcademicYear.endDate);
+      if (weeks.length > 0) {
+        setSelectedWeek(weeks[0].label);
+      }
+    }
+  }, [currentAcademicYear, selectedWeek]);
 
   const loadStudentPoints = async () => {
     const { data } = await supabase
@@ -260,11 +271,11 @@ export default function GroupsPage() {
   const getCheckboxClasses = () => {
     switch (theme) {
       case 'light':
-        return 'w-8 h-8 rounded border-gray-400 bg-white text-indigo-600 focus:ring-indigo-500';
+        return 'w-6 h-6 rounded border-gray-400 bg-white text-indigo-600 focus:ring-indigo-500';
       case 'colorful':
-        return 'w-8 h-8 rounded border-purple-300 bg-purple-100 text-purple-600 focus:ring-purple-500';
+        return 'w-6 h-6 rounded border-purple-300 bg-purple-100 text-purple-600 focus:ring-purple-500';
       default: // black
-        return 'w-8 h-8 rounded border-gray-400 bg-gray-700 text-indigo-600 focus:ring-indigo-500';
+        return 'w-6 h-6 rounded border-gray-400 bg-gray-700 text-indigo-600 focus:ring-indigo-500';
     }
   };
 
@@ -276,6 +287,17 @@ export default function GroupsPage() {
         return 'w-12 h-6 px-1 text-xs rounded border-purple-300 bg-purple-100 text-purple-900 placeholder-purple-500 focus:ring-purple-500';
       default: // black
         return 'w-12 h-6 px-1 text-xs rounded border-gray-400 bg-gray-700 text-gray-300 placeholder-gray-500 focus:ring-indigo-500';
+    }
+  };
+
+  const getSelectClasses = () => {
+    switch (theme) {
+      case 'light':
+        return 'w-28 h-8 px-2 text-xs rounded border-gray-400 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500';
+      case 'colorful':
+        return 'w-28 h-8 px-2 text-xs rounded border-purple-300 bg-purple-100 text-purple-900 focus:ring-purple-500 focus:border-purple-500';
+      default: // black
+        return 'w-28 h-8 px-2 text-xs rounded border-gray-400 bg-gray-700 text-gray-300 focus:ring-indigo-500 focus:border-indigo-500';
     }
   };
 
@@ -330,7 +352,7 @@ export default function GroupsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
             />
-            <div className="flex items-left gap-4flex flex-col gap-4 sm:flex-row sm:items-left">
+            <div className="flex flex-wrap gap-2 sm:gap-4">
               <label className="flex items-center space-x-2 text-sm text-gray-600 whitespace-nowrap">
                 <input
                   type="checkbox"
@@ -545,15 +567,36 @@ export default function GroupsPage() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                                     <h4 className={`font-medium ${getTextClasses('primary')}`}>Daftar Santri:</h4>
-                  {showAbsenceTemplate && (
-                    <div className="flex gap-1">
-                                             <span className={`text-lg ${getTextClasses('secondary')}`}>Pekan ke: ___________</span>
-                       <input type="text" className={getInputClasses()} />
+                  <h4 className={`font-medium ${getTextClasses('primary')}`}>Daftar Santri:</h4>
+                  {showAbsenceTemplate && currentAcademicYear && (
+                    <div className="flex gap-2 items-center bg-opacity-10 p-2 rounded-md" style={{
+                      backgroundColor: theme === 'light' ? 'rgba(99, 102, 241, 0.1)' : 
+                                     theme === 'colorful' ? 'rgba(168, 85, 247, 0.2)' : 
+                                     'rgba(75, 85, 99, 0.2)'
+                    }}>
+                      <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>Pekan ke:</span>
+                      <select
+                        value={selectedWeek}
+                        onChange={(e) => setSelectedWeek(e.target.value)}
+                        className={getSelectClasses()}
+                      >
+                        <option value="">Pilih Pekan</option>
+                        {generateWeeksFromAcademicYear(currentAcademicYear.startDate, currentAcademicYear.endDate).map((week) => (
+                          <option key={week.label} value={week.label}>
+                            {week.label}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedWeek && (
+                        <span className={`text-xs font-semibold ${theme === 'light' ? 'text-indigo-600' : theme === 'colorful' ? 'text-purple-200' : 'text-indigo-300'}`}>
+                          Pekan {selectedWeek}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
-                <ul className="space-y-1">
+                <div className="overflow-x-auto">
+                  <ul className="space-y-1 min-w-max">
                   {sortedStudents.map((student, index) => {
                     const level = levels.find(l => l.id === student.level_id);
                     const points = studentPoints[student.id] || 0;
@@ -561,7 +604,7 @@ export default function GroupsPage() {
                     return (
                       <li 
                         key={student.id} 
-                        className={`text-lg flex items-center gap-2 ${
+                        className={`text-lg flex items-center gap-2 ${columnLayout === 1 ? 'min-w-[800px]' : columnLayout === 2 ? 'min-w-[600px]' : 'min-w-[500px]'} ${
                           !student.status ? getTextClasses('tertiary') : getTextClasses('primary')
                         }`}
                       >
@@ -585,7 +628,7 @@ export default function GroupsPage() {
                             </div>
                           </div>
                         )}
-                        <span>{student.name}</span>
+                        <span className={`${columnLayout === 1 ? 'w-[300px]' : columnLayout === 2 ? 'w-[200px]' : 'w-[150px]'} truncate`}>{student.name}</span>
                         {showAge && age !== null && (
                           <span className={`inline-flex items-center px-2 py-0.5 ml-2 rounded-full text-xs font-semibold shadow ${
                             theme === 'light' ? 'bg-yellow-200 text-yellow-900' : 
@@ -654,20 +697,25 @@ export default function GroupsPage() {
                           )}
                           </div>
                           {/* Absence Template */}
-                          {showAbsenceTemplate && (
+                          {showAbsenceTemplate && selectedWeek && currentAcademicYear && (
                             <div className="flex ml-auto">
-                              <div className="flex gap-1">
-                                {['S', 'S', 'R', 'K', 'J'].map((day, dayIndex) => (
-                                  <div key={dayIndex} className="flex items-center gap-1">
-                                    <span className={`text-lg ${getTextClasses('secondary')}`}>{day}</span>
-                                    <input
-                                      type="checkbox"
-                                      checked={absenceData[student.id]?.[dayIndex] || false}
-                                      onChange={(e) => handleAbsenceChange(student.id, dayIndex, e.target.checked)}
-                                      className={getCheckboxClasses()}
-                                    />
-                                  </div>
-                                ))}
+                              <div className="flex flex-col gap-3">
+                                {/* Date Headers */}
+                                <div className="flex gap-3">
+                                  {getWeekDates(selectedWeek, currentAcademicYear.startDate, currentAcademicYear.endDate)?.map((dateInfo, dayIndex) => (
+                                    <div key={dayIndex} className="flex flex-col items-center gap-3">
+                                      <span className={`text-xs ${getTextClasses('tertiary')} text-center`}>
+                                        {dateInfo.day}, {dateInfo.date}
+                                      </span>
+                                      <input
+                                        type="checkbox"
+                                        checked={absenceData[student.id]?.[dayIndex] || false}
+                                        onChange={(e) => handleAbsenceChange(student.id, dayIndex, e.target.checked)}
+                                        className={getCheckboxClasses()}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           )}
@@ -675,6 +723,7 @@ export default function GroupsPage() {
                     );
                   })}
                 </ul>
+                </div>
                 {sortedStudents.length > 0 && (
                   <p className={`text-sm ${getTextClasses('secondary')} mt-2 font-semibold`}>
                     Total Students: {visibleStudents}
