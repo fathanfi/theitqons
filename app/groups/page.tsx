@@ -63,6 +63,17 @@ export default function GroupsPage() {
     date: string;
     currentStatus?: 'present' | 'sick' | 'permit' | 'absent';
   } | null>(null);
+  const [confirmationData, setConfirmationData] = useState<{
+    isOpen: boolean;
+    groupId: string;
+    groupName: string;
+    dayIndex: number;
+    dayName: string;
+    date: string;
+    weekNumber: number;
+    year: number;
+  } | null>(null);
+  const [isMarkingPresent, setIsMarkingPresent] = useState(false);
   const [theme, setTheme] = useState<'black' | 'light' | 'colorful'>('light');
   const [columnLayout, setColumnLayout] = useState<1 | 2 | 3>(1);
   const itqonExams = useExamStore((state) => state.itqonExams);
@@ -324,6 +335,127 @@ export default function GroupsPage() {
     }
   };
 
+  const handleMarkAllPresent = async (dayIndex: number) => {
+    if (!selectedWeek || !currentAcademicYear) return;
+    
+    const weekData = selectedWeek.split('-');
+    const weekNumber = parseInt(weekData[0]);
+    const year = parseInt(weekData[1]);
+    
+    // Get all students from all filtered groups
+    const allStudentIds = Array.from(new Set(
+      filteredGroups.flatMap(group => group.students || [])
+    ));
+    
+    if (allStudentIds.length === 0) {
+      setSuccessMessage('No students found to mark as present');
+      return;
+    }
+    
+    try {
+      // Mark all students as present for the specified day
+      const attendancePromises = allStudentIds.map(async (studentId) => {
+        // Find the group that contains this student
+        const studentGroup = filteredGroups.find(group => 
+          group.students?.includes(studentId)
+        );
+        
+        if (!studentGroup) return;
+        
+        return upsertAttendance({
+          student_id: studentId,
+          academic_year_id: currentAcademicYear.id,
+          group_id: studentGroup.id,
+          week_number: weekNumber,
+          year: year,
+          day_index: dayIndex,
+          status: 'present'
+        });
+      });
+      
+      await Promise.all(attendancePromises);
+      
+      const weekDates = getWeekDates(selectedWeek, currentAcademicYear.startDate, currentAcademicYear.endDate);
+      const dayName = weekDates?.[dayIndex]?.day || `Day ${dayIndex + 1}`;
+      const date = weekDates?.[dayIndex]?.date || '';
+      
+      setSuccessMessage(`All students marked as present for ${dayName}, ${date}`);
+    } catch (error) {
+      console.error('Error marking all students as present:', error);
+      setSuccessMessage('Error marking students as present');
+    }
+  };
+
+  const handleMarkGroupPresent = async (groupId: string, dayIndex: number) => {
+    if (!selectedWeek || !currentAcademicYear) return;
+    
+    const weekData = selectedWeek.split('-');
+    const weekNumber = parseInt(weekData[0]);
+    const year = parseInt(weekData[1]);
+    
+    const group = filteredGroups.find(g => g.id === groupId);
+    if (!group || !group.students || group.students.length === 0) {
+      setSuccessMessage('No students found in this group');
+      return;
+    }
+    
+    const weekDates = getWeekDates(selectedWeek, currentAcademicYear.startDate, currentAcademicYear.endDate);
+    const dayName = weekDates?.[dayIndex]?.day || `Day ${dayIndex + 1}`;
+    const date = weekDates?.[dayIndex]?.date || '';
+    
+    // Show confirmation dialog
+    setConfirmationData({
+      isOpen: true,
+      groupId,
+      groupName: group.name,
+      dayIndex,
+      dayName,
+      date,
+      weekNumber,
+      year
+    });
+  };
+
+  const handleConfirmMarkGroupPresent = async () => {
+    if (!confirmationData || !currentAcademicYear) return;
+    
+    setIsMarkingPresent(true);
+    
+    try {
+      // Mark all students in this group as present for the specified day
+      const group = filteredGroups.find(g => g.id === confirmationData.groupId);
+      if (!group || !group.students) return;
+      
+      const attendancePromises = group.students.map(async (studentId) => {
+        return upsertAttendance({
+          student_id: studentId,
+          academic_year_id: currentAcademicYear.id,
+          group_id: confirmationData.groupId,
+          week_number: confirmationData.weekNumber,
+          year: confirmationData.year,
+          day_index: confirmationData.dayIndex,
+          status: 'present'
+        });
+      });
+      
+      await Promise.all(attendancePromises);
+      
+      setSuccessMessage(`All students in ${confirmationData.groupName} marked as present for ${confirmationData.dayName}, ${confirmationData.date} (Week ${confirmationData.weekNumber}, ${confirmationData.year})`);
+    } catch (error) {
+      console.error('Error marking group students as present:', error);
+      setSuccessMessage('Error marking students as present');
+    } finally {
+      setIsMarkingPresent(false);
+      setConfirmationData(null);
+    }
+  };
+
+  const handleCancelMarkGroupPresent = () => {
+    setConfirmationData(null);
+  };
+
+
+
   // Theme utility functions
   const getGroupCardClasses = () => {
     switch (theme) {
@@ -442,6 +574,8 @@ export default function GroupsPage() {
           {attendanceError}
         </div>
       )}
+
+      
 
       {/* Search and Filter Controls */}
       <div className="mb-6">
@@ -591,14 +725,14 @@ export default function GroupsPage() {
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="ALL">All Classes</option>
-                {classes.map(class_ => (
-                  <option key={class_.id} value={class_.id}>
-                    {class_.name}
-                  </option>
-                ))}
-              </select>
+            >
+              <option value="ALL">All Classes</option>
+              {classes.map(class_ => (
+                <option key={class_.id} value={class_.id}>
+                  {class_.name}
+                </option>
+              ))}
+            </select>
               <button
                 onClick={() => setStudentSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
                 className={`px-4 py-2 rounded whitespace-nowrap ${
@@ -671,38 +805,66 @@ export default function GroupsPage() {
                 <div className="flex justify-between items-center">
                   <h4 className={`font-medium ${getTextClasses('primary')}`}>Daftar Santri:</h4>
                   {showAbsenceTemplate && currentAcademicYear && (
-                    <div className="flex gap-2 items-center bg-opacity-10 p-2 rounded-md" style={{
-                      backgroundColor: theme === 'light' ? 'rgba(99, 102, 241, 0.1)' : 
-                                     theme === 'colorful' ? 'rgba(168, 85, 247, 0.2)' : 
-                                     'rgba(75, 85, 99, 0.2)'
-                    }}>
-                      <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>Pekan ke:</span>
-                      <select
-                        value={selectedWeek}
-                        onChange={(e) => setSelectedWeek(e.target.value)}
-                        className={getSelectClasses()}
-                      >
-                        <option value="">Pilih Pekan</option>
-                        {generateWeeksFromAcademicYear(currentAcademicYear.startDate, currentAcademicYear.endDate).map((week) => (
-                          <option key={week.label} value={week.label}>
-                            {week.label}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedWeek && (
-                        <span className={`text-xs font-semibold ${theme === 'light' ? 'text-indigo-600' : theme === 'colorful' ? 'text-purple-200' : 'text-indigo-300'}`}>
-                          Pekan {selectedWeek}
-                        </span>
-                      )}
-                      {attendanceLoading && (
-                        <div className="flex items-center gap-1">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b border-indigo-600"></div>
-                          <span className={`text-xs ${getTextClasses('tertiary')}`}>Loading...</span>
-                        </div>
-                      )}
+                    <div className="flex flex-col gap-2">
+                      {/* Week Selection */}
+                      <div className="flex gap-2 items-center bg-opacity-10 p-2 rounded-md" style={{
+                        backgroundColor: theme === 'light' ? 'rgba(99, 102, 241, 0.1)' : 
+                                       theme === 'colorful' ? 'rgba(168, 85, 247, 0.2)' : 
+                                       'rgba(75, 85, 99, 0.2)'
+                      }}>
+                        <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>Pekan ke:</span>
+                        <select
+                          value={selectedWeek}
+                          onChange={(e) => setSelectedWeek(e.target.value)}
+                          className={getSelectClasses()}
+                        >
+                          <option value="">Pilih Pekan</option>
+                          {generateWeeksFromAcademicYear(currentAcademicYear.startDate, currentAcademicYear.endDate).map((week) => (
+                            <option key={week.label} value={week.label}>
+                              {week.label}
+                            </option>
+                          ))}
+                        </select>
+                        {selectedWeek && (
+                          <span className={`text-xs font-semibold ${theme === 'light' ? 'text-indigo-600' : theme === 'colorful' ? 'text-purple-200' : 'text-indigo-300'}`}>
+                            Pekan {selectedWeek}
+                          </span>
+                        )}
+                        {attendanceLoading && (
+                          <div className="flex items-center gap-1">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b border-indigo-600"></div>
+                            <span className={`text-xs ${getTextClasses('tertiary')}`}>Loading...</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
+                {/* Group Day Check Buttons */}
+                {showAbsenceTemplate && selectedWeek && currentAcademicYear && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-sm font-medium ${getTextClasses('primary')}`}>
+                        Mark all students in {group.name} as present for each day:
+                      </span>
+                    </div>
+                    <div className="flex gap-2 items-end justify-end">
+                      {getWeekDates(selectedWeek, currentAcademicYear.startDate, currentAcademicYear.endDate)?.map((dateInfo, dayIndex) => (
+                        <button
+                          key={dayIndex}
+                          onClick={() => handleMarkGroupPresent(group.id, dayIndex)}
+                          className="flex flex-col items-center gap-1 px-3 py-2 bg-white border border-blue-300 rounded-md hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                          title={`Mark all students in ${group.name} as present for ${dateInfo.day}, ${dateInfo.date}`}
+                        >
+                          <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                          <span className="text-xs text-gray-600 font-medium">{dateInfo.day}</span>
+                          <span className="text-xs text-gray-500">{dateInfo.date}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="overflow-x-auto">
                   <ul className="space-y-1 min-w-max">
                   {sortedStudents.map((student, index) => {
@@ -712,9 +874,9 @@ export default function GroupsPage() {
                     return (
                       <li 
                         key={student.id} 
-                        className={`text-lg flex items-center gap-2 ${columnLayout === 1 ? 'min-w-[800px]' : columnLayout === 2 ? 'min-w-[600px]' : 'min-w-[500px]'} ${
+                        className={`text-lg flex items-center gap-2 p-2 rounded ${columnLayout === 1 ? 'min-w-[800px]' : columnLayout === 2 ? 'min-w-[600px]' : 'min-w-[500px]'} ${
                           !student.status ? getTextClasses('tertiary') : getTextClasses('primary')
-                        }`}
+                        } ${index % 2 === 0 ? 'bg-white' : 'bg-blue-50'}`}
                       >
                         <span className={`${getTextClasses('tertiary')} w-6`}>{index + 1}.</span>
                         {showProfilePicture && (
@@ -811,7 +973,7 @@ export default function GroupsPage() {
                                 {/* Date Headers */}
                                 <div className="flex gap-3">
                                   {getWeekDates(selectedWeek, currentAcademicYear.startDate, currentAcademicYear.endDate)?.map((dateInfo, dayIndex) => (
-                                    <div key={dayIndex} className="flex flex-col items-center gap-3">
+                                    <div key={dayIndex} className="flex flex-col items-center gap-0.5 bg-white rounded p-1">
                                       <span className={`text-xs ${getTextClasses('tertiary')} text-center`}>
                                         {dateInfo.day}, {dateInfo.date}
                                       </span>
@@ -903,6 +1065,53 @@ export default function GroupsPage() {
           date={popupData.date}
           currentStatus={popupData.currentStatus}
         />
+      )}
+
+      {/* Confirmation Popup */}
+      {confirmationData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Confirm Mark All as Present
+                </h3>
+              </div>
+            </div>
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to mark <strong>all students</strong> in group{' '}
+                <strong>"{confirmationData.groupName}"</strong> as present for{' '}
+                <strong>{confirmationData.dayName}, {confirmationData.date}</strong>?
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Week {confirmationData.weekNumber}, {confirmationData.year}
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelMarkGroupPresent}
+                disabled={isMarkingPresent}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmMarkGroupPresent}
+                disabled={isMarkingPresent}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isMarkingPresent && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {isMarkingPresent ? 'Processing...' : 'Yes, Mark All as Present'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
