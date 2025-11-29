@@ -142,7 +142,7 @@ export default function StudentReportsPage() {
   const [teacherId, setTeacherId] = useState<string>('');
 
   const [academicYear, setAcademicYear] = useState<string>('');
-  const [sessionId, setSessionId] = useState<number>(2); // Fixed to SM2
+  const [sessionId, setSessionId] = useState<number>(1); // Fixed to SM2
   const [classId, setClassId] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
   const [className, setClassName] = useState<string>('');
