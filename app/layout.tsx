@@ -9,6 +9,7 @@ import { Footer } from '@/components/Footer';
 import { RouteLoader } from '@/components/RouteLoader';
 import { UnauthorizedProvider } from '@/contexts/UnauthorizedContext';
 import FloatingChatButton from '@/components/FloatingChatButton';
+import { ToastContainer } from '@/components/Toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -49,6 +50,7 @@ export default function RootLayout({
           </AuthProvider>
         </UnauthorizedProvider>
         <FloatingChatButton />
+        <ToastContainer />
       </body>
     </html>
   );

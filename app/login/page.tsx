@@ -48,24 +48,67 @@ export default function LoginPage() {
         });
 
         if (authError) {
-          // If auth fails, try to create a new auth user
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: teacher.email,
-            password: teacher.password,
-            options: {
-              data: {
-                name: teacher.name
-              }
-            }
-          });
+          // Auth login failed - try to sync password and retry
+          // First, try to sync the password via API
+          try {
+            const syncResponse = await fetch('/api/teachers/sync-auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: teacher.email, password: teacher.password })
+            });
 
-          if (signUpError || !signUpData.user) {
-            setError('Failed to create authentication for teacher');
-            setIsLoading(false);
-            return;
+            // Wait a bit for sync to complete, then try login again
+            if (syncResponse.ok || syncResponse.status === 500) {
+              // Even if sync returns error, wait and try login
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          } catch (syncErr) {
+            // Sync failed, but continue anyway
+            console.warn('Auth sync failed, will try direct login', syncErr);
           }
 
-          authUser = signUpData.user;
+          // Try to sign in again after sync attempt
+          const { data: retryAuthData, error: retryAuthError } = await supabase.auth.signInWithPassword({
+            email: teacher.email,
+            password: teacher.password,
+          });
+
+          if (!retryAuthError && retryAuthData?.user) {
+            // Success! Auth password was synced or already correct
+            authUser = retryAuthData.user;
+          } else {
+            // Still can't login - try to create/update auth user
+            // First try signUp to create new user or see if exists
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: teacher.email,
+              password: teacher.password,
+              options: {
+                data: {
+                  name: teacher.name
+                },
+                emailRedirectTo: undefined // Don't redirect
+              }
+            });
+
+            if (signUpError && (signUpError.message?.includes('already registered') || 
+                signUpError.message?.includes('User already registered'))) {
+              // User exists but password doesn't match
+              // The sync might have worked but needs time, or service role key is missing
+              // Let's inform the user clearly and suggest waiting
+              setError('Your password was updated, but the authentication system is still syncing. Please wait 10-30 seconds and try logging in again. If the problem persists, contact your administrator.');
+              setIsLoading(false);
+              return;
+            } else if (!signUpError && signUpData?.user) {
+              // New user created successfully
+              authUser = signUpData.user;
+            } else {
+              // Failed to create user - show the actual error
+              const errorMsg = signUpError?.message || 'Failed to create authentication';
+              setError(`Failed to create authentication: ${errorMsg}`);
+              setIsLoading(false);
+              return;
+            }
+          }
         } else {
           authUser = authData.user;
         }

@@ -217,44 +217,82 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
   },
 
   updateTeacher: async (teacher) => {
+    // Get the original teacher data to check if password/username/email changed
+    const originalTeacher = get().teachers.find(t => t.id === teacher.id);
+    
+    // Check if password was actually provided and is different (not empty string)
+    const passwordProvided = teacher.password && teacher.password.trim() !== '';
+    const passwordChanged = originalTeacher && passwordProvided && originalTeacher.password !== teacher.password;
+    const usernameChanged = originalTeacher && originalTeacher.username !== teacher.username;
+    const emailChanged = originalTeacher && originalTeacher.email !== teacher.email;
+
+    // Prepare update object - only update password if it was provided and changed
+    const updateData: any = {
+      name: teacher.name,
+      address: teacher.address,
+      date_of_birth: teacher.dateOfBirth,
+      place_of_birth: teacher.placeOfBirth,
+      phone: teacher.phone,
+      join_date: teacher.joinDate,
+      gender: teacher.gender,
+      status: teacher.status,
+      username: teacher.username,
+      email: teacher.email
+    };
+
+    // Only update password if it was actually provided (not empty)
+    if (passwordProvided && passwordChanged) {
+      updateData.password = teacher.password;
+    }
+
     const { error } = await supabase
       .from('teachers')
-      .update({
-        name: teacher.name,
-        address: teacher.address,
-        date_of_birth: teacher.dateOfBirth,
-        place_of_birth: teacher.placeOfBirth,
-        phone: teacher.phone,
-        join_date: teacher.joinDate,
-        gender: teacher.gender,
-        status: teacher.status,
-        username: teacher.username,
-        password: teacher.password,
-        email: teacher.email
-      })
+      .update(updateData)
       .eq('id', teacher.id);
 
-    if (!error) {
-      // Update roles
-      await supabase
-        .from('teacher_roles')
-        .delete()
-        .eq('teacher_id', teacher.id);
-
-      const rolePromises = teacher.roles.map(role =>
-        supabase
-          .from('teacher_roles')
-          .insert([{ teacher_id: teacher.id, role }])
-      );
-
-      await Promise.all(rolePromises);
-
-      set(state => ({
-        teachers: state.teachers.map(t =>
-          t.id === teacher.id ? teacher : t
-        )
-      }));
+    if (error) {
+      throw new Error(error.message || 'Failed to update teacher');
     }
+
+    // If password, username, or email changed, try to sync with Supabase Auth
+    if ((passwordChanged && passwordProvided) || usernameChanged || emailChanged) {
+      try {
+        // Try to sync password via API route (non-blocking)
+        fetch('/api/teachers/sync-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: teacher.email, 
+            password: passwordProvided ? teacher.password : originalTeacher?.password,
+            oldEmail: originalTeacher?.email 
+          })
+        }).catch(() => {
+          // Silently fail - the login flow will handle auth sync if needed
+        });
+      } catch (syncError) {
+        // Continue anyway - the update was successful in the teachers table
+      }
+    }
+
+    // Update roles
+    await supabase
+      .from('teacher_roles')
+      .delete()
+      .eq('teacher_id', teacher.id);
+
+    const rolePromises = teacher.roles.map(role =>
+      supabase
+        .from('teacher_roles')
+        .insert([{ teacher_id: teacher.id, role }])
+    );
+
+    await Promise.all(rolePromises);
+
+    set(state => ({
+      teachers: state.teachers.map(t =>
+        t.id === teacher.id ? teacher : t
+      )
+    }));
   },
 
   setTeacherStatus: async (id, status) => {

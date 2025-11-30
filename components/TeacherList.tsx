@@ -125,7 +125,8 @@ export function TeacherList() {
           </div>
           <TeacherForm 
             editTeacher={editingTeacher} 
-            onUpdate={() => setEditingTeacher(null)} 
+            onUpdate={() => setEditingTeacher(null)}
+            onCancel={handleCancel}
           />
         </div>
       )}
