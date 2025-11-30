@@ -12,6 +12,7 @@ export function Navigation() {
   const { signOut, user } = useAuthStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
   const [isPointsOpen, setIsPointsOpen] = useState(false);
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [isItqonOpen, setIsItqonOpen] = useState(false);
@@ -30,6 +31,7 @@ export function Navigation() {
 
   const closeAllDropdowns = () => {
     setIsOpen(false);
+    setIsActivitiesOpen(false);
     setIsPointsOpen(false);
     setIsBillingOpen(false);
     setIsItqonOpen(false);
@@ -214,30 +216,22 @@ export function Navigation() {
 
             <Link href="/groups" className="hover:text-gray-300 font-semibold">Groups</Link>
 
-            {/* Badges - Admin and Teacher */}
-            {(user?.role === 'admin' || user?.role === 'teacher') && (
-              <Link href="/badges" className="hover:text-gray-300">Badges</Link>
-            )}
-
             {/* Reports - Admin and Teacher */}
             {(user?.role === 'admin' || user?.role === 'teacher') && (
               <Link href="/student-reports" className="hover:text-gray-300">Reports</Link>
             )}
             
-            {/* Points - Admin and Teacher */}
+            {/* Activities - Admin and Teacher */}
             {(user?.role === 'admin' || user?.role === 'teacher') && renderDropdown(
-              isPointsOpen,
-              setIsPointsOpen,
-              'Points',
+              isActivitiesOpen,
+              setIsActivitiesOpen,
+              'Activities',
               [
+                { href: '/badges', label: 'Badges' },
                 { href: '/points', label: 'Points' },
-                { href: '/student-points', label: 'Student Points' }
+                { href: '/student-points', label: 'Student Points' },
+                { href: '/redeem', label: 'Redeem' }
               ]
-            )}
-            
-            {/* Redeem - Admin and Teacher */}
-            {(user?.role === 'admin' || user?.role === 'teacher') && (
-              <Link href="/redeem" className="hover:text-gray-300">Redeem</Link>
             )}
 
             {/* Itqon - All users */}
@@ -394,17 +388,6 @@ export function Navigation() {
                 Groups
               </Link>
 
-              {/* Badges - Admin and Teacher */}
-              {(user?.role === 'admin' || user?.role === 'teacher') && (
-                <Link
-                  href="/badges"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  onClick={handleMobileLinkClick}
-                >
-                  Badges
-                </Link>
-              )}
-
               {/* Reports - Admin and Teacher */}
               {(user?.role === 'admin' || user?.role === 'teacher') && (
                 <Link
@@ -416,26 +399,17 @@ export function Navigation() {
                 </Link>
               )}
 
-              {/* Points - Admin and Teacher */}
+              {/* Activities - Admin and Teacher */}
               {(user?.role === 'admin' || user?.role === 'teacher') && renderMobileDropdown(
-                isPointsOpen,
-                setIsPointsOpen,
-                'Points',
+                isActivitiesOpen,
+                setIsActivitiesOpen,
+                'Activities',
                 [
+                  { href: '/badges', label: 'Badges' },
                   { href: '/points', label: 'Points' },
-                  { href: '/student-points', label: 'Student Points' }
+                  { href: '/student-points', label: 'Student Points' },
+                  { href: '/redeem', label: 'Redeem' }
                 ]
-              )}
-
-              {/* Redeem - Admin and Teacher */}
-              {(user?.role === 'admin' || user?.role === 'teacher') && (
-                <Link
-                  href="/redeem"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  onClick={handleMobileLinkClick}
-                >
-                  Redeem
-                </Link>
               )}
 
               {/* Itqon - All users */}
