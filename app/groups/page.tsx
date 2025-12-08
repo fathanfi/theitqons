@@ -802,6 +802,48 @@ export default function GroupsPage() {
                 </div>
               </div>
               <div className="space-y-2">
+                {/* Progress Report */}
+                {showReportProgress && (() => {
+                  const activeStudents = sortedStudents.filter(s => s.status);
+                  const totalActive = activeStudents.length;
+                  
+                  const semester1Complete = activeStudents.filter(student => 
+                    studentReports[student.id]?.[1] === 'complete'
+                  ).length;
+                  
+                  const semester2Complete = activeStudents.filter(student => 
+                    studentReports[student.id]?.[2] === 'complete'
+                  ).length;
+                  
+                  const semester1Percentage = totalActive > 0 ? Math.round((semester1Complete / totalActive) * 100) : 0;
+                  const semester2Percentage = totalActive > 0 ? Math.round((semester2Complete / totalActive) * 100) : 0;
+                  
+                  return (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                      <h4 className={`text-base font-bold mb-3 ${getTextClasses('primary')}`}>Progress Report:</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white p-3 rounded-md border border-blue-200 flex flex-col items-center justify-center">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">Semester 1</div>
+                          <div className={`text-[30px] font-bold mb-1 ${theme === 'light' ? 'text-indigo-600' : theme === 'colorful' ? 'text-purple-500' : 'text-indigo-400'}`}>
+                            {semester1Percentage}%
+                          </div>
+                          <div className="text-xs font-medium text-gray-600">
+                            {semester1Complete} / {totalActive}
+                          </div>
+                        </div>
+                        <div className="bg-white p-3 rounded-md border border-blue-200 flex flex-col items-center justify-center">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">Semester 2</div>
+                          <div className={`text-[30px] font-bold mb-1 ${theme === 'light' ? 'text-indigo-600' : theme === 'colorful' ? 'text-purple-500' : 'text-indigo-400'}`}>
+                            {semester2Percentage}%
+                          </div>
+                          <div className="text-xs font-medium text-gray-600">
+                            {semester2Complete} / {totalActive}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="flex justify-between items-center">
                   <h4 className={`font-medium ${getTextClasses('primary')}`}>Daftar Santri:</h4>
                   {showAbsenceTemplate && currentAcademicYear && (
@@ -1053,6 +1095,42 @@ export default function GroupsPage() {
           );
         })}
       </div>
+
+      {/* Progress Report Summary */}
+      {showReportProgress && filteredGroups.length > 0 && (
+        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-900">Progress Report Summary</h2>
+          <div className="space-y-2">
+            {filteredGroups.map((group, index) => {
+              const class_ = classes.find(c => c.id === group.classId);
+              const teacher = useSchoolStore.getState().teachers.find(t => t.id === group.teacherId);
+              const groupStudents = (group.students || [])
+                .map(id => students.find(s => s.id === id))
+                .filter((student): student is Student => student !== undefined)
+                .filter(student => showInactive || student.status);
+              
+              const totalActive = groupStudents.length;
+              
+              const semester1Complete = groupStudents.filter(student => 
+                studentReports[student.id]?.[1] === 'complete'
+              ).length;
+              
+              const semester2Complete = groupStudents.filter(student => 
+                studentReports[student.id]?.[2] === 'complete'
+              ).length;
+              
+              const semester1Percentage = totalActive > 0 ? Math.round((semester1Complete / totalActive) * 100) : 0;
+              const semester2Percentage = totalActive > 0 ? Math.round((semester2Complete / totalActive) * 100) : 0;
+              
+              return (
+                <div key={group.id} className="text-base text-gray-700 py-1">
+                  {index + 1}. {group.name}/{class_?.name || 'No Class'}/{teacher?.name || 'No Teacher'}, Semester 1 {semester1Percentage}%, Semester 2 {semester2Percentage}%
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Attendance Popup */}
       {popupData && (
