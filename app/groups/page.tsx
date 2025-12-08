@@ -39,19 +39,19 @@ export default function GroupsPage() {
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('ALL');
   const [studentSortOrder, setStudentSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showInactive, setShowInactive] = useState(false);
-  const [showLevel, setShowLevel] = useState(true);
+  const [showLevel, setShowLevel] = useState(false);
   const [showPoints, setShowPoints] = useState(false);
   const [studentPoints, setStudentPoints] = useState<{[key: string]: number}>({});
   const { showUnauthorized } = useUnauthorized();
   const { user } = useAuthStore();
-  const [showReportProgress, setShowReportProgress] = useState(false);
+  const [showReportProgress, setShowReportProgress] = useState(true);
   const [reportSessionFilter, setReportSessionFilter] = useState<'ALL' | 1 | 2>('ALL');
   const [studentReports, setStudentReports] = useState<{ [studentId: string]: { [sessionId: number]: string } }>({});
-  const [showBadges, setShowBadges] = useState(true);
+  const [showBadges, setShowBadges] = useState(false);
   const [showLastExam, setShowLastExam] = useState(false);
-  const [showAge, setShowAge] = useState(true);
+  const [showAge, setShowAge] = useState(false);
   const [showProfilePicture, setShowProfilePicture] = useState(true);
-  const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(true);
+  const [showAbsenceTemplate, setShowAbsenceTemplate] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [popupData, setPopupData] = useState<{
@@ -75,7 +75,7 @@ export default function GroupsPage() {
   } | null>(null);
   const [isMarkingPresent, setIsMarkingPresent] = useState(false);
   const [theme, setTheme] = useState<'black' | 'light' | 'colorful'>('light');
-  const [columnLayout, setColumnLayout] = useState<1 | 2 | 3>(1);
+  const [columnLayout, setColumnLayout] = useState<1 | 2 | 3>(3);
   const itqonExams = useExamStore((state) => state.itqonExams);
   const loadItqonExams = useExamStore((state) => state.loadItqonExams);
   
