@@ -782,7 +782,7 @@ export default function StudentReportsPage() {
     doc.setTextColor(0, 0, 0);
     // Fixed date: 23 June 2025
     const place = signatures.place || 'Kota Tasikmalaya';
-    const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+    const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
     doc.text(`${place}, ${fixedDate}`, 105, y, { align: 'center' });
     y += 2;
 
@@ -1265,7 +1265,7 @@ export default function StudentReportsPage() {
       {/* Place and Date above signature names (UI/Print) */}
       <div className="bg-white rounded shadow p-4 flex flex-col items-center mb-2">
         <div className="flex items-center gap-4 mb-2">
-          <span className="font-medium">{signatures.place || 'Kota Tasikmalaya'}, 23 Juni 2025 / 27 Dzulhijjah 1446 H</span>
+          <span className="font-medium">{signatures.place || 'Kota Tasikmalaya'}, 18 Desember 2025 / 27 Jumadil Akhir 1447 H</span>
         </div>
       </div>
       <div className="bg-white rounded shadow p-4 grid grid-cols-3 gap-8 items-end">

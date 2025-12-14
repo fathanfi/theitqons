@@ -481,14 +481,14 @@ export default function StudentReportsPage() {
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
         doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
       } else if (selectedTheme === 2) {
         // Place and Date
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
         doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
       }
       
@@ -560,7 +560,7 @@ export default function StudentReportsPage() {
       doc.setFontSize(14);
       doc.setTextColor(60, 70, 90);
       const place = 'Kota Tasikmalaya';
-      const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+      const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
       doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
       y += 10;
 
@@ -774,14 +774,14 @@ export default function StudentReportsPage() {
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
         doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
       } else if (selectedTheme === 2) {
         // Place and Date
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
         doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
       }
 
@@ -846,7 +846,7 @@ export default function StudentReportsPage() {
       doc.setFontSize(14);
       doc.setTextColor(60, 70, 90);
       const place = 'Kota Tasikmalaya';
-      const fixedDate = '23 Juni 2025 / 27 Dzulhijjah 1446 H';
+      const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
       doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
       y += 10;
 
