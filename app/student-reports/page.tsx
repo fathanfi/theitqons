@@ -16,6 +16,8 @@ const SESSIONS = [
   { id: 2, name: '2' },
 ];
 const PREDICATES = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif", "100%", "75%", "50%", "25%", "0%"];
+const PREDICATES_ONLY = ["Mumtaz", "Jayyid Jiddan", "Jayyid", "Dhoif"];
+const PERCENTAGES_ONLY = ["100%", "75%", "50%", "25%", "0%"];
 
 // Helper to load image as base64 at runtime
 function getBase64FromUrl(url: string): Promise<string> {
@@ -83,6 +85,9 @@ const ZIYADAH_DESCRIPTIONS: Record<string, string> = {
 const SCORE_NAMES = [
   'PILIH MATERI',
   'CUSTOM',
+  'KENAIKAN JUZ 30',
+  'KENAIKAN JUZ 29',
+  'KENAIKAN JUZ 28',
   'IQ-0 HIJAIYAH, TAHSIN DASAR',
   'ITQON 1 ANNAAS - AL A\'LA',
   'ITQON 2 AT THORIQ  - AN-NABA',
@@ -218,8 +223,13 @@ export default function StudentReportsPage() {
     fetchTeacherId();
   }, [user?.email]);
 
-  // Student search filter
+  // Student search filter - only show active students
   const filteredStudents = students.filter((s) => {
+    // Only show active students
+    if (!s.status) {
+      return false;
+    }
+
     // If user is a teacher, only show their students
     if (user?.role === 'teacher') {
       // Get all groups for this teacher using the correct teacher ID
@@ -1071,34 +1081,42 @@ export default function StudentReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(ziyadah).map(([aspect, val]) => (
-                <tr key={aspect}>
-                  <td className="border px-2 py-1 capitalize">{aspect}</td>
-                  <td className="border px-2 py-1 no-print">
-                    <select 
-                      value={val.predicate} 
-                      onChange={e => handleZiyadahChange(aspect, "predicate", e.target.value)}
-                      onBlur={handleFieldBlur}
-                      className="border rounded px-3 py-2 w-full sm:w-48"
-                    >
-                      <option value="">-</option>
-                      {PREDICATES.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                    <input 
-                      value={val.description} 
-                      onChange={e => handleZiyadahChange(aspect, "description", e.target.value)}
-                      onBlur={handleFieldBlur}
-                      className="border rounded px-3 py-2 w-full min-h-[40px]" 
-                      maxLength={100}
-                    />
-                    <span className="ml-2 text-xs text-gray-500">
-                      Word count: {countWords(val.description)}/10
-                    </span>
-                  </td>
-                  <td className="border px-2 py-1 print-only">{val.predicate}</td>
-                  <td className="border px-2 py-1 print-only">{val.description}</td>
-                </tr>
-              ))}
+              {Object.entries(ziyadah).map(([aspect, val]) => {
+                // For Target, show only percentage options
+                // For Adab, Murajaah, Tahsin, show only predicate options
+                const isTarget = aspect === 'target';
+                const options = isTarget ? PERCENTAGES_ONLY : PREDICATES_ONLY;
+                
+                return (
+                  <tr key={aspect}>
+                    <td className="border px-2 py-1 capitalize">{aspect}</td>
+                    <td className="border px-2 py-1 no-print">
+                      <select 
+                        value={val.predicate} 
+                        onChange={e => handleZiyadahChange(aspect, "predicate", e.target.value)}
+                        onBlur={handleFieldBlur}
+                        className="border rounded px-3 py-2 w-full sm:w-48"
+                      >
+                        <option value="">-</option>
+                        {options.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      <input 
+                        value={val.description} 
+                        onChange={e => handleZiyadahChange(aspect, "description", e.target.value)}
+                        onBlur={handleFieldBlur}
+                        className="border rounded px-3 py-2 w-full min-h-[40px] mt-2" 
+                        maxLength={100}
+                        placeholder="Description (auto-filled when predicate is selected)"
+                      />
+                      <span className="ml-2 text-xs text-gray-500">
+                        Word count: {countWords(val.description)}/10
+                      </span>
+                    </td>
+                    <td className="border px-2 py-1 print-only">{val.predicate}</td>
+                    <td className="border px-2 py-1 print-only">{val.description}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
