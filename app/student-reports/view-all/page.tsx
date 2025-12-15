@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSchoolStore } from '@/store/schoolStore';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/authStore';
@@ -63,10 +63,11 @@ export default function ViewAllReports() {
   const groups = useSchoolStore((state) => state.groups);
   const loadGroups = useSchoolStore((state) => state.loadGroups);
 
-  const [academicYear, setAcademicYear] = useState<string>('90943225-94d0-450c-a163-dfb68ebf4f34');
-  const [sessionId, setSessionId] = useState<number>(2); // Fixed to SM2
+  const [academicYear, setAcademicYear] = useState<string>('');
+  const [sessionId, setSessionId] = useState<number>(1);
   const [classId, setClassId] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
+  const [classificationType, setClassificationType] = useState<'class' | 'group'>('group');
 
   // Fetch teacher ID when user changes
   useEffect(() => {
@@ -263,50 +264,116 @@ export default function ViewAllReports() {
     return total.toFixed(2);
   };
 
-  // Add sorting function
-  const sortReports = (reports: StudentReport[]) => {
-    if (!sortConfig.key) return reports;
+  // Helper function to get class ID for a report
+  const getClassIdForReport = (report: StudentReport): string => {
+    const student = students.find(s => s.id === report.student_id);
+    if (!student) return '';
 
-    return [...reports].sort((a, b) => {
-      let aValue: number | string = 0;
-      let bValue: number | string = 0;
+    // Try to find the student's group and get its classId
+    const studentGroup = groups.find(g => g.students?.includes(report.student_id));
+    if (studentGroup && studentGroup.classId) {
+      return studentGroup.classId;
+    }
 
-      switch (sortConfig.key) {
-        case 'attendance':
-          aValue = a.meta_values.attendance.present;
-          bValue = b.meta_values.attendance.present;
-          break;
-        case 'ziyadah':
-          aValue = Number(calculateZiyadahScore(a.meta_values.ziyadah)) || 0;
-          bValue = Number(calculateZiyadahScore(b.meta_values.ziyadah)) || 0;
-          break;
-        case 'exam':
-          aValue = Number(calculateAverageScore(a.meta_values.score)) || 0;
-          bValue = Number(calculateAverageScore(b.meta_values.score)) || 0;
-          break;
-        case 'total':
-          aValue = Number(calculateTotalScore(
-            a.meta_values.ziyadah,
-            a.meta_values.attendance,
-            a.meta_values.score
-          )) || 0;
-          bValue = Number(calculateTotalScore(
-            b.meta_values.ziyadah,
-            b.meta_values.attendance,
-            b.meta_values.score
-          )) || 0;
-          break;
-        default:
-          return 0;
-      }
+    // Fallback to student's class_id
+    return student.class_id || '';
+  };
 
-      if (aValue === bValue) return 0;
-      if (sortConfig.direction === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
+  // Helper function to get group ID for a report (returns the most recent group)
+  const getGroupIdForReport = (report: StudentReport): string => {
+    // Find all groups containing this student, sorted by most recent
+    const studentGroups = groups
+      .filter(g => g.students?.includes(report.student_id))
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (dateB !== dateA) {
+          return dateB - dateA;
+        }
+        return (b.id || '').localeCompare(a.id || '');
+      });
+    
+    return studentGroups.length > 0 ? studentGroups[0].id : 'unassigned';
+  };
+
+  // Sort reports by total score (descending)
+  const sortReportsByTotalScore = (reportList: StudentReport[]) => {
+    return [...reportList].sort((a, b) => {
+      const aTotal = Number(calculateTotalScore(
+        a.meta_values.ziyadah,
+        a.meta_values.attendance,
+        a.meta_values.score
+      )) || 0;
+      const bTotal = Number(calculateTotalScore(
+        b.meta_values.ziyadah,
+        b.meta_values.attendance,
+        b.meta_values.score
+      )) || 0;
+      return bTotal - aTotal; // Descending order
     });
+  };
+
+  // Group and sort reports by classification type (class or group), then by total score
+  const groupAndSortReports = (reports: StudentReport[]) => {
+    if (classificationType === 'class') {
+      // Group by class
+      const groupedByClass: Record<string, StudentReport[]> = {};
+      
+      reports.forEach(report => {
+        const classId = getClassIdForReport(report);
+        const classKey = classId || 'unassigned';
+        
+        if (!groupedByClass[classKey]) {
+          groupedByClass[classKey] = [];
+        }
+        groupedByClass[classKey].push(report);
+      });
+
+      // Sort each group by total score (descending)
+      Object.keys(groupedByClass).forEach(classKey => {
+        groupedByClass[classKey] = sortReportsByTotalScore(groupedByClass[classKey]);
+      });
+
+      // Return grouped reports as an array of { id, name, type, reports } objects
+      return Object.entries(groupedByClass).map(([classId, classReports]) => {
+        const classInfo = classes.find(c => c.id === classId);
+        return {
+          id: classId,
+          name: classInfo?.name || (classId === 'unassigned' ? 'Unassigned' : 'Unknown Class'),
+          type: 'class' as const,
+          reports: classReports
+        };
+      });
+    } else {
+      // Group by group
+      const groupedByGroup: Record<string, StudentReport[]> = {};
+      
+      reports.forEach(report => {
+        const groupId = getGroupIdForReport(report);
+        const groupKey = groupId || 'unassigned';
+        
+        if (!groupedByGroup[groupKey]) {
+          groupedByGroup[groupKey] = [];
+        }
+        groupedByGroup[groupKey].push(report);
+      });
+
+      // Sort each group by total score (descending)
+      Object.keys(groupedByGroup).forEach(groupKey => {
+        groupedByGroup[groupKey] = sortReportsByTotalScore(groupedByGroup[groupKey]);
+      });
+
+      // Return grouped reports as an array of { id, name, type, reports } objects
+      return Object.entries(groupedByGroup).map(([groupId, groupReports]) => {
+        const groupInfo = groups.find(g => g.id === groupId);
+        return {
+          id: groupId,
+          name: groupInfo?.name || (groupId === 'unassigned' ? 'Unassigned' : 'Unknown Group'),
+          type: 'group' as const,
+          reports: groupReports
+        };
+      });
+    }
   };
 
   // Add sort handler
@@ -344,12 +411,36 @@ export default function ViewAllReports() {
       {/* Filters */}
       <div className="bg-white rounded shadow p-4 flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap">
         <div className="w-full md:w-auto">
+          <label className="block text-sm font-medium">Classification</label>
+          <div className="mt-1 flex gap-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="group"
+                checked={classificationType === 'group'}
+                onChange={(e) => setClassificationType(e.target.value as 'class' | 'group')}
+                className="mr-2"
+              />
+              <span className="text-sm">By Group</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="class"
+                checked={classificationType === 'class'}
+                onChange={(e) => setClassificationType(e.target.value as 'class' | 'group')}
+                className="mr-2"
+              />
+              <span className="text-sm">By Class</span>
+            </label>
+          </div>
+        </div>
+        <div className="w-full md:w-auto">
           <label className="block text-sm font-medium">Academic Year</label>
           <select 
             value={academicYear} 
             onChange={e => setAcademicYear(e.target.value)} 
             className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-            disabled
           >
             {academicYears.map(y => (
               <option key={y.id} value={y.id}>
@@ -364,7 +455,6 @@ export default function ViewAllReports() {
             value={sessionId} 
             onChange={e => setSessionId(Number(e.target.value))} 
             className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-            disabled
           >
             {SESSIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
@@ -399,6 +489,12 @@ export default function ViewAllReports() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('total')}
+              >
+                Total Score <SortIndicator columnKey="total" />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adab</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Murajaah</th>
@@ -423,12 +519,6 @@ export default function ViewAllReports() {
               >
                 Exam Score <SortIndicator columnKey="exam" />
               </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('total')}
-              >
-                Total Score <SortIndicator columnKey="total" />
-              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -445,86 +535,108 @@ export default function ViewAllReports() {
                 </td>
               </tr>
             ) : (
-              sortReports(reports).map((report, index) => {
-                const student = students.find(s => s.id === report.student_id);
-                const averageScore = calculateAverageScore(report.meta_values.score);
-                const ziyadahScore = calculateZiyadahScore(report.meta_values.ziyadah);
-                const totalScore = calculateTotalScore(
-                  report.meta_values.ziyadah,
-                  report.meta_values.attendance,
-                  report.meta_values.score
-                );
-                const isExpanded = expandedRow === report.id;
+              (() => {
+                const groupedReports = groupAndSortReports(reports);
+                let globalIndex = 0;
 
-                return (
-                  <>
-                    <tr key={report.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student?.name || 'Unknown'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.adab.predicate}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.murajaah.predicate}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.tahsin.predicate}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.target.predicate}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {report.meta_values.attendance.present}%
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <button
-                          onClick={() => setExpandedRow(isExpanded ? null : report.id)}
-                          className="text-blue-600 hover:text-blue-800 focus:outline-none"
-                        >
-                          {isExpanded ? 'Hide Details' : 'View Details'}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ziyadahScore}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {averageScore}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {totalScore}
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr>
-                        <td colSpan={11} className="px-6 py-4 bg-gray-50">
-                          <div className="space-y-4">
-                            <h4 className="font-semibold text-gray-900">Score Details</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {report.meta_values.score.map((score, idx) => (
-                                <div key={idx} className="bg-white p-4 rounded shadow">
-                                  <h5 className="font-medium text-gray-900 mb-2">
-                                    {score.name === 'CUSTOM' ? score.customName : score.name}
-                                  </h5>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">Tahfidz:</span>
-                                      <span className="font-medium">{score.tahfidz_score}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">Tahsin:</span>
-                                      <span className="font-medium">{score.tahsin_score}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mt-4 flex justify-end">
-                              <button
-                                onClick={() => window.location.href = `/student-reports?studentId=${report.student_id}`}
-                                className="text-blue-600 hover:text-blue-800 focus:outline-none"
-                              >
-                                View Full Report →
-                              </button>
-                            </div>
-                          </div>
+                return groupedReports.map((group) => {
+                  const headerLabel = group.type === 'class' ? 'Class' : 'Group';
+                  const headerName = group.name;
+
+                  return (
+                    <React.Fragment key={`${group.type}-${group.id}`}>
+                      {/* Classification Header (Class or Group) */}
+                      <tr className="bg-gray-100">
+                        <td colSpan={11} className="px-6 py-3 text-left text-sm font-bold text-gray-900 border-t-2 border-gray-300">
+                          {headerLabel}: {headerName} ({group.reports.length} {group.reports.length === 1 ? 'student' : 'students'})
                         </td>
                       </tr>
-                    )}
-                  </>
-                );
-              })
+                      {/* Reports for this group/class */}
+                      {group.reports.map((report: StudentReport) => {
+                        globalIndex++;
+                        const student = students.find(s => s.id === report.student_id);
+                        const averageScore = calculateAverageScore(report.meta_values.score);
+                        const ziyadahScore = calculateZiyadahScore(report.meta_values.ziyadah);
+                        const totalScore = calculateTotalScore(
+                          report.meta_values.ziyadah,
+                          report.meta_values.attendance,
+                          report.meta_values.score
+                        );
+                        const isExpanded = expandedRow === report.id;
+
+                        return (
+                          <React.Fragment key={report.id}>
+                            <tr>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{globalIndex}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                                {totalScore}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student?.name || 'Unknown'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.adab.predicate}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.murajaah.predicate}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.tahsin.predicate}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.target.predicate}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {report.meta_values.attendance.present}%
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                <button
+                                  onClick={() => setExpandedRow(isExpanded ? null : report.id)}
+                                  className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                                >
+                                  {isExpanded ? 'Hide Details' : 'View Details'}
+                                </button>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {ziyadahScore}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {averageScore}
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={11} className="px-6 py-4 bg-gray-50">
+                                  <div className="space-y-4">
+                                    <h4 className="font-semibold text-gray-900">Score Details</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                      {report.meta_values.score.map((score: { name: string; tahfidz_score: string; tahsin_score: string; customName: string }, idx: number) => (
+                                        <div key={idx} className="bg-white p-4 rounded shadow">
+                                          <h5 className="font-medium text-gray-900 mb-2">
+                                            {score.name === 'CUSTOM' ? score.customName : score.name}
+                                          </h5>
+                                          <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Tahfidz:</span>
+                                              <span className="font-medium">{score.tahfidz_score}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Tahsin:</span>
+                                              <span className="font-medium">{score.tahsin_score}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="mt-4 flex justify-end">
+                                      <button
+                                        onClick={() => window.location.href = `/student-reports?studentId=${report.student_id}`}
+                                        className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                                      >
+                                        View Full Report →
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                });
+              })()
             )}
           </tbody>
         </table>

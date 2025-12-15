@@ -177,17 +177,37 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
         .from('group_students')
         .select(`
           groups!inner (
+            id,
+            created_at,
             teacher:teachers (
               name
             )
           )
         `)
-        .eq('student_id', studentId)
-        .single();
+        .eq('student_id', studentId);
 
       if (error) throw error;
-      // groups is likely an array or object with teacher as array
-      const group = Array.isArray(data?.groups) ? data.groups[0] : data?.groups;
+      if (!data || data.length === 0) return '';
+
+      // If there are multiple groups, sort by created_at (most recent first), then by id (highest)
+      const sortedData = [...data].sort((a, b) => {
+        const groupA = Array.isArray(a.groups) ? a.groups[0] : a.groups;
+        const groupB = Array.isArray(b.groups) ? b.groups[0] : b.groups;
+        
+        // Sort by created_at descending (most recent first)
+        const dateA = groupA?.created_at ? new Date(groupA.created_at).getTime() : 0;
+        const dateB = groupB?.created_at ? new Date(groupB.created_at).getTime() : 0;
+        
+        if (dateB !== dateA) {
+          return dateB - dateA; // Descending order (most recent first)
+        }
+        
+        // If created_at is the same, sort by id (highest/UUID lexicographically)
+        return (groupB?.id || '').localeCompare(groupA?.id || '');
+      });
+
+      const firstEntry = sortedData[0];
+      const group = Array.isArray(firstEntry?.groups) ? firstEntry.groups[0] : firstEntry?.groups;
       const teacher = group?.teacher;
       if (Array.isArray(teacher)) {
         // Explicitly cast as any to avoid TS inferring never
@@ -257,14 +277,35 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
         .from('group_students')
         .select(`
           groups!inner (
+            id,
+            created_at,
             name
           )
         `)
-        .eq('student_id', studentId)
-        .single();
+        .eq('student_id', studentId);
 
       if (error) throw error;
-      const group = Array.isArray(data?.groups) ? data.groups[0] : data?.groups;
+      if (!data || data.length === 0) return '';
+
+      // If there are multiple groups, sort by created_at (most recent first), then by id (highest)
+      const sortedData = [...data].sort((a, b) => {
+        const groupA = Array.isArray(a.groups) ? a.groups[0] : a.groups;
+        const groupB = Array.isArray(b.groups) ? b.groups[0] : b.groups;
+        
+        // Sort by created_at descending (most recent first)
+        const dateA = groupA?.created_at ? new Date(groupA.created_at).getTime() : 0;
+        const dateB = groupB?.created_at ? new Date(groupB.created_at).getTime() : 0;
+        
+        if (dateB !== dateA) {
+          return dateB - dateA; // Descending order (most recent first)
+        }
+        
+        // If created_at is the same, sort by id (highest/UUID lexicographically)
+        return (groupB?.id || '').localeCompare(groupA?.id || '');
+      });
+
+      const firstEntry = sortedData[0];
+      const group = Array.isArray(firstEntry?.groups) ? firstEntry.groups[0] : firstEntry?.groups;
       if (group && typeof group === 'object' && 'name' in group) {
         return group.name;
       } else {
