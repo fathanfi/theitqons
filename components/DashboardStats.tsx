@@ -149,6 +149,12 @@ export function DashboardStats() {
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(item => {
     if (!user) return false;
+    
+    // Special case: 'ayuhana' user should see Certificates menu
+    if (item.href === '/certificates' && user.email === 'ayu.hana@pptqmiftahulkhoir.id') {
+      return true;
+    }
+    
     if (item.role === 'all') return true;
     if (Array.isArray(item.role)) {
       return item.role.includes(user.role);

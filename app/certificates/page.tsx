@@ -86,7 +86,7 @@ export default function StudentReportsPage() {
   const [teacherId, setTeacherId] = useState<string>('');
 
   const [academicYear, setAcademicYear] = useState<string>('');
-  const [sessionId, setSessionId] = useState<number>(2); // Fixed to SM2
+  const [sessionId, setSessionId] = useState<number>(1); // Fixed to SM2
   const [classId, setClassId] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
   const [className, setClassName] = useState<string>('');
@@ -146,6 +146,11 @@ export default function StudentReportsPage() {
 
   // Student search filter
   const filteredStudents = students.filter((s) => {
+    // If username is 'ayuhana', show all students like admin
+    if (user?.email === 'ayu.hana@pptqmiftahulkhoir.id') {
+      return !classId || s.class_id === classId;
+    }
+
     // If user is a teacher, only show their students
     if (user?.role === 'teacher') {
       // Get all groups for this teacher using the correct teacher ID
@@ -980,7 +985,6 @@ export default function StudentReportsPage() {
             value={sessionId} 
             onChange={e => setSessionId(Number(e.target.value))} 
             className="mt-1 block w-full md:w-auto border rounded px-2 py-1"
-            disabled
           >
             {SESSIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>

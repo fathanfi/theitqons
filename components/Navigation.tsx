@@ -130,12 +130,17 @@ export function Navigation() {
     { href: '/student-points', label: 'Points', icon: '⭐', bg: 'bg-yellow-400' },
     { href: '/redeem', label: 'Redeem', icon: '🎁', bg: 'bg-blue-600' },
     { href: '/billing', label: 'Billing', icon: '💰', bg: 'bg-red-500' },
-    { href: '/student-reports', label: 'Reports', icon: '📝', bg: 'bg-green-500' }
+    { href: '/student-reports', label: 'Reports', icon: '📝', bg: 'bg-green-500' },
+    { href: '/certificates', label: 'Certificates', icon: '🔖', bg: 'bg-purple-500' }
   ];
 
   // Filter quick access items based on user role
   const filteredQuickAccessItems = quickAccessItems.filter(item => {
     if (!user) return false;
+    // Special case: 'ayuhana' user should see Certificates
+    if (item.href === '/certificates' && user.email === 'ayu.hana@pptqmiftahulkhoir.id') {
+      return true;
+    }
     if (user.role === 'admin') return true;
     if (user.role === 'teacher') {
       return ['/groups', '/levels', '/student-points', '/redeem', '/billing', '/student-reports'].includes(item.href);
@@ -219,6 +224,11 @@ export function Navigation() {
             {/* Reports - Admin and Teacher */}
             {(user?.role === 'admin' || user?.role === 'teacher') && (
               <Link href="/student-reports" className="hover:text-gray-300">Reports</Link>
+            )}
+            
+            {/* Certificates - Admin and ayuhana */}
+            {(user?.role === 'admin' || user?.email === 'ayu.hana@pptqmiftahulkhoir.id') && (
+              <Link href="/certificates" className="hover:text-gray-300">Certificates</Link>
             )}
             
             {/* Activities - Admin and Teacher */}
