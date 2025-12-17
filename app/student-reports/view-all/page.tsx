@@ -600,7 +600,20 @@ export default function ViewAllReports() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                                 {totalScore}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student?.name || 'Unknown'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="relative group inline-block">
+                                  <span className="cursor-help underline decoration-dotted">
+                                    {student?.name || 'Unknown'}
+                                  </span>
+                                  {report.student_id && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 whitespace-normal">
+                                      <div className="font-semibold mb-1">Student ID:</div>
+                                      <div className="font-mono break-all">{report.student_id}</div>
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <div className="relative group inline-block">
                                   <span className="cursor-help underline decoration-dotted">
