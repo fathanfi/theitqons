@@ -109,16 +109,23 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
     // Sanitize values to remove 'eq.' prefix if present
     const clean = (val: string | number) => typeof val === 'string' ? val.replace(/^eq\./, '') : val;
     try {
+      // Use .maybeSingle() instead of .single() to handle cases where no record exists
+      // If multiple records exist, get the most recent one
       const { data, error } = await supabase
         .from('student_reports')
         .select('*')
         .eq('academic_year_id', clean(academicYearId))
         .eq('session_id', clean(sessionId))
         .eq('student_id', clean(studentId))
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) throw error;
-      set({ currentReport: data });
+      
+      // If multiple records exist, we got the most recent one
+      // If no record exists, data will be null
+      set({ currentReport: data || null });
     } catch (error) {
       console.error('Error loading report:', error);
       set({ currentReport: null });
@@ -128,11 +135,37 @@ export const useStudentReportsStore = create<StudentReportsStore>((set, get) => 
   saveReport: async (report) => {
     try {
       const { completion_status, ...rest } = report;
-      const { error } = await supabase
+      
+      // First, check if a report already exists with the same academic_year_id, session_id, and student_id
+      const { data: existingReport, error: checkError } = await supabase
+        .from('student_reports')
+        .select('id, status')
+        .eq('academic_year_id', report.academic_year_id)
+        .eq('session_id', report.session_id)
+        .eq('student_id', report.student_id)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" which is fine
+        throw checkError;
+      }
+
+      // If report exists, update it instead of inserting
+      if (existingReport) {
+        const { error: updateError } = await supabase
+          .from('student_reports')
+          .update({ ...rest, completion_status, updated_at: new Date().toISOString() })
+          .eq('id', existingReport.id);
+
+        if (updateError) throw updateError;
+        return { error: null };
+      }
+
+      // If no report exists, insert a new one
+      const { error: insertError } = await supabase
         .from('student_reports')
         .insert([{ ...rest, status: 'draft', completion_status }]);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
       return { error: null };
     } catch (error) {
       console.error('Error saving report:', error);
