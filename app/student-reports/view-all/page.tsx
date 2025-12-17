@@ -24,6 +24,7 @@ interface StudentReport {
     };
     score: Array<{ name: string; tahfidz_score: string; tahsin_score: string; customName: string }>;
     attendance: { present: number; permit: number; absence: number };
+    notes?: string;
   };
 }
 
@@ -496,10 +497,38 @@ export default function ViewAllReports() {
                 Total Score <SortIndicator columnKey="total" />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adab</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Murajaah</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahsin</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <span className="relative group">
+                  Adab
+                  <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+                    Notes: Hover over a cell to see description
+                  </span>
+                </span>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <span className="relative group">
+                  Murajaah
+                  <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+                    Notes: Hover over a cell to see description
+                  </span>
+                </span>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <span className="relative group">
+                  Tahsin
+                  <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+                    Notes: Hover over a cell to see description
+                  </span>
+                </span>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <span className="relative group">
+                  Target
+                  <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+                    Notes: Hover over a cell to see description
+                  </span>
+                </span>
+              </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('attendance')}
@@ -572,10 +601,62 @@ export default function ViewAllReports() {
                                 {totalScore}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student?.name || 'Unknown'}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.adab.predicate}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.murajaah.predicate}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.tahsin.predicate}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.meta_values.ziyadah.target.predicate}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="relative group inline-block">
+                                  <span className="cursor-help underline decoration-dotted">
+                                    {report.meta_values.ziyadah.adab.predicate}
+                                  </span>
+                                  {report.meta_values.ziyadah.adab.description && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 whitespace-normal">
+                                      <div className="font-semibold mb-1">Adab Notes:</div>
+                                      <div>{report.meta_values.ziyadah.adab.description}</div>
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="relative group inline-block">
+                                  <span className="cursor-help underline decoration-dotted">
+                                    {report.meta_values.ziyadah.murajaah.predicate}
+                                  </span>
+                                  {report.meta_values.ziyadah.murajaah.description && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 whitespace-normal">
+                                      <div className="font-semibold mb-1">Murajaah Notes:</div>
+                                      <div>{report.meta_values.ziyadah.murajaah.description}</div>
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="relative group inline-block">
+                                  <span className="cursor-help underline decoration-dotted">
+                                    {report.meta_values.ziyadah.tahsin.predicate}
+                                  </span>
+                                  {report.meta_values.ziyadah.tahsin.description && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 whitespace-normal">
+                                      <div className="font-semibold mb-1">Tahsin Notes:</div>
+                                      <div>{report.meta_values.ziyadah.tahsin.description}</div>
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div className="relative group inline-block">
+                                  <span className="cursor-help underline decoration-dotted">
+                                    {report.meta_values.ziyadah.target.predicate}
+                                  </span>
+                                  {report.meta_values.ziyadah.target.description && (
+                                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 whitespace-normal">
+                                      <div className="font-semibold mb-1">Target Notes:</div>
+                                      <div>{report.meta_values.ziyadah.target.description}</div>
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {report.meta_values.attendance.present}%
                               </td>
@@ -618,6 +699,16 @@ export default function ViewAllReports() {
                                         </div>
                                       ))}
                                     </div>
+                                    {report.meta_values.notes && (
+                                      <div className="mt-4">
+                                        <h4 className="font-semibold text-gray-900 mb-2">Notes</h4>
+                                        <div className="bg-white p-4 rounded shadow">
+                                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                            {report.meta_values.notes}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
                                     <div className="mt-4 flex justify-end">
                                       <button
                                         onClick={() => window.location.href = `/student-reports?studentId=${report.student_id}`}
