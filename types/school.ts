@@ -91,6 +91,7 @@ export interface SchoolSettings {
   latitude: number;
   longitude: number;
   bankAccount: NameValuePair[];
+  documentDate: string;
   createdAt: string;
   updatedAt: string;
 }

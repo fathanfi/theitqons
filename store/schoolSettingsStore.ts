@@ -24,6 +24,7 @@ function toSnakeCase(obj: Partial<SchoolSettings>): any {
     latitude: obj.latitude,
     longitude: obj.longitude,
     bank_account: obj.bankAccount,
+    document_date: obj.documentDate,
     created_at: obj.createdAt,
     updated_at: obj.updatedAt,
   };
@@ -51,6 +52,7 @@ function toCamelCase(row: any): SchoolSettings {
     latitude: row.latitude,
     longitude: row.longitude,
     bankAccount: row.bank_account,
+    documentDate: row.document_date ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

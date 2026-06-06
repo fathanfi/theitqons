@@ -5,6 +5,8 @@ import { useSchoolStore } from '@/store/schoolStore';
 import { useStore } from '@/store/useStore';
 import { useStudentReportsStore } from '@/store/studentReportsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSchoolSettingsStore } from '@/store/schoolSettingsStore';
+import { getDocumentDate } from '@/lib/documentDate';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Select from 'react-select';
@@ -144,6 +146,8 @@ export default function StudentReportsPage() {
     getLevelName,
     getGroupName
   } = useStudentReportsStore();
+  const { schoolSettings, loadSchoolSettings } = useSchoolSettingsStore();
+  const documentDate = getDocumentDate(schoolSettings);
   const [teacherId, setTeacherId] = useState<string>('');
 
   const [academicYear, setAcademicYear] = useState<string>('');
@@ -272,7 +276,8 @@ export default function StudentReportsPage() {
     loadAcademicYears();
     loadClasses();
     loadStudents();
-  }, [loadAcademicYears, loadClasses, loadStudents]);
+    loadSchoolSettings();
+  }, [loadAcademicYears, loadClasses, loadStudents, loadSchoolSettings]);
 
   // Load groups when academic year changes
   useEffect(() => {
@@ -792,8 +797,7 @@ export default function StudentReportsPage() {
     doc.setTextColor(0, 0, 0);
     // Fixed date: 23 June 2025
     const place = signatures.place || 'Kota Tasikmalaya';
-    const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-    doc.text(`${place}, ${fixedDate}`, 105, y, { align: 'center' });
+    doc.text(`${place}, ${documentDate}`, 105, y, { align: 'center' });
     y += 2;
 
     // --- Signatures ---
@@ -1283,7 +1287,7 @@ export default function StudentReportsPage() {
       {/* Place and Date above signature names (UI/Print) */}
       <div className="bg-white rounded shadow p-4 flex flex-col items-center mb-2">
         <div className="flex items-center gap-4 mb-2">
-          <span className="font-medium">{signatures.place || 'Kota Tasikmalaya'}, 18 Desember 2025 / 27 Jumadil Akhir 1447 H</span>
+          <span className="font-medium">{signatures.place || 'Kota Tasikmalaya'}, {documentDate}</span>
         </div>
       </div>
       <div className="bg-white rounded shadow p-4 grid grid-cols-3 gap-8 items-end">

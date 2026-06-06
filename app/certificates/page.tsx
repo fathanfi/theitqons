@@ -9,6 +9,8 @@ import { jsPDF } from 'jspdf';
 import Select from 'react-select';
 import { supabase } from '@/lib/supabase';
 import { setFontAlegreyaMedium } from './setFontAlegreyaMedium';
+import { useSchoolSettingsStore } from '@/store/schoolSettingsStore';
+import { getDocumentDate } from '@/lib/documentDate';
 
 const SESSIONS = [
   { id: 1, name: '1' },
@@ -83,6 +85,8 @@ export default function StudentReportsPage() {
     getLevelName,
     getGroupName
   } = useStudentReportsStore();
+  const { schoolSettings, loadSchoolSettings } = useSchoolSettingsStore();
+  const documentDate = getDocumentDate(schoolSettings);
   const [teacherId, setTeacherId] = useState<string>('');
 
   const [academicYear, setAcademicYear] = useState<string>('');
@@ -193,7 +197,8 @@ export default function StudentReportsPage() {
     loadAcademicYears();
     loadClasses();
     loadStudents();
-  }, [loadAcademicYears, loadClasses, loadStudents]);
+    loadSchoolSettings();
+  }, [loadAcademicYears, loadClasses, loadStudents, loadSchoolSettings]);
 
   // Load groups when academic year changes
   useEffect(() => {
@@ -486,15 +491,13 @@ export default function StudentReportsPage() {
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+        doc.text(`${place}, ${documentDate}`, centerX, y, { align: 'center' });
       } else if (selectedTheme === 2) {
         // Place and Date
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+        doc.text(`${place}, ${documentDate}`, centerX, y, { align: 'center' });
       }
       
       // Generate PDF blob
@@ -565,8 +568,7 @@ export default function StudentReportsPage() {
       doc.setFontSize(14);
       doc.setTextColor(60, 70, 90);
       const place = 'Kota Tasikmalaya';
-      const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-      doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      doc.text(`${place}, ${documentDate}`, centerX, y, { align: 'center' });
       y += 10;
 
       // Director
@@ -779,15 +781,13 @@ export default function StudentReportsPage() {
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+        doc.text(`${place}, ${documentDate}`, centerX, y, { align: 'center' });
       } else if (selectedTheme === 2) {
         // Place and Date
         doc.setFont('AlegreyaMedium', 'normal');
         doc.setFontSize(14);
         const place = 'Kota Tasikmalaya';
-        const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-        doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+        doc.text(`${place}, ${documentDate}`, centerX, y, { align: 'center' });
       }
 
       // Build file name (UPPERCASE)
@@ -851,8 +851,7 @@ export default function StudentReportsPage() {
       doc.setFontSize(14);
       doc.setTextColor(60, 70, 90);
       const place = 'Kota Tasikmalaya';
-      const fixedDate = '18 Desember 2025 / 27 Jumadil Akhir 1447 H';
-      doc.text(`${place}, ${fixedDate}`, centerX, y, { align: 'center' });
+      doc.text(`${place}, ${documentDate}`, centerX, y, { align: 'center' });
       y += 10;
 
       // Director

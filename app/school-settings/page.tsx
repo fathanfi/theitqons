@@ -38,7 +38,8 @@ export default function SchoolSettingsPage() {
     websiteUrl: '',
     schoolCode: '',
     latitude: 0,
-    longitude: 0
+    longitude: 0,
+    documentDate: ''
   });
 
   useEffect(() => {
@@ -62,7 +63,8 @@ export default function SchoolSettingsPage() {
         websiteUrl: schoolSettings.websiteUrl,
         schoolCode: schoolSettings.schoolCode,
         latitude: schoolSettings.latitude,
-        longitude: schoolSettings.longitude
+        longitude: schoolSettings.longitude,
+        documentDate: schoolSettings.documentDate ?? ''
       });
       setFacilities(schoolSettings.facilities || [{ name: '', value: '' }]);
       setStudentCount(schoolSettings.studentCount || [{ name: '', value: '' }]);
@@ -144,7 +146,8 @@ export default function SchoolSettingsPage() {
         websiteUrl: '',
         schoolCode: '',
         latitude: 0,
-        longitude: 0
+        longitude: 0,
+        documentDate: ''
       });
       setFacilities([{ name: '', value: '' }]);
       setStudentCount([{ name: '', value: '' }]);
@@ -237,6 +240,21 @@ export default function SchoolSettingsPage() {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700">Document Date (Reports &amp; Certificates)</label>
+              <input
+                type="text"
+                name="documentDate"
+                value={formData.documentDate ?? ''}
+                onChange={handleChange}
+                placeholder="18 Desember 2025 / 27 Jumadil Akhir 1447 H"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Shown on student reports and certificates. Override with NEXT_PUBLIC_DOCUMENT_DATE env if unset.
+              </p>
             </div>
 
             <div>
