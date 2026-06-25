@@ -9,6 +9,21 @@ import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
+function FieldLabel({
+  children,
+  required = false,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+}) {
+  return (
+    <label className="block text-sm font-medium text-gray-700">
+      {children}
+      {required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
+    </label>
+  );
+}
+
 export function StudentForm({ 
   onSubmit, 
   initialData, 
@@ -248,8 +263,14 @@ export function StudentForm({
           </button>
         </div>
         <div className="space-y-4">
+          <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+            Fields marked with <span className="text-red-500 font-medium">*</span> are required. You can skip everything else.
+          </p>
+
+          <div className="border border-indigo-100 rounded-lg p-4 space-y-4 bg-indigo-50/30">
+            <h3 className="text-lg font-medium text-gray-900">Required Information</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <FieldLabel required>Name</FieldLabel>
             <input
               type="text"
               name="name"
@@ -265,38 +286,7 @@ export function StudentForm({
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Place of Birth</label>
-            <input
-              type="text"
-              name="placeOfBirth"
-              value={formData.placeOfBirth}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              placeholder="e.g., 08123456789"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Gender</label>
+            <FieldLabel required>Gender</FieldLabel>
             <select
               name="gender"
               value={formData.gender}
@@ -309,7 +299,7 @@ export function StudentForm({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Address</label>
+            <FieldLabel required>Address</FieldLabel>
             <input
               type="text"
               name="address"
@@ -320,7 +310,7 @@ export function StudentForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Class</label>
+            <FieldLabel required>Class</FieldLabel>
             <select
               name="class_id"
               value={formData.class_id}
@@ -337,7 +327,7 @@ export function StudentForm({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Level</label>
+            <FieldLabel required>Level</FieldLabel>
             <select
               name="level_id"
               value={formData.level_id}
@@ -356,13 +346,49 @@ export function StudentForm({
               }
             </select>
           </div>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Additional Details <span className="text-sm font-normal text-gray-500">(optional)</span></h3>
+
+          <div>
+            <FieldLabel>Place of Birth</FieldLabel>
+            <input
+              type="text"
+              name="placeOfBirth"
+              value={formData.placeOfBirth}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <FieldLabel>Date of Birth</FieldLabel>
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+          <div>
+            <FieldLabel>Phone Number</FieldLabel>
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              placeholder="e.g., 08123456789"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
 
           {/* Parent Information Section */}
           <div className="border-t pt-4 mt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Parent Information</h3>
+            <h4 className="text-base font-medium text-gray-900 mb-4">Parent Information</h4>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Father's Name</label>
+                <FieldLabel>Father&apos;s Name</FieldLabel>
                 <input
                   type="text"
                   name="father_name"
@@ -372,7 +398,7 @@ export function StudentForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Mother's Name</label>
+                <FieldLabel>Mother&apos;s Name</FieldLabel>
                 <input
                   type="text"
                   name="mother_name"
@@ -382,7 +408,7 @@ export function StudentForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Wali's Name</label>
+                <FieldLabel>Wali&apos;s Name</FieldLabel>
                 <input
                   type="text"
                   name="wali_name"
@@ -392,7 +418,7 @@ export function StudentForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">School Information</label>
+                <FieldLabel>School Information</FieldLabel>
                 <textarea
                   name="school_info"
                   value={formData.school_info}
@@ -405,7 +431,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Last Achievement</label>
+            <FieldLabel>Last Achievement</FieldLabel>
             <input
               type="text"
               name="lastAchievement"
@@ -417,7 +443,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Total Pages</label>
+            <FieldLabel>Total Pages</FieldLabel>
             <input
               type="number"
               name="totalPages"
@@ -430,7 +456,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">NISP</label>
+            <FieldLabel>NISP</FieldLabel>
             <input
               type="text"
               name="registration_number"
@@ -442,7 +468,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">NIK</label>
+            <FieldLabel>NIK</FieldLabel>
             <input
               type="text"
               name="national_id"
@@ -454,7 +480,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">No. KK</label>
+            <FieldLabel>No. KK</FieldLabel>
             <input
               type="text"
               name="family_id"
@@ -466,7 +492,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Joined Date</label>
+            <FieldLabel>Joined Date</FieldLabel>
             <input
               type="date"
               name="joined_date"
@@ -477,7 +503,7 @@ export function StudentForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Notes</label>
+            <FieldLabel>Notes</FieldLabel>
             <textarea
               name="notes"
               value={formData.notes}
@@ -504,9 +530,7 @@ export function StudentForm({
 
           {/* Profile Picture Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Profile Picture
-            </label>
+            <FieldLabel>Profile Picture</FieldLabel>
             
             {profileImageUrl ? (
               <div className="flex items-center space-x-4">
@@ -580,6 +604,7 @@ export function StudentForm({
                 Uploading image...
               </div>
             )}
+          </div>
           </div>
 
           <button
