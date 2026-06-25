@@ -8,6 +8,8 @@ import { useUnauthorized } from '@/contexts/UnauthorizedContext';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { toast } from '@/components/Toast';
+import { getStudentRegistrationErrorMessage } from '@/lib/studentFormUtils';
 
 function FieldLabel({
   children,
@@ -46,6 +48,8 @@ export function StudentForm({
 
   const [uploading, setUploading] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadClasses();
@@ -121,45 +125,59 @@ export function StudentForm({
       showUnauthorized();
       return;
     }
-    const initials = getInitials(formData.name || '');
-    const avatarType = formData.gender === 'Akhwat' ? 'lorelei' : 'avataaars';
-    const defaultProfileImageUrl = `https://api.dicebear.com/7.x/${avatarType}/svg?seed=${encodeURIComponent(initials)}`;
 
-    await onSubmit({
-      ...formData,
-      profileImageUrl: profileImageUrl || defaultProfileImageUrl,
-      profilePicture: profileImageUrl || '',
-      profile_picture: profileImageUrl || '',
-    } as Student);
+    setSubmitError(null);
+    setIsSubmitting(true);
 
-    if (!initialData) {
-      setFormData({
-        name: '',
-        placeOfBirth: '',
-        dateOfBirth: '',
-        phoneNumber: '',
-        lastAchievement: '',
-        totalPages: 0,
-        gender: 'Ikhwan',
-        address: '',
-        class_id: '',
-        level_id: '',
-        father_name: '',
-        mother_name: '',
-        wali_name: '',
-        school_info: '',
-        status: true,
-        profileImageUrl: '',
-        registration_number: '',
-        national_id: '',
-        family_id: '',
-        joined_date: '',
-        notes: '',
-        badges: [],
-        profilePicture: '',
-        profile_picture: '',
-      });
-      setProfileImageUrl('');
+    try {
+      const initials = getInitials(formData.name || '');
+      const avatarType = formData.gender === 'Akhwat' ? 'lorelei' : 'avataaars';
+      const defaultProfileImageUrl = `https://api.dicebear.com/7.x/${avatarType}/svg?seed=${encodeURIComponent(initials)}`;
+
+      await onSubmit({
+        ...formData,
+        profileImageUrl: profileImageUrl || defaultProfileImageUrl,
+        profilePicture: profileImageUrl || '',
+        profile_picture: profileImageUrl || '',
+      } as Student);
+
+      toast.success(initialData ? 'Student updated successfully.' : 'Student registered successfully.');
+
+      if (!initialData) {
+        setFormData({
+          name: '',
+          placeOfBirth: '',
+          dateOfBirth: '',
+          phoneNumber: '',
+          lastAchievement: '',
+          totalPages: 0,
+          gender: 'Ikhwan',
+          address: '',
+          class_id: '',
+          level_id: '',
+          father_name: '',
+          mother_name: '',
+          wali_name: '',
+          school_info: '',
+          status: true,
+          profileImageUrl: '',
+          registration_number: '',
+          national_id: '',
+          family_id: '',
+          joined_date: '',
+          notes: '',
+          badges: [],
+          profilePicture: '',
+          profile_picture: '',
+        });
+        setProfileImageUrl('');
+      }
+    } catch (error) {
+      const message = getStudentRegistrationErrorMessage(error);
+      setSubmitError(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -263,6 +281,15 @@ export function StudentForm({
           </button>
         </div>
         <div className="space-y-4">
+          {submitError && (
+            <div
+              role="alert"
+              className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            >
+              {submitError}
+            </div>
+          )}
+
           <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
             Fields marked with <span className="text-red-500 font-medium">*</span> are required. You can skip everything else.
           </p>
@@ -346,6 +373,28 @@ export function StudentForm({
               }
             </select>
           </div>
+          <div>
+            <FieldLabel required>Date of Birth</FieldLabel>
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              required
+            />
+          </div>
+          <div>
+            <FieldLabel required>Joined Date</FieldLabel>
+            <input
+              type="date"
+              name="joined_date"
+              value={formData.joined_date}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              required
+            />
+          </div>
           </div>
 
           <div className="border border-gray-200 rounded-lg p-4 space-y-4">
@@ -357,16 +406,6 @@ export function StudentForm({
               type="text"
               name="placeOfBirth"
               value={formData.placeOfBirth}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-          <div>
-            <FieldLabel>Date of Birth</FieldLabel>
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             />
@@ -492,17 +531,6 @@ export function StudentForm({
           </div>
 
           <div>
-            <FieldLabel>Joined Date</FieldLabel>
-            <input
-              type="date"
-              name="joined_date"
-              value={formData.joined_date}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
-          </div>
-
-          <div>
             <FieldLabel>Notes</FieldLabel>
             <textarea
               name="notes"
@@ -609,9 +637,10 @@ export function StudentForm({
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            disabled={isSubmitting}
+            className={`w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {initialData ? 'Update Student' : 'Add Student'}
+            {isSubmitting ? 'Saving...' : initialData ? 'Update Student' : 'Add Student'}
           </button>
         </div>
       </form>

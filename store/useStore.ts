@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Student, Badge, Level, Redemption } from '@/types/student';
 import { supabase } from '@/lib/supabase';
+import { toStudentDbPayload } from '@/lib/studentFormUtils';
 
 interface StudentStore {
   students: Student[];
@@ -98,30 +99,7 @@ export const useStore = create<StudentStore>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('students')
-        .insert([{
-          name: student.name,
-          gender: student.gender,
-          address: student.address,
-          class_id: student.class_id,
-          level_id: student.level_id,
-          father_name: student.father_name,
-          mother_name: student.mother_name,
-          wali_name: student.wali_name,
-          school_info: student.school_info,
-          profile_image_url: student.profileImageUrl,
-          profile_picture: student.profilePicture || '',
-          status: student.status,
-          place_of_birth: student.placeOfBirth,
-          date_of_birth: student.dateOfBirth,
-          phone_number: student.phoneNumber,
-          last_achievement: student.lastAchievement,
-          total_pages: student.totalPages || 0,
-          registration_number: student.registration_number,
-          national_id: student.national_id,
-          family_id: student.family_id,
-          joined_date: student.joined_date,
-          notes: student.notes
-        }])
+        .insert([toStudentDbPayload(student)])
         .select()
         .single();
 
@@ -170,29 +148,8 @@ export const useStore = create<StudentStore>((set, get) => ({
       const { error } = await supabase
         .from('students')
         .update({
-          name: student.name,
-          gender: student.gender,
-          address: student.address,
-          class_id: student.class_id,
-          level_id: student.level_id,
-          father_name: student.father_name,
-          mother_name: student.mother_name,
-          wali_name: student.wali_name,
-          school_info: student.school_info,
-          profile_image_url: student.profileImageUrl,
-          profile_picture: student.profilePicture || '',
-          status: student.status,
-          place_of_birth: student.placeOfBirth,
-          date_of_birth: student.dateOfBirth,
-          phone_number: student.phoneNumber,
-          last_achievement: student.lastAchievement,
-          total_pages: student.totalPages || 0,
-          registration_number: student.registration_number,
-          national_id: student.national_id,
-          family_id: student.family_id,
-          joined_date: student.joined_date,
-          notes: student.notes,
-          updated_at: new Date().toISOString()
+          ...toStudentDbPayload(student),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', student.id);
 
