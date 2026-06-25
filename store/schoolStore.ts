@@ -288,6 +288,12 @@ export const useSchoolStore = create<SchoolStore>((set, get) => ({
 
     await Promise.all(rolePromises);
 
+    fetch('/api/teachers/sync-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: teacher.email, roles: teacher.roles, username: teacher.username }),
+    }).catch(() => {});
+
     set(state => ({
       teachers: state.teachers.map(t =>
         t.id === teacher.id ? teacher : t

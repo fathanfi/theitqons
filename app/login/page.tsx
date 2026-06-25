@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { getTeacherRoleNames, resolveAuthRoleFromTeacherRoles } from '@/lib/teacherRoles';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ export default function LoginPage() {
       if (username) {
         const { data: teacher, error: teacherError } = await supabase
           .from('teachers')
-          .select('*')
+          .select('*, teacher_roles(role)')
           .eq('username', username)
           .eq('password', password)
           .single();
@@ -113,12 +114,12 @@ export default function LoginPage() {
           authUser = authData.user;
         }
 
-        userRole = 'teacher';
+        const teacherRoleNames = getTeacherRoleNames(teacher.teacher_roles);
+        userRole = resolveAuthRoleFromTeacherRoles(teacherRoleNames, teacher.username);
 
-        // Assign teacher role using the function
         const { error: roleError } = await supabase
           .rpc('assign_user_role', {
-            p_role_name: 'teacher',
+            p_role_name: userRole,
             p_user_id: authUser.id
           });
 
@@ -129,12 +130,11 @@ export default function LoginPage() {
           return;
         }
 
-        // Update auth store
         useAuthStore.setState({
           user: {
             id: authUser.id,
             email: teacher.email,
-            role: 'teacher',
+            role: userRole as 'admin' | 'user' | 'teacher',
             name: userName
           },
           loading: false
@@ -158,19 +158,18 @@ export default function LoginPage() {
         // Check if this email belongs to a teacher
         const { data: teacherData, error: teacherError } = await supabase
           .from('teachers')
-          .select('*')
+          .select('*, teacher_roles(role)')
           .eq('email', email)
           .single();
 
         if (teacherData) {
-          // This is a teacher
           userName = teacherData.name;
-          userRole = 'teacher';
+          const teacherRoleNames = getTeacherRoleNames(teacherData.teacher_roles);
+          userRole = resolveAuthRoleFromTeacherRoles(teacherRoleNames, teacherData.username);
 
-          // Assign teacher role using the function
           const { error: roleError } = await supabase
             .rpc('assign_user_role', {
-              p_role_name: 'teacher',
+              p_role_name: userRole,
               p_user_id: authUser.id
             });
 
